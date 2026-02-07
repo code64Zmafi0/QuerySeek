@@ -1,0 +1,16 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org">
+  <!-- Фон с мягким скруглением -->
+  <rect width="256" height="256" rx="48" fill="#F0F4F8"/>
+  
+  <!-- Стилизованная лупа / Буква Q -->
+  <circle cx="110" cy="110" r="65" stroke="#0078D4" stroke-width="24"/>
+  <path d="M155 155 L210 210" stroke="#0078D4" stroke-width="24" stroke-linecap="round"/>
+  
+  <!-- Внутренняя декоративная деталь (текстовые строки) -->
+  <path d="M80 90 H140" stroke="#4CC9F0" stroke-width="8" stroke-linecap="round"/>
+  <path d="M80 115 H120" stroke="#4CC9F0" stroke-width="8" stroke-linecap="round"/>
+  <path d="M80 140 H130" stroke="#4CC9F0" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Название библиотеки -->
+  <text x="128" y="245" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-weight="800" font-size="34" fill="#1a1a2e">QuerySeek</text>
+</svg>

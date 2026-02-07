@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>QuerySeek</Title>
+    <Authors>code64Zmafi0</Authors>
+    <Description>Linked data text search engine.</Description>
+    <RepositoryUrl>https://github.com/code64Zmafi0/AntIndex</RepositoryUrl>
+    <PackageTags>search; index; relations; data;</PackageTags>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
+    <Version>1.0.1</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+	<None Include="..\README.md" Pack="true" PackagePath="\" />
+	<PackageReference Include="MessagePack" Version="3.1.4" />
+  </ItemGroup>
+
+</Project>
