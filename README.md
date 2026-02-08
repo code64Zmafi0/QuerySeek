@@ -5,7 +5,7 @@ Linked data text search engine.
 
 ## Features
 
-- Fast text search using 2-gramm words index
+- Fast text search using 3-gramm words index
 - Designed to search for entities of different types (up to 250 types)
 - Support for data hierarchy and relatedness
 - Flexible sorting settings
@@ -52,7 +52,7 @@ Also, you can redefine normalization and phrases splitting on words for use in y
 *Implement SearchContextBase* 
 - Implement SearcherBase.Request property (array of requests to search) to configure your search request. The query options are presented below (use in the same order for proper operation)
     - Search - search current type entities
-    - SearchBy - search current type entities in parents hierarchy (parents must be found in the Search block above)
+    - SearchByContainer - search current type entities in parents hierarchy (parents must be found in the Search block above)
     - Select - performs forced addition of entities of the target type based on the passed ids
     - AppendChilds - use to force adding entities by parent
 
