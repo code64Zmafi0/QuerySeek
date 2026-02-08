@@ -3,7 +3,6 @@ using System.Runtime.InteropServices;
 using QuerySeek.Models;
 using QuerySeek.Services.Extensions;
 using QuerySeek.Services.Normalizing;
-using QuerySeek.Services.Searching.Requests;
 using QuerySeek.Services.Splitting;
 
 namespace QuerySeek.Services.Searching;
@@ -122,7 +121,7 @@ public class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normal
             Word[] alterantivesMetas = [];
 
             if (context.AlternativeWords.TryGetValue(i, out var alternatives))
-                alterantivesMetas = Array.ConvertAll(alternatives, alt => new Word(alt));
+                alterantivesMetas = Array.ConvertAll(alternatives, alt => new Word(normalizer.Normalize(alt)));
 
             return new QueryWordContainer(
                 new Word(i),
@@ -140,7 +139,7 @@ public class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normal
         var result = new List<KeyValuePair<int, byte>>[splittedQuery.Length];
 
         //Используем один словарь для расчета совпавщих нграмм для каждого слова дабы лишний раз не аллоцировать
-        Dictionary<int, IndexWordSearchInfo> wordsSearchProcessDict = new(400_000);
+        Dictionary<int, IndexWordSearchInfo> wordsSearchProcessDict = new(perfomance.WordsSearchDictionaryPreallocate);
 
         for (int i = 0; i < result.Length; i++)
         {
