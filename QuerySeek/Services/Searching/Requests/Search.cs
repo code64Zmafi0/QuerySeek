@@ -21,7 +21,6 @@ public class Search(
         EntitiesByWordsIndex entitiesByWordsIndex = searchContext.Index.EntitiesByWordsIndex;
         Dictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
 
-
         for (byte queryWordPosition = 0; queryWordPosition < wordsBundle.Length; queryWordPosition++)
         {
             List<KeyValuePair<int, byte>> currentSimilarWordsBundle = wordsBundle[queryWordPosition];
