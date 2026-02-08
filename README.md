@@ -22,14 +22,15 @@ Linked data text search engine.
         - Use the _QS.Phrase()_ method and its overloads to specify names to search for and to define the name type for flexible sorting and scoring.
         - If you are using the extended phrase configuration QS.Phrase(string phrase, byte phraseType), use phraseType > 0
     - GetLinks() - Identify the keys that are associated with your entity (when creating an index, the entity will be a child of each element in the Links list)
+    - GetContainer() - Define container. For using SearchByContainer
+    - GetParents() - Define parents. For using AppendChilds
 
 ### Build index
 
 **Building**
 
 - Use QS.Build() to build Index intsnace index isntance, passing the normalizer and splitter instances to the method, as well as an enumeration entities for searching
-- Also, you can get an instance of the builder using QS.GetBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter, HierarchySettings? settings = null)
-    - Setup HierarchySettings. Declare type dependencies to containers or parents to use SearchBy and AppendChilds
+- Also, you can get an instance of the builder using QS.GetBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter)
     - Call builder _AddEntity_ method to add entity (multithreading is not working)
     - Call _Build_ to get IndexInstance
 
@@ -71,4 +72,4 @@ Also, you can redefine normalization and phrases splitting on words for use in y
 ## Optimizations
 
 - If your entity cannot be found if the hierarchy parent is not found, be sure to set the IIndexedEntity.GetContainer method to improve performance.
-- If you using overrides OnLinkedEntityMatched or OnEntityProcessed use a static AdditionalRule intances for smaller memory allocations 
+- If you using overrides OnLinkedEntityMatched or OnEntityProcessed use a static AdditionalRule intances for smaller memory 
