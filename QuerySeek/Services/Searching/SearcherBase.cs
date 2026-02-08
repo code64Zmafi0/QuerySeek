@@ -184,7 +184,7 @@ public class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normal
             SearchSimilars(altWord, (byte)wordContainer.QueryWord.NGrammsHashes.Length, wordsSearchProcessDict);
 
         int treshold = wordContainer.QueryWord.IsDigit
-            ? wordContainer.QueryWord.NGrammsHashes.Length - SeekTools.NGRAM_LENGTH + 1
+            ? wordContainer.QueryWord.NGrammsHashes.Length - QS.NGRAM_LENGTH + 1
             : (int)(wordContainer.QueryWord.NGrammsHashes.Length * SimilarityTreshold);
 
         SearchSimilars(wordContainer.QueryWord, treshold, wordsSearchProcessDict);
@@ -207,6 +207,7 @@ public class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normal
                 result.Add(new(item.Key, item.Value.Score));
             }
 
+            //Чистка переиспользуемого словаря
             wordsSearchProcessDict.Clear();
         }
     }
@@ -265,6 +266,7 @@ public class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normal
 
     private int CalculateScore(TContext searchContext, EntityMatchesBundle entityMatchesBundle)
     {
+        Key currentEntityKey = entityMatchesBundle.Key;
         Span<int> wordsScores = stackalloc int[searchContext.NgrammedQuery.Length];
 
         //Считаем количество всех совпадений в найденной сущности и заполняем wordsScores
@@ -277,10 +279,10 @@ public class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normal
             if (searchContext.GetResultsByType(nodeKey.Type) is { } req
                 && req.TryGetValue(nodeKey, out var chaiedMathes))
             {
-                double nodeMultipler = GetLinkedEntityMatchMiltipler(entityMatchesBundle.Key.Type, nodeKey.Type);
+                double nodeMultipler = GetLinkedEntityMatchMiltipler(currentEntityKey.Type, nodeKey.Type);
                 CalculateNodeMatchesScore(in wordsScores, chaiedMathes.WordsMatches, nodeMultipler);
 
-                if (OnLinkedEntityMatched(entityMatchesBundle.Key, nodeKey) is { } chainedMatchRule)
+                if (OnLinkedEntityMatched(currentEntityKey, nodeKey) is { } chainedMatchRule)
                     entityMatchesBundle.Rules.Add(chainedMatchRule);
             }
         }
@@ -291,8 +293,15 @@ public class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normal
         int resultScore = 0;
 
         //Складывам совпадения по словам из запроса
-        for (int i = 0; i < wordsScores.Length; i++)
-            resultScore += wordsScores[i];
+        foreach (int ws in wordsScores)
+            resultScore += ws;
+
+        //Обрабатываем дополнительные правила
+        resultScore += entityMatchesBundle.RulesScore;
+        foreach (AdditionalRule item in entityMatchesBundle.Rules)
+        {
+            resultScore = (int)(resultScore * item.Multipler);
+        }
 
         return resultScore;
     }
@@ -331,10 +340,10 @@ public class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normal
 
     #region Overrides
     /// <summary>
-    /// Отсортированный по количеству совпадений enumerable, позволяе переопределить сортировку
+    /// Позволяет переопределить сортировку
     /// </summary>
     /// <param name="context"></param>
-    /// <param name="result"></param>
+    /// <param name="result">Отсортированный по количеству совпадений enumerable сущностей</param>
     /// <returns></returns>
     public virtual IOrderedEnumerable<EntityMatchesBundle> PostProcessing(TContext context, IOrderedEnumerable<EntityMatchesBundle> result)
         => result;
@@ -367,7 +376,7 @@ public class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normal
         => 1;
 
     /// <summary>
-    /// Добавление правила если линк совал
+    /// Добавление правила если линк совпал
     /// </summary>
     /// <param name="entityKey"></param>
     /// <param name="linkedKey"></param>
@@ -376,7 +385,7 @@ public class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normal
         => null;
 
     /// <summary>
-    /// Добавление правила на свопадение сущности
+    /// Добавление правила на совпадение сущности
     /// </summary>
     /// <param name="context"></param>
     /// <param name="entityMatchesBundle"></param>

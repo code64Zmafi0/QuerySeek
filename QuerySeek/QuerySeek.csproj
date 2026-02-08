@@ -8,7 +8,7 @@
     <Title>QuerySeek</Title>
     <Authors>code64Zmafi0</Authors>
     <Description>Linked data text search engine.</Description>
-    <RepositoryUrl>https://github.com/code64Zmafi0/AntIndex</RepositoryUrl>
+    <RepositoryUrl>https://github.com/code64Zmafi0/QuerySeek</RepositoryUrl>
     <PackageTags>search; index; relations; data;</PackageTags>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
     <Version>1.0.1</Version>

@@ -7,7 +7,7 @@ using QuerySeek.Services.Splitting;
 
 namespace QuerySeek.Services.Extensions;
 
-public static class SeekTools
+public static class QS
 {
     #region Tools
     public static Phrase Phrase<TPhraseType>(string phrase, TPhraseType phraseType) where TPhraseType : Enum

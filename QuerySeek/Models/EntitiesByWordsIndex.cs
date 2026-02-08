@@ -2,16 +2,20 @@
 
 namespace QuerySeek.Models;
 
+/// <summary>
+/// Индекс сущностей по словам. id слова - индекс массива, внутри разложены матчи отдельно для каждого типа, внутри словари по контейнерам
+/// </summary>
 [MessagePackObject]
 public class EntitiesByWordsIndex()
 {
     [Key(1)]
-    public KeyValuePair<byte /*TypeId*/, Dictionary</*ByNodeKey*/ Key, WordMatchMeta[]>>[][/*WordId*/] EntitiesByWords { get; set; } = [];
+    public KeyValuePair<byte /*TypeId*/, Dictionary</*ByNodeKey*/ Key, WordMatchMeta[]>>[/*WordId*/][] EntitiesByWords { get; set; } = [];
 
     public WordMatchMeta[]? GetMatchesByWord(int wordId, byte entityType)
     {
-        var wordMatches = EntitiesByWords[wordId];
+        KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[] wordMatches = EntitiesByWords[wordId];
 
+        //Типы в бандле упорядочены. Используем бинарный поиск.
         int index = BinarySearch(wordMatches, entityType);
         if (index == -1) return null;
 
@@ -28,8 +32,9 @@ public class EntitiesByWordsIndex()
         byte entityType,
         Key[] parentKeys)
     {
-        var wordMatches = EntitiesByWords[wordId];
+        KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[] wordMatches = EntitiesByWords[wordId];
 
+        //Типы в бандле упорядочены. Используем бинарный поиск.
         int index = BinarySearch(wordMatches, entityType);
         if (index == -1) yield break;
 

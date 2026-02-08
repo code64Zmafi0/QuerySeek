@@ -17,26 +17,26 @@ Linked data text search engine.
 ### Defining entities of search
 - Your search entity must implement the interface **IIndexedEntity**
     - GetKey() - Defines an entity keys
-        - Use SeekTools.Key() for create key, _entityType must be greater than 0_
+        - Use QS.Key() for create key, _entityType must be greater than 0_
     - GetNames() - Define the phrases by which the search will be carried out
-        - Use the _SeekTools.Phrase()_ method and its overloads to specify names to search for and to define the name type for flexible sorting and scoring.
-        - If you are using the extended phrase configuration SeekTools.Phrase(string phrase, byte phraseType), use phraseType > 0
+        - Use the _QS.Phrase()_ method and its overloads to specify names to search for and to define the name type for flexible sorting and scoring.
+        - If you are using the extended phrase configuration QS.Phrase(string phrase, byte phraseType), use phraseType > 0
     - GetLinks() - Identify the keys that are associated with your entity (when creating an index, the entity will be a child of each element in the Links list)
 
 ### Build index
 
 **Building**
 
-- Use SeekTools.Build() to build Index intsnace index isntance, passing the normalizer and splitter instances to the method, as well as an enumeration entities for searching
-- Also, you can get an instance of the builder using SeekTools.GetBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter, HierarchySettings? settings = null)
+- Use QS.Build() to build Index intsnace index isntance, passing the normalizer and splitter instances to the method, as well as an enumeration entities for searching
+- Also, you can get an instance of the builder using QS.GetBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter, HierarchySettings? settings = null)
     - Setup HierarchySettings. Declare type dependencies to containers or parents to use SearchBy and AppendChilds
     - Call builder _AddEntity_ method to add entity (multithreading is not working)
     - Call _Build_ to get IndexInstance
 
 **Save**
 
-- Use SeekTools.WriteIndex(IndexInstance index, string filePath) for saving index file
-- Use SeekTools.ReadIndex(string filePath) for read index file
+- Use QS.WriteIndex(IndexInstance index, string filePath) for saving index file
+- Use QS.ReadIndex(string filePath) for read index file
 
 ### Normalizing and splitting
 The library provides built-in tools for normalizing and splitting a name into words for searching. Use this static objects.
@@ -48,14 +48,14 @@ Also, you can redefine normalization and phrases splitting on words for use in y
 
 ### Search
 
-*Implement index context* 
+*Implement SearchContextBase* 
 - Implement SearcherBase.Request property (array of requests to search) to configure your search request. The query options are presented below (use in the same order for proper operation)
     - Search - search current type entities
     - SearchBy - search current type entities in parents hierarchy (parents must be found in the Search block above)
     - Select - performs forced addition of entities of the target type based on the passed ids
     - AppendChilds - use to force adding entities by parent
 
-*Implement index searcher SearcherBase* 
+*Implement SearcherBase* 
 - Override GetLinkedEntityMatchMiltipler(byte entityType, byte linkedType) for flexible scoring mathes of linked entities
 - Override GetPhraseTypeMultipler(byte phraseType) for flexible scoring by phrase types
 - Override OnLinkedEntityMatched(Key entityKey, Key linkedKey) to add individual sorting rules if linked entity is match

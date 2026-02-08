@@ -2,6 +2,9 @@
 
 namespace QuerySeek.Models;
 
+/// <summary>
+/// Ключ сущности
+/// </summary>
 [MessagePackObject]
 public readonly struct Key : IEquatable<Key>
 {

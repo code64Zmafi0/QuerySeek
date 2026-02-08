@@ -47,4 +47,4 @@ public readonly record struct IndexWordSearchInfo(
     public byte Score => (byte)(Mathes > Misses ? Mathes - (Misses * 0.5): 0);
 }
 
-public record AdditionalRule(string Name, int Score, double multipler = 1);
+public record AdditionalRule(string Name, int Score, double Multipler = 1);

@@ -4,12 +4,15 @@ using QuerySeek.Services.Searching.Requests;
 
 namespace QuerySeek.Services.Searching;
 
-//Контекст поиска, абстрактный класс, определяем запрос поиска суностей. Позволяет при переопределении хранить какие либо дополнительные свойства для сортировки.
-public abstract class SearchContextBase(IndexInstance ant, string query)
+/// <summary>
+/// Контекст поиска, абстрактный класс, определяем запрос поиска суностей. Позволяет при переопределении хранить какие либо дополнительные свойства для сортировки.
+/// </summary>
+/// <param name="index"></param>
+/// <param name="query"></param>
+public abstract class SearchContextBase(IndexInstance index, string query)
 {
     #region Overrides
     public abstract RequestBase[] Request { get; }
-
 
     public virtual HashSet<string> NotRealivatedWords { get; } = []; 
 
@@ -19,8 +22,7 @@ public abstract class SearchContextBase(IndexInstance ant, string query)
     public virtual Dictionary<string, string[]> AlternativeWords { get; } = [];
     #endregion
 
-
-    public IndexInstance Index { get; set; } = ant;
+    public IndexInstance Index { get; set; } = index;
 
     public string Query { get; set; } = query;
 

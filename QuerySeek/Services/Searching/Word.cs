@@ -10,7 +10,7 @@ public class Word(string word) : IEquatable<Word>
 {
     public readonly string QueryWord = word;
 
-    public readonly int[] NGrammsHashes = SeekTools.GetNgrams(word);
+    public readonly int[] NGrammsHashes = QS.GetNgrams(word);
 
     public readonly bool IsDigit = int.TryParse(word, out _);
 
