@@ -91,12 +91,10 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
         };
 
         Dictionary<int, HashSet<int>> wordsIdsByNgramms = [];
-        int[] wordsByIds = new int[WordsBundle.Pairs.Count];
 
         foreach (var item in WordsBundle.GetWordsByIds())
         {
             int[] ngramms = QS.GetNgrams(item.Key);
-            wordsByIds[item.Value] = ngramms.Length;
 
             for (int i = 0; i < ngramms.Length; i++)
             {
