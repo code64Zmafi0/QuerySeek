@@ -62,13 +62,11 @@ public class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normal
     /// Поиск топов по типам
     /// </summary>
     /// <param name="context"></param>
-    /// <param name="request"></param>
     /// <param name="selectTypes"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     public TypeSearchResult[] SearchTypes(
         TContext context,
-        RequestBase[] request,
         (byte Type, int Take)[] selectTypes,
         CancellationToken? cancellationToken = null)
     {
@@ -80,7 +78,7 @@ public class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normal
 
         List<KeyValuePair<int, byte>>[] wordsBundle = SearchSimlarIndexWordsByQuery(context, perfomance);
 
-        foreach (var i in request) i.ProcessRequest(context, wordsBundle, perfomance, ct);
+        foreach (var i in context.Request) i.ProcessRequest(context, wordsBundle, perfomance, ct);
 
         var result = new TypeSearchResult[selectTypes.Length];
 
