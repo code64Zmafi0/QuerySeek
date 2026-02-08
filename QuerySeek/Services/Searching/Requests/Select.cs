@@ -3,10 +3,10 @@ using QuerySeek.Models;
 namespace QuerySeek.Services.Searching.Requests;
 
 /// <summary>
-/// Принудительное добавление сущностей целевого типа
+/// Р’С‹РїРѕР»РЅСЏРµС‚ РїСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕРµ РґРѕР±Р°РІР»РµРЅРёРµ СЃСѓС‰РЅРѕСЃС‚РµР№ С†РµР»РµРІРѕРіРѕ С‚РёРїР°
 /// </summary>
-/// <param name="targetType">Целевой тип</param>
-/// <param name="ids">Идентификаторы</param>
+/// <param name="targetType"></param>
+/// <param name="ids"></param>
 public class Select(byte targetType, IEnumerable<int> ids) : RequestBase(targetType)
 {
     public override void ProcessRequest(
