@@ -5,7 +5,7 @@ using QuerySeek.Services.Searching.Requests;
 namespace QuerySeek.Services.Searching;
 
 /// <summary>
-/// Контекст поиска, абстрактный класс, определяем запрос поиска суностей. Позволяет при переопределении хранить какие либо дополнительные свойства для сортировки.
+/// РљРѕРЅС‚РµРєСЃС‚ РїРѕРёСЃРєР°. РђР±СЃС‚СЂР°РєС‚РЅС‹Р№ РєР»Р°СЃСЃ. РћРїСЂРµРґРµР»СЏРµРј Р·Р°РїСЂРѕСЃ, РјРѕР¶РµРј С…СЂР°РЅРёС‚СЊ РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ СЃРІРѕР№СЃС‚РІР°
 /// </summary>
 /// <param name="index"></param>
 /// <param name="query"></param>
@@ -17,7 +17,7 @@ public abstract class SearchContextBase(IndexInstance index, string query)
     public virtual HashSet<string> NotRealivatedWords { get; } = []; 
 
    /// <summary>
-   /// Возможные замены слов(III -> 3, и тд)
+   /// Г‚Г®Г§Г¬Г®Г¦Г­Г»ГҐ Г§Г Г¬ГҐГ­Г» Г±Г«Г®Гў(III -> 3, ГЁ ГІГ¤)
    /// </summary>
     public virtual Dictionary<string, string[]> AlternativeWords { get; } = [];
     #endregion
