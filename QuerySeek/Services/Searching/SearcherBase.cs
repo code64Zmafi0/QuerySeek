@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using QuerySeek.Models;
 using QuerySeek.Services.Extensions;
 using QuerySeek.Services.Normalizing;
+using QuerySeek.Services.Searching.Requests;
 using QuerySeek.Services.Splitting;
 
 namespace QuerySeek.Services.Searching;
@@ -13,7 +14,7 @@ namespace QuerySeek.Services.Searching;
 /// <typeparam name="TContext"></typeparam>
 /// <param name="splitter"></param>
 /// <param name="normalizer"></param>
-public class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normalizer) where TContext : SearchContextBase
+public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normalizer) where TContext : SearchContextBase
 {
     #region Search logic
     /// <summary>
@@ -109,7 +110,7 @@ public class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normal
         return result;
     }
 
-    private void FillContext(TContext context)
+    public void FillContext(TContext context)
     {
         string normalizedQuery = normalizer.Normalize(context.Query);
         string[] splittedQuery = splitter.Tokenize(normalizedQuery);
@@ -131,11 +132,10 @@ public class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normal
 
         context.NgrammedQuery = ngrammedWords;
         context.SplittedAndNormalizedQuery = splittedQuery;
-
-        context.Request = context.GetRequest();
+        context.Request = GetRequest(context);
     }    
 
-    private List<KeyValuePair<int, byte>>[] SearchSimlarIndexWordsByQuery(SearchContextBase searchContext, PerfomanceSettings perfomance)
+    public List<KeyValuePair<int, byte>>[] SearchSimlarIndexWordsByQuery(SearchContextBase searchContext, PerfomanceSettings perfomance)
     {
         var splittedQuery = searchContext.NgrammedQuery;
         var result = new List<KeyValuePair<int, byte>>[splittedQuery.Length];
@@ -338,6 +338,13 @@ public class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normal
     #endregion
 
     #region Overrides
+    /// <summary>
+    /// Орпеделяет запрос на поиск в индексе
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
+    public abstract RequestBase[] GetRequest(TContext context);
+
     /// <summary>
     /// Позволяет переопределить сортировку
     /// </summary>

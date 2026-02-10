@@ -9,11 +9,9 @@ namespace QuerySeek.Services.Searching;
 /// </summary>
 /// <param name="index"></param>
 /// <param name="query"></param>
-public abstract class SearchContextBase(IndexInstance index, string query)
+public class SearchContextBase(IndexInstance index, string query)
 {
     #region Overrides
-    public abstract RequestBase[] GetRequest();
-
     public virtual HashSet<string> NotRealivatedWords { get; } = [];
 
     /// <summary>
