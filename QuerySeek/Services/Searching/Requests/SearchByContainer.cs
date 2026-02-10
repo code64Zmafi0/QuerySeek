@@ -14,13 +14,13 @@ public class SearchByContainer(
     byte targetType,
     byte containerType,
     Func<Key, bool>? filter = null,
-    Func<IEnumerable<EntityMatchesBundle>, IEnumerable<EntityMatchesBundle>>? parentsFilter = null) : RequestBase(targetType)
+    Func<IEnumerable<EntityMatchesBundle>, IEnumerable<EntityMatchesBundle>>? containersFilter = null) : RequestBase(targetType)
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public virtual Key[] SelectParents(Dictionary<Key, EntityMatchesBundle> byStrat)
-        => [.. parentsFilter is null
+        => [.. containersFilter is null
             ? byStrat.Keys
-            : parentsFilter.Invoke(byStrat.Values).Select(i => i.Key)];
+            : containersFilter.Invoke(byStrat.Values).Select(i => i.Key)];
 
     public override void ProcessRequest(
         SearchContextBase searchContext,
