@@ -49,14 +49,15 @@ Also, you can redefine normalization and phrases splitting on words for use in y
 
 ### Search
 
-*Implement SearchContextBase* 
+*Override SearchContextBase if you need to store additional sorting properties* 
+
+
+*Implement SearcherBase* 
 - Implement SearcherBase.Request property (array of requests to search) to configure your search request. The query options are presented below (use in the same order for proper operation)
     - Search - search current type entities
     - SearchByContainer - search current type entities in parents hierarchy (parents must be found in the Search block above)
     - Select - performs forced addition of entities of the target type based on the passed ids
     - AppendChilds - use to force adding entities by parent
-
-*Implement SearcherBase* 
 - Override GetLinkedEntityMatchMiltipler(byte entityType, byte linkedType) for flexible scoring mathes of linked entities
 - Override GetPhraseTypeMultipler(byte phraseType) for flexible scoring by phrase types
 - Override OnLinkedEntityMatched(Key entityKey, Key linkedKey) to add individual sorting rules if linked entity is match

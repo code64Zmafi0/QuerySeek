@@ -9,7 +9,7 @@ namespace QuerySeek.Services.Searching.Requests;
 /// <param name="targetType">Целевой тип сущности</param>
 /// <param name="containerType">Тип сущности родителя (Parent)</param>
 /// <param name="filter">Фильтр добавления в словарь найденных</param>
-/// <param name="parentsFilter">Фильтр родителей по которым осуществляем поиск</param>
+/// <param name="containersFilter">Фильтр родителей по которым осуществляем поиск</param>
 public class SearchByContainer(
     byte targetType,
     byte containerType,
