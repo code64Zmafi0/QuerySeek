@@ -131,6 +131,8 @@ public class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normal
 
         context.NgrammedQuery = ngrammedWords;
         context.SplittedAndNormalizedQuery = splittedQuery;
+
+        context.Request = context.GetRequest();
     }    
 
     private List<KeyValuePair<int, byte>>[] SearchSimlarIndexWordsByQuery(SearchContextBase searchContext, PerfomanceSettings perfomance)

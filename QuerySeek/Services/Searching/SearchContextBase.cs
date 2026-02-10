@@ -12,15 +12,17 @@ namespace QuerySeek.Services.Searching;
 public abstract class SearchContextBase(IndexInstance index, string query)
 {
     #region Overrides
-    public abstract RequestBase[] Request { get; }
+    public abstract RequestBase[] GetRequest();
 
-    public virtual HashSet<string> NotRealivatedWords { get; } = []; 
+    public virtual HashSet<string> NotRealivatedWords { get; } = [];
 
-   /// <summary>
-   /// Âîçìîæíûå çàìåíû ñëîâ(III -> 3, è òä)
-   /// </summary>
+    /// <summary>
+    /// Альтернативные слова вида (III -> 3)
+    /// </summary>
     public virtual Dictionary<string, string[]> AlternativeWords { get; } = [];
     #endregion
+
+    public RequestBase[] Request { get; internal set; } = [];
 
     public IndexInstance Index { get; set; } = index;
 
