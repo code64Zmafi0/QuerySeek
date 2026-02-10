@@ -1,4 +1,5 @@
-﻿using MessagePack;
+﻿using System.Runtime.InteropServices;
+using MessagePack;
 
 namespace QuerySeek.Models;
 
@@ -6,6 +7,7 @@ namespace QuerySeek.Models;
 /// Ключ сущности
 /// </summary>
 [MessagePackObject]
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
 public readonly struct Key : IEquatable<Key>
 {
     public static readonly Key Default = new(0, 0);

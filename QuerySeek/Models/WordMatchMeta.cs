@@ -1,4 +1,5 @@
-﻿using MessagePack;
+﻿using System.Runtime.InteropServices;
+using MessagePack;
 
 namespace QuerySeek.Models;
 
@@ -6,6 +7,7 @@ namespace QuerySeek.Models;
 /// Информация о совпадении слова с сущностью (EntityId, WordPositionInName, PhraseType)
 /// </summary>
 [MessagePackObject]
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
 public readonly struct WordMatchMeta
 {
     public WordMatchMeta() { }
