@@ -24,7 +24,7 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
 
         HashSet<Key> linksKeys = [.. indexedEntity.GetLinks()];
 
-        foreach (Key parent in indexedEntity.GetParents())
+        foreach (Key parent in linksKeys)
         {
             ref var set = ref CollectionsMarshal.GetValueRefOrAddDefault(Childs, parent, out var exists);
 
@@ -35,7 +35,7 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
         }
 
         IEnumerable<Phrase> names = indexedEntity.GetNames();
-        HashSet<int> uniqWords = [];
+
         (string[] TokenizedPhrase, byte PhraseType)[] namesToBuild = GetNamesToBuild(names, normalizer, phraseSplitter);
         for (int nameIndex = 0; nameIndex < namesToBuild.Length; nameIndex++)
         {
@@ -45,9 +45,6 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
             {
                 string word = phrase[wordNamePosition];
                 var wordId = WordsBundle.GetWordId(word);
-
-                if (!uniqWords.Add(wordId))
-                    continue;
 
                 WordMatchMeta wordMatchMeta = new(key.Id, wordNamePosition, phraseType);
                 EntitiesByWordsIndex.AddMatch(wordId, key.Type, containerKey, wordMatchMeta);

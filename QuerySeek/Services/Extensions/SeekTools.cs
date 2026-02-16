@@ -72,7 +72,7 @@ public static class QS
         for (var i = 0; i <= normalized.Length - NGRAM_LENGTH; i++)
         {
             var nGramm = normalized.AsSpan(i, NGRAM_LENGTH);
-            result[i] = GetNGrammHash(nGramm);
+            result[i] = GetNGrammHash(in nGramm);
         }
 
         return result;

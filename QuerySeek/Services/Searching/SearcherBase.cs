@@ -212,9 +212,9 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     }
 
     /// <summary>
-    /// Метод отвечает за поиск похожих слов по 2-gramm
+    /// Метод отвечает за поиск похожих слов по n-gramm
     /// </summary>
-    /// <returns>Словарь id слова, количество свопадений и пропусков</returns>
+    /// <returns>Словарь id слова количество совпадений и пропусков</returns>
     private static Dictionary<int, IndexWordSearchInfo> GetSimilarWords(
         IndexInstance index,
         Word queryWord,

@@ -24,9 +24,4 @@ public interface IIndexedEntity
     /// The container to which the entity is bound. For using SearchByContainer request.
     /// </summary>
     Key? GetContainer();
-
-    /// <summary>
-    /// Parents to bind to. For using AppendChilds request.
-    /// </summary>
-    IEnumerable<Key> GetParents();
 }
