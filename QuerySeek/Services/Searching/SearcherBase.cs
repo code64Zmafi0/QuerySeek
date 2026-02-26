@@ -339,7 +339,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
     #region Overrides
     /// <summary>
-    /// Орпеделяет запрос на поиск в индексе
+    /// Определяет запрос на поиск в индексе
     /// </summary>
     /// <param name="context"></param>
     /// <returns></returns>
