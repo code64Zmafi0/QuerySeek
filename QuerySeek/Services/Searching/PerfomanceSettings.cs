@@ -5,10 +5,9 @@ public record PerfomanceSettings(
     int SearchedWordsToStopProcess,
     int WordsSearchDictionaryPreallocate)
 {
-    public static readonly PerfomanceSettings Default = new(1000, 4, 400_000);
+    public static readonly PerfomanceSettings Default = new(800, 4, 400_000);
 
-    public static readonly PerfomanceSettings Fast = new(500, 2, 400_000);
+    public static readonly PerfomanceSettings Fast = new(400, 2, 400_000);
 
-    public Perfomancer GetPerfomancer()
-        => new(SearchedWordsToStopProcess);
+    public Perfomancer GetPerfomancer() => new(SearchedWordsToStopProcess);
 }
