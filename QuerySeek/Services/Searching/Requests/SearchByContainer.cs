@@ -18,9 +18,21 @@ public class SearchByContainer(
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public virtual Key[] SelectParents(Dictionary<Key, EntitySearchResult> byStrat)
-        => [.. containersFilter is null
-            ? byStrat.Keys
-            : containersFilter.Invoke(byStrat.Values).Select(i => i.Key)];
+    {
+        Key[] result = [];
+
+        if (containersFilter is null)
+        {
+            result = new Key[byStrat.Count];
+            byStrat.Keys.CopyTo(result, 0);
+        }
+        else
+        {
+            result = [.. containersFilter.Invoke(byStrat.Values).Select(i => i.Key)];
+        }
+
+        return result;
+    }
 
     public override void ProcessRequest(
         SearchContextBase searchContext,
