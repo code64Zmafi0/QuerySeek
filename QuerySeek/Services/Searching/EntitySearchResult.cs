@@ -15,15 +15,18 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 
     public EntityMeta Meta => meta;
 
+    public bool[] MatchedLinks { get; } = new bool[meta.Links.Length];
+
     public List<WordCompareResult> WordsMatches { get; } = new(1);
 
     public List<AdditionalRule> Rules { get; } = [];
 
-    public int RulesScore => Rules.Sum(i => i.Score);
-
     public int Prescore;
 
     public int Score;
+
+    public void AddRule(AdditionalRule rule)
+        => Rules.Add(rule);
 
     internal void AddMatch(in WordCompareResult wordCompareResult)
     {

@@ -52,7 +52,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         {
             foreach (var typeResults in context.SearchResult)
             {
-                foreach (var item in ResultVisionFilter(context, typeResults.Key, typeResults.Value.Values))
+                foreach (var item in TypeBundlePreprocessing(context, typeResults.Key, typeResults.Value.Values))
                     yield return item;
             }
         }
@@ -94,7 +94,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
             }
 
             var typeResult =
-                PostProcessing(context, ResultVisionFilter(context, Type, typeSearchResult.Values)
+                PostProcessing(context, TypeBundlePreprocessing(context, Type, typeSearchResult.Values)
                     .OrderByDescending(matchBundle =>
                     {
                         matchBundle.Score = CalculateScore(context, matchBundle);
@@ -274,21 +274,19 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         //Добавление матчей из связанных сущностей если они найдены в контексте
         Key[] nodes = entityLinks;
-        foreach (Key nodeKey in nodes)
+        for (int i = 0; i < nodes.Length; i++)
         {
+            Key nodeKey = nodes[i];
+
             if (searchContext.GetResultsByType(nodeKey.Type) is { } req
                 && req.TryGetValue(nodeKey, out var chaiedMathes))
             {
+                entityMatchesBundle.MatchedLinks[i] = true;
+
                 double nodeMultipler = GetLinkedEntityMatchMiltipler(currentEntityKey.Type, nodeKey.Type);
                 CalculateNodeMatchesScore(in wordsScores, chaiedMathes.WordsMatches, nodeMultipler);
-
-                if (OnLinkedEntityMatched(currentEntityKey, nodeKey) is { } chainedMatchRule)
-                    entityMatchesBundle.Rules.Add(chainedMatchRule);
             }
         }
-
-        if (OnEntityProcessed(searchContext, entityMatchesBundle) is { } rule)
-            entityMatchesBundle.Rules.Add(rule);
 
         int resultScore = 0;
 
@@ -297,9 +295,9 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
             resultScore += ws;
 
         //Обрабатываем дополнительные правила
-        resultScore += entityMatchesBundle.RulesScore;
         foreach (AdditionalRule item in entityMatchesBundle.Rules)
         {
+            resultScore += item.Score;
             resultScore = (int)(resultScore * item.Multipler);
         }
 
@@ -356,13 +354,13 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         => result;
 
     /// <summary>
-    /// Позволяет отсортировать показ определенных типов
+    /// Позволяет осуществить препроцессинг
     /// </summary>
     /// <param name="context"></param>
     /// <param name="type"></param>
     /// <param name="result"></param>
     /// <returns></returns>
-    public virtual IEnumerable<EntitySearchResult> ResultVisionFilter(TContext context, byte type, IEnumerable<EntitySearchResult> result)
+    public virtual IEnumerable<EntitySearchResult> TypeBundlePreprocessing(TContext context, byte type, IEnumerable<EntitySearchResult> result)
         => result;
 
     /// <summary>
@@ -381,24 +379,6 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     /// <returns></returns>
     public virtual double GetPhraseTypeMultipler(byte phraseType)
         => 1;
-
-    /// <summary>
-    /// Добавление правила если линк совпал
-    /// </summary>
-    /// <param name="entityKey"></param>
-    /// <param name="linkedKey"></param>
-    /// <returns></returns>
-    public virtual AdditionalRule? OnLinkedEntityMatched(Key entityKey, Key linkedKey)
-        => null;
-
-    /// <summary>
-    /// Добавление правила на совпадение сущности
-    /// </summary>
-    /// <param name="context"></param>
-    /// <param name="entityMatchesBundle"></param>
-    /// <returns></returns>
-    public virtual AdditionalRule? OnEntityProcessed(TContext context, EntitySearchResult entityMatchesBundle)
-        => null;
 
     /// <summary>
     /// Таймаут если не передан ct
