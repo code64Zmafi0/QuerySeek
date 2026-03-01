@@ -19,7 +19,6 @@ public class Search(
         CancellationToken ct)
     {
         EntitiesByWordsIndex entitiesByWordsIndex = searchContext.Index.EntitiesByWordsIndex;
-        Dictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
 
         for (byte queryWordPosition = 0; queryWordPosition < wordsBundle.Length; queryWordPosition++)
         {

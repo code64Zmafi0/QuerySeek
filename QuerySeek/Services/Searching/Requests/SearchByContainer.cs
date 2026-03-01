@@ -28,7 +28,6 @@ public class SearchByContainer(
         PerfomanceSettings perfomance,
         CancellationToken ct)
     {
-        Dictionary<Key, EntityMeta> entites = searchContext.Index.Entities;
         EntitiesByWordsIndex entitiesByWordsIndex = searchContext.Index.EntitiesByWordsIndex;
 
         if (!(searchContext.GetResultsByType(containerType) is { } byStrat))
