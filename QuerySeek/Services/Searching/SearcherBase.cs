@@ -266,23 +266,19 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     private int CalculateScore(TContext searchContext, EntitySearchResult entityMatchesBundle)
     {
         Key currentEntityKey = entityMatchesBundle.Key;
-        Span<int> wordsScores = stackalloc int[searchContext.NgrammedQuery.Length];
         Key[] entityLinks = searchContext.Index.Entities[currentEntityKey].Links;
+
+        Span<int> wordsScores = stackalloc int[searchContext.NgrammedQuery.Length];
 
         //Считаем количество всех совпадений в найденной сущности и заполняем wordsScores
         CalculateNodeMatchesScore(in wordsScores, entityMatchesBundle.WordsMatches, 1);
 
         //Добавление матчей из связанных сущностей если они найдены в контексте
-        Key[] nodes = entityLinks;
-        for (int i = 0; i < nodes.Length; i++)
+        foreach (Key nodeKey in entityLinks)
         {
-            Key nodeKey = nodes[i];
-
             if (searchContext.GetResultsByType(nodeKey.Type) is { } req
                 && req.TryGetValue(nodeKey, out var chaiedMathes))
             {
-                entityMatchesBundle.MatchedLinks[i] = true;
-
                 double nodeMultipler = GetLinkedEntityMatchMiltipler(currentEntityKey.Type, nodeKey.Type);
                 CalculateNodeMatchesScore(in wordsScores, chaiedMathes.WordsMatches, nodeMultipler);
             }

@@ -15,8 +15,6 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 
     public EntityMeta Meta => meta;
 
-    public bool[] MatchedLinks { get; } = new bool[meta.Links.Length];
-
     public List<WordCompareResult> WordsMatches { get; } = new(1);
 
     public List<AdditionalRule> Rules { get; } = [];
