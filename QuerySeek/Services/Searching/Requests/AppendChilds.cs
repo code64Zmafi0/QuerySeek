@@ -48,9 +48,7 @@ public class AppendChilds(
 
                 foreach (Key child in appendFilter(parentEntityChilds.Where(i => i.Type == TargetType)))
                 {
-                    var entityMeta = entities[child];
-
-                    searchContext.AddResult(child, entityMeta);
+                    searchContext.AddResult(child);
                 }
             }
         }

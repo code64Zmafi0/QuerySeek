@@ -24,7 +24,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     /// <param name="take"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public EntityMatchesBundle[] Search(
+    public EntitySearchResult[] Search(
         TContext context,
         int take,
         CancellationToken? cancellationToken = null)
@@ -48,7 +48,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
             .Take(take)
             .ToArray();
 
-        IEnumerable<EntityMatchesBundle> GetAllResults()
+        IEnumerable<EntitySearchResult> GetAllResults()
         {
             foreach (var typeResults in context.SearchResult)
             {
@@ -85,7 +85,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         for (int i = 0; i < selectTypes.Length; i++)
         {
             (byte Type, int Take) = selectTypes[i];
-            Dictionary<Key, EntityMatchesBundle>? typeSearchResult = context.GetResultsByType(Type);
+            Dictionary<Key, EntitySearchResult>? typeSearchResult = context.GetResultsByType(Type);
 
             if (typeSearchResult is null)
             {
@@ -263,16 +263,17 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         return words;
     }
 
-    private int CalculateScore(TContext searchContext, EntityMatchesBundle entityMatchesBundle)
+    private int CalculateScore(TContext searchContext, EntitySearchResult entityMatchesBundle)
     {
         Key currentEntityKey = entityMatchesBundle.Key;
         Span<int> wordsScores = stackalloc int[searchContext.NgrammedQuery.Length];
+        Key[] entityLinks = searchContext.Index.Entities[currentEntityKey].Links;
 
         //Считаем количество всех совпадений в найденной сущности и заполняем wordsScores
         CalculateNodeMatchesScore(in wordsScores, entityMatchesBundle.WordsMatches, 1);
 
         //Добавление матчей из связанных сущностей если они найдены в контексте
-        Key[] nodes = entityMatchesBundle.EntityMeta.Links;
+        Key[] nodes = entityLinks;
         foreach (Key nodeKey in nodes)
         {
             if (searchContext.GetResultsByType(nodeKey.Type) is { } req
@@ -351,7 +352,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     /// <param name="context"></param>
     /// <param name="result">Отсортированный по количеству совпадений enumerable сущностей</param>
     /// <returns></returns>
-    public virtual IOrderedEnumerable<EntityMatchesBundle> PostProcessing(TContext context, IOrderedEnumerable<EntityMatchesBundle> result)
+    public virtual IOrderedEnumerable<EntitySearchResult> PostProcessing(TContext context, IOrderedEnumerable<EntitySearchResult> result)
         => result;
 
     /// <summary>
@@ -361,7 +362,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     /// <param name="type"></param>
     /// <param name="result"></param>
     /// <returns></returns>
-    public virtual IEnumerable<EntityMatchesBundle> ResultVisionFilter(TContext context, byte type, IEnumerable<EntityMatchesBundle> result)
+    public virtual IEnumerable<EntitySearchResult> ResultVisionFilter(TContext context, byte type, IEnumerable<EntitySearchResult> result)
         => result;
 
     /// <summary>
@@ -396,7 +397,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     /// <param name="context"></param>
     /// <param name="entityMatchesBundle"></param>
     /// <returns></returns>
-    public virtual AdditionalRule? OnEntityProcessed(TContext context, EntityMatchesBundle entityMatchesBundle)
+    public virtual AdditionalRule? OnEntityProcessed(TContext context, EntitySearchResult entityMatchesBundle)
         => null;
 
     /// <summary>

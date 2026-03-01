@@ -30,10 +30,10 @@ public class SearchContextBase(IndexInstance index, string query)
 
     public QueryWordContainer[] NgrammedQuery { get; set; } = [];
 
-    public Dictionary<byte, Dictionary<Key, EntityMatchesBundle>> SearchResult { get; set; } = [];
+    public Dictionary<byte, Dictionary<Key, EntitySearchResult>> SearchResult { get; set; } = [];
 
     #region Search Tools
-    public Dictionary<Key, EntityMatchesBundle>? GetResultsByType(byte type)
+    public Dictionary<Key, EntitySearchResult>? GetResultsByType(byte type)
     {
         if (SearchResult.TryGetValue(type, out var result))
             return result;
@@ -41,7 +41,7 @@ public class SearchContextBase(IndexInstance index, string query)
         return null;
     }
 
-    public void AddResult(Key key, EntityMeta meta)
+    public void AddResult(Key key)
     {
         ref var types = ref CollectionsMarshal.GetValueRefOrAddDefault(SearchResult, key.Type, out var exists);
 
@@ -51,20 +51,20 @@ public class SearchContextBase(IndexInstance index, string query)
         ref var matchesBundle = ref CollectionsMarshal.GetValueRefOrAddDefault(types!, key, out exists);
 
         if (!exists)
-            matchesBundle = new(key, meta);
+            matchesBundle = new(key, Index.Entities[key]);
     }
 
-    public void AddResult(Key key, EntityMeta entityMeta, byte nameWordPosition, byte phraseType, byte queryWordPosition, byte matchLength)
+    public void AddResult(Key key, byte nameWordPosition, byte phraseType, byte queryWordPosition, byte matchLength)
     {
         ref var types = ref CollectionsMarshal.GetValueRefOrAddDefault(SearchResult, key.Type, out var exists);
 
         if (!exists)
             types = [];
 
-        ref var matchesBundle = ref CollectionsMarshal.GetValueRefOrAddDefault(types!, key, out exists);
+        ref EntitySearchResult? matchesBundle = ref CollectionsMarshal.GetValueRefOrAddDefault(types!, key, out exists);
 
         if (!exists)
-            matchesBundle = new(key, entityMeta);
+            matchesBundle = new(key, Index.Entities[key]);
 
         matchesBundle!.AddMatch(new(nameWordPosition, phraseType, queryWordPosition, matchLength));
     }

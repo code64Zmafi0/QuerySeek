@@ -14,10 +14,10 @@ public class SearchByContainer(
     byte targetType,
     byte containerType,
     Func<Key, bool>? filter = null,
-    Func<IEnumerable<EntityMatchesBundle>, IEnumerable<EntityMatchesBundle>>? containersFilter = null) : RequestBase(targetType)
+    Func<IEnumerable<EntitySearchResult>, IEnumerable<EntitySearchResult>>? containersFilter = null) : RequestBase(targetType)
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public virtual Key[] SelectParents(Dictionary<Key, EntityMatchesBundle> byStrat)
+    public virtual Key[] SelectParents(Dictionary<Key, EntitySearchResult> byStrat)
         => [.. containersFilter is null
             ? byStrat.Keys
             : containersFilter.Invoke(byStrat.Values).Select(i => i.Key)];
@@ -63,14 +63,12 @@ public class SearchByContainer(
                     isMatchedWord = true;
 
                     Key entityKey = new(TargetType, wordMatchMeta.EntityId);
-                    EntityMeta entityMeta = entites[entityKey];
 
                     if (!((filter?.Invoke(entityKey)) ?? true))
                         continue;
 
                     searchContext.AddResult(
                         entityKey,
-                        entityMeta,
                         wordMatchMeta.NameWordPosition,
                         wordMatchMeta.PhraseType,
                         queryWordPosition,

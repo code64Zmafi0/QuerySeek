@@ -49,14 +49,12 @@ public class Search(
                         return;
 
                     Key entityKey = new(TargetType, wordMatchMeta.EntityId);
-                    EntityMeta entityMeta = entities[entityKey];
 
                     if (!((filter?.Invoke(entityKey)) ?? true))
                         continue;
 
                     searchContext.AddResult(
                         entityKey,
-                        entityMeta,
                         wordMatchMeta.NameWordPosition,
                         wordMatchMeta.PhraseType,
                         queryWordPosition,

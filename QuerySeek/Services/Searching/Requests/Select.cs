@@ -15,13 +15,9 @@ public class Select(byte targetType, IEnumerable<int> ids) : RequestBase(targetT
         PerfomanceSettings perfomanceSettings,
         CancellationToken ct)
     {
-        Dictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
-
         foreach (int id in ids)
         {
-            Key key = new(TargetType, id);
-            if (entities.TryGetValue(key, out EntityMeta? meta))
-                searchContext.AddResult(key, meta);
+            searchContext.AddResult(new(TargetType, id));
         }
     }
 }
