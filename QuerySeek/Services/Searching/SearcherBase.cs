@@ -9,7 +9,7 @@ using QuerySeek.Services.Splitting;
 namespace QuerySeek.Services.Searching;
 
 /// <summary>
-/// Поисковик, позволяет переопределить сортировку.
+/// Позволяет определить стратегию поиска
 /// </summary>
 /// <typeparam name="TContext"></typeparam>
 /// <param name="splitter"></param>
@@ -170,7 +170,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         return result;
     }
 
-    private List<KeyValuePair<int, byte>> SearchSimilarWordByQueryAndAlternatives(
+    private static List<KeyValuePair<int, byte>> SearchSimilarWordByQueryAndAlternatives(
         IndexInstance index,
         QueryWordContainer wordContainer,
         WordsSearchSettings wordsSearchSettings,
@@ -336,14 +336,14 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
     #region Overrides
     /// <summary>
-    /// Определяет запрос на поиск в индексе
+    /// Определяет запрос на поиск в индексе - что ищем в индексе
     /// </summary>
     /// <param name="context"></param>
     /// <returns></returns>
     public abstract RequestBase[] GetRequest(TContext context);
 
     /// <summary>
-    /// Позволяет переопределить сортировку
+    /// Позволяет переопределить конечную сортировку
     /// </summary>
     /// <param name="context"></param>
     /// <param name="result">Отсортированный по количеству совпадений enumerable сущностей</param>
@@ -352,7 +352,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         => result;
 
     /// <summary>
-    /// Позволяет осуществить препроцессинг
+    /// Позволяет осуществить предпроцессинг, указать выборку сущностей на сортировку, добавить правила
     /// </summary>
     /// <param name="context"></param>
     /// <param name="type"></param>
@@ -362,7 +362,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         => result;
 
     /// <summary>
-    /// Множитель сопадений из связанных сущностей
+    /// Множитель совпадений из связанных сущностей
     /// </summary>
     /// <param name="entityType"></param>
     /// <param name="linkedType"></param>
@@ -385,7 +385,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         => 1500;
 
     /// <summary>
-    /// Определение настроек перфоманса
+    /// Определение настроек поиска по словам
     /// </summary>
     /// <param name="searchContext"></param>
     /// <returns></returns>

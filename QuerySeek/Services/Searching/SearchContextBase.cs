@@ -5,7 +5,7 @@ using QuerySeek.Services.Searching.Requests;
 namespace QuerySeek.Services.Searching;
 
 /// <summary>
-/// Контекст поиска. Абстрактный класс. Определяем запрос, можем хранить дополнительные свойства
+/// Контекст поиска, можем хранить дополнительные свойства при переопределении
 /// </summary>
 /// <param name="index"></param>
 /// <param name="query"></param>
