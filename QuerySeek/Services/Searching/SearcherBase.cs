@@ -279,7 +279,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
             if (searchContext.GetResultsByType(nodeKey.Type) is { } req
                 && req.TryGetValue(nodeKey, out var chaiedMathes))
             {
-                double nodeMultipler = GetLinkedEntityMatchMiltipler(currentEntityKey.Type, nodeKey.Type);
+                double nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityKey.Type, nodeKey.Type);
                 CalculateEntityPartScore(in wordsScores, chaiedMathes.WordsMatches, nodeMultipler);
             }
         }
@@ -367,7 +367,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     /// <param name="entityType"></param>
     /// <param name="linkedType"></param>
     /// <returns></returns>
-    public virtual double GetLinkedEntityMatchMiltipler(byte entityType, byte linkedType)
+    public virtual double GetLinkedEntityMatchMultipler(byte entityType, byte linkedType)
         => 1;
 
     /// <summary>
