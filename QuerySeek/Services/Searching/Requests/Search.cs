@@ -15,7 +15,7 @@ public class Search(
     public override void ProcessRequest(
         SearchContextBase searchContext,
         List<KeyValuePair<int, byte>>[] wordsBundle,
-        PerfomanceSettings perfomance,
+        WordsSearchSettings perfomance,
         CancellationToken ct)
     {
         EntitiesByWordsIndex entitiesByWordsIndex = searchContext.Index.EntitiesByWordsIndex;
@@ -24,7 +24,7 @@ public class Search(
         {
             List<KeyValuePair<int, byte>> currentSimilarWordsBundle = wordsBundle[queryWordPosition];
 
-            Perfomancer perfomancer = perfomance.GetPerfomancer();
+            WordsSearchManager perfomancer = perfomance.GetWordsSearchManager();
 
             for (int wbIndex = 0; wbIndex < currentSimilarWordsBundle.Count; wbIndex++)
             {
@@ -52,12 +52,13 @@ public class Search(
                     if (!((filter?.Invoke(entityKey)) ?? true))
                         continue;
 
-                    searchContext.AddResult(
-                        entityKey,
+                    WordCompareResult wcr = new(
                         wordMatchMeta.NameWordPosition,
                         wordMatchMeta.PhraseType,
                         queryWordPosition,
                         indexWordInfo.Value);
+
+                    searchContext.AddResult(entityKey, wcr);
                 }
             }
         }

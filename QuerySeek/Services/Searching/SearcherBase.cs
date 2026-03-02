@@ -33,11 +33,11 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         FillContext(context);
 
-        PerfomanceSettings perfomance = GetPerfomance(context);
+        WordsSearchSettings wordsSearchSettings = GetPerfomance(context);
 
-        List<KeyValuePair<int, byte>>[] wordsBundle = SearchSimlarIndexWordsByQuery(context, perfomance);
+        List<KeyValuePair<int, byte>>[] wordsBundle = SearchSimlarIndexWordsByQuery(context, wordsSearchSettings);
 
-        foreach (var i in context.Request) i.ProcessRequest(context, wordsBundle, perfomance, ct);
+        foreach (var i in context.Request) i.ProcessRequest(context, wordsBundle, wordsSearchSettings, ct);
 
         return PostProcessing(context, GetAllResults()
             .OrderByDescending(i =>
@@ -74,11 +74,11 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         FillContext(context);
 
-        PerfomanceSettings perfomance = GetPerfomance(context);
+        WordsSearchSettings wordsSearchSettings = GetPerfomance(context);
 
-        List<KeyValuePair<int, byte>>[] wordsBundle = SearchSimlarIndexWordsByQuery(context, perfomance);
+        List<KeyValuePair<int, byte>>[] wordsBundle = SearchSimlarIndexWordsByQuery(context, wordsSearchSettings);
 
-        foreach (var i in context.Request) i.ProcessRequest(context, wordsBundle, perfomance, ct);
+        foreach (var i in context.Request) i.ProcessRequest(context, wordsBundle, wordsSearchSettings, ct);
 
         var result = new TypeSearchResult[selectTypes.Length];
 
@@ -135,13 +135,13 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         context.Request = GetRequest(context);
     }    
 
-    public List<KeyValuePair<int, byte>>[] SearchSimlarIndexWordsByQuery(SearchContextBase searchContext, PerfomanceSettings perfomance)
+    public List<KeyValuePair<int, byte>>[] SearchSimlarIndexWordsByQuery(SearchContextBase searchContext, WordsSearchSettings wordsSearchSettings)
     {
         var splittedQuery = searchContext.NgrammedQuery;
         var result = new List<KeyValuePair<int, byte>>[splittedQuery.Length];
 
         //Используем один словарь для расчета совпавщих нграмм для каждого слова дабы лишний раз не аллоцировать
-        Dictionary<int, IndexWordSearchInfo> wordsSearchProcessDict = new(perfomance.WordsSearchDictionaryPreallocate);
+        Dictionary<int, IndexWordSearchInfo> wordsSearchProcessDict = new(wordsSearchSettings.WordsSearchDictionaryPreallocate);
 
         for (int i = 0; i < result.Length; i++)
         {
@@ -162,7 +162,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
                 result[i] = SearchSimilarWordByQueryAndAlternatives(
                     searchContext.Index,
                     currentWord,
-                    perfomance,
+                    wordsSearchSettings,
                     wordsSearchProcessDict);
             }
         }
@@ -173,7 +173,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     private List<KeyValuePair<int, byte>> SearchSimilarWordByQueryAndAlternatives(
         IndexInstance index,
         QueryWordContainer wordContainer,
-        PerfomanceSettings perfomance,
+        WordsSearchSettings wordsSearchSettings,
         Dictionary<int, IndexWordSearchInfo> wordsSearchProcessDict)
     {
         List<KeyValuePair<int, byte>> result = [];
@@ -184,7 +184,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         int treshold = wordContainer.QueryWord.IsDigit
             ? wordContainer.QueryWord.NGrammsHashes.Length - QS.NGRAM_LENGTH + 1
-            : (int)(wordContainer.QueryWord.NGrammsHashes.Length * SimilarityTreshold);
+            : (int)(wordContainer.QueryWord.NGrammsHashes.Length * wordsSearchSettings.Similarity);
 
         SearchSimilars(wordContainer.QueryWord, treshold, wordsSearchProcessDict);
 
@@ -201,7 +201,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
             foreach (KeyValuePair<int, IndexWordSearchInfo> item in similars
                 .Where(i => i.Value.Score >= treshold)
                 .OrderByDescending(i => i.Value.Score)
-                .Take(perfomance.MaxCheckingWordsCount))
+                .Take(wordsSearchSettings.MaxCheckingWordsCount))
             {
                 result.Add(new(item.Key, item.Value.Score));
             }
@@ -271,7 +271,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         Span<int> wordsScores = stackalloc int[searchContext.NgrammedQuery.Length];
 
         //Считаем количество всех совпадений в найденной сущности и заполняем wordsScores
-        CalculateNodeMatchesScore(in wordsScores, entityMatchesBundle.WordsMatches, 1);
+        CalculateEntityPartScore(in wordsScores, entityMatchesBundle.WordsMatches, 1);
 
         //Добавление матчей из связанных сущностей если они найдены в контексте
         foreach (Key nodeKey in entityLinks)
@@ -280,7 +280,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
                 && req.TryGetValue(nodeKey, out var chaiedMathes))
             {
                 double nodeMultipler = GetLinkedEntityMatchMiltipler(currentEntityKey.Type, nodeKey.Type);
-                CalculateNodeMatchesScore(in wordsScores, chaiedMathes.WordsMatches, nodeMultipler);
+                CalculateEntityPartScore(in wordsScores, chaiedMathes.WordsMatches, nodeMultipler);
             }
         }
 
@@ -291,8 +291,10 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
             resultScore += ws;
 
         //Обрабатываем дополнительные правила
-        foreach (AdditionalRule item in entityMatchesBundle.Rules)
+        for (int i = 0; i < entityMatchesBundle.Rules.Count; i++)
         {
+            AdditionalRule item = entityMatchesBundle.Rules[i];
+
             resultScore += item.Score;
             resultScore = (int)(resultScore * item.Multipler);
         }
@@ -301,7 +303,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void CalculateNodeMatchesScore(
+    private void CalculateEntityPartScore(
         in Span<int> wordsScores,
         List<WordCompareResult> wordsMatches,
         double nodeMultipler)
@@ -383,20 +385,14 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         => 1500;
 
     /// <summary>
-    /// Трешхолд совпадения слов
-    /// </summary>
-    public virtual double SimilarityTreshold
-        => 0.5;
-
-    /// <summary>
     /// Определение настроек перфоманса
     /// </summary>
     /// <param name="searchContext"></param>
     /// <returns></returns>
-    public virtual PerfomanceSettings GetPerfomance(SearchContextBase searchContext)
+    public virtual WordsSearchSettings GetPerfomance(SearchContextBase searchContext)
         => searchContext.NgrammedQuery.Length > 5
-            ? PerfomanceSettings.Fast
-            : PerfomanceSettings.Default;
+            ? WordsSearchSettings.Fast
+            : WordsSearchSettings.Default;
 
     #endregion
 }

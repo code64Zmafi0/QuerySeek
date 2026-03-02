@@ -18,7 +18,7 @@ public class AppendChilds(
     public override void ProcessRequest(
         SearchContextBase searchContext,
         List<KeyValuePair<int, byte>>[] wordsBundle,
-        PerfomanceSettings perfomance,
+        WordsSearchSettings perfomance,
         CancellationToken ct)
     {
         Dictionary<Key, EntityMeta> entities = searchContext.Index.Entities;

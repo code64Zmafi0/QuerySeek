@@ -1,6 +1,6 @@
 namespace QuerySeek.Services.Searching;
 
-public class Perfomancer(int quantity)
+public class WordsSearchManager(int quantity)
 {
     private int MatchesCount;
 

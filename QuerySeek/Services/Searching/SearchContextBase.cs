@@ -33,6 +33,8 @@ public class SearchContextBase(IndexInstance index, string query)
     public Dictionary<byte, Dictionary<Key, EntitySearchResult>> SearchResult { get; set; } = [];
 
     #region Search Tools
+    public int FullQueryScore => NgrammedQuery.Sum(i => i.QueryWord.NGrammsHashes.Length);
+
     public Dictionary<Key, EntitySearchResult>? GetResultsByType(byte type)
     {
         if (SearchResult.TryGetValue(type, out var result))
@@ -54,7 +56,7 @@ public class SearchContextBase(IndexInstance index, string query)
             matchesBundle = new(key, Index.Entities[key]);
     }
 
-    public void AddResult(Key key, byte nameWordPosition, byte phraseType, byte queryWordPosition, byte matchLength)
+    public void AddResult(Key key, WordCompareResult wordCompareResult)
     {
         ref var types = ref CollectionsMarshal.GetValueRefOrAddDefault(SearchResult, key.Type, out var exists);
 
@@ -66,7 +68,7 @@ public class SearchContextBase(IndexInstance index, string query)
         if (!exists)
             matchesBundle = new(key, Index.Entities[key]);
 
-        matchesBundle!.AddMatch(new(nameWordPosition, phraseType, queryWordPosition, matchLength));
+        matchesBundle!.AddMatch(wordCompareResult);
     }
     #endregion
 }

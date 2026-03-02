@@ -10,7 +10,7 @@ public class Select(byte targetType, IEnumerable<int> ids) : RequestBase(targetT
     public override void ProcessRequest(
         SearchContextBase searchContext,
         List<KeyValuePair<int, byte>>[] wordsBundle,
-        PerfomanceSettings perfomanceSettings,
+        WordsSearchSettings perfomanceSettings,
         CancellationToken ct)
     {
         foreach (int id in ids)

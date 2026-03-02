@@ -37,7 +37,7 @@ public class SearchByContainer(
     public override void ProcessRequest(
         SearchContextBase searchContext,
         List<KeyValuePair<int, byte>>[] wordsBundle,
-        PerfomanceSettings perfomance,
+        WordsSearchSettings perfomance,
         CancellationToken ct)
     {
         EntitiesByWordsIndex entitiesByWordsIndex = searchContext.Index.EntitiesByWordsIndex;
@@ -51,7 +51,7 @@ public class SearchByContainer(
         {
             List<KeyValuePair<int, byte>> currentBundle = wordsBundle[queryWordPosition];
 
-            Perfomancer perfomancer = perfomance.GetPerfomancer();
+            WordsSearchManager perfomancer = perfomance.GetWordsSearchManager();
 
             for (int i = 0; i < currentBundle.Count; i++)
             {
@@ -78,12 +78,13 @@ public class SearchByContainer(
                     if (!((filter?.Invoke(entityKey)) ?? true))
                         continue;
 
-                    searchContext.AddResult(
-                        entityKey,
+                    WordCompareResult wcr = new(
                         wordMatchMeta.NameWordPosition,
                         wordMatchMeta.PhraseType,
                         queryWordPosition,
                         indexWordInfo.Value);
+
+                    searchContext.AddResult(entityKey, wcr);
                 }
 
                 if (isMatchedWord) perfomancer.IncrementMatch();

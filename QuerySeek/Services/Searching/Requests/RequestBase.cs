@@ -14,6 +14,6 @@ public abstract class RequestBase(byte targetType)
     public abstract void ProcessRequest(
         SearchContextBase searchContext,
         List<KeyValuePair<int, byte>>[] wordsBundle,
-        PerfomanceSettings perfomance,
+        WordsSearchSettings perfomance,
         CancellationToken ct);
 }
