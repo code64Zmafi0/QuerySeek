@@ -33,7 +33,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         FillContext(context);
 
-        WordsSearchSettings wordsSearchSettings = GetPerfomance(context);
+        WordsSearchSettings wordsSearchSettings = GetWordsSearchSettings(context);
 
         List<KeyValuePair<int, byte>>[] wordsBundle = SearchSimlarIndexWordsByQuery(context, wordsSearchSettings);
 
@@ -74,7 +74,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         FillContext(context);
 
-        WordsSearchSettings wordsSearchSettings = GetPerfomance(context);
+        WordsSearchSettings wordsSearchSettings = GetWordsSearchSettings(context);
 
         List<KeyValuePair<int, byte>>[] wordsBundle = SearchSimlarIndexWordsByQuery(context, wordsSearchSettings);
 
@@ -389,7 +389,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     /// </summary>
     /// <param name="searchContext"></param>
     /// <returns></returns>
-    public virtual WordsSearchSettings GetPerfomance(SearchContextBase searchContext)
+    public virtual WordsSearchSettings GetWordsSearchSettings(SearchContextBase searchContext)
         => searchContext.NgrammedQuery.Length > 5
             ? WordsSearchSettings.Fast
             : WordsSearchSettings.Default;
