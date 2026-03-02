@@ -9,11 +9,11 @@ public abstract class RequestBase(byte targetType)
     /// </summary>
     /// <param name="searchContext"></param>
     /// <param name="wordsBundle"></param>
-    /// <param name="perfomance"></param>
+    /// <param name="wordsSearchSettings"></param>
     /// <param name="ct"></param>
     public abstract void ProcessRequest(
         SearchContextBase searchContext,
         List<KeyValuePair<int, byte>>[] wordsBundle,
-        WordsSearchSettings perfomance,
+        WordsSearchSettings wordsSearchSettings,
         CancellationToken ct);
 }

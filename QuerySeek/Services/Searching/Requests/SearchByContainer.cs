@@ -37,7 +37,7 @@ public class SearchByContainer(
     public override void ProcessRequest(
         SearchContextBase searchContext,
         List<KeyValuePair<int, byte>>[] wordsBundle,
-        WordsSearchSettings perfomance,
+        WordsSearchSettings wordsSearchSettings,
         CancellationToken ct)
     {
         EntitiesByWordsIndex entitiesByWordsIndex = searchContext.Index.EntitiesByWordsIndex;
@@ -45,13 +45,13 @@ public class SearchByContainer(
         if (!(searchContext.GetResultsByType(containerType) is { } byStrat))
             return;
 
-        Key[] parents = SelectParents(byStrat);
+        Key[] containers = SelectParents(byStrat);
 
         for (byte queryWordPosition = 0; queryWordPosition < wordsBundle.Length; queryWordPosition++)
         {
             List<KeyValuePair<int, byte>> currentBundle = wordsBundle[queryWordPosition];
 
-            WordsSearchManager perfomancer = perfomance.GetWordsSearchManager();
+            WordsSearchManager perfomancer = wordsSearchSettings.GetWordsSearchManager();
 
             for (int i = 0; i < currentBundle.Count; i++)
             {
@@ -66,7 +66,7 @@ public class SearchByContainer(
                 foreach (var wordMatchMeta in entitiesByWordsIndex.GetMatchesByWordAndParents(
                     wordId,
                     TargetType,
-                    parents))
+                    containers))
                 {
                     if (ct.IsCancellationRequested)
                         return;
