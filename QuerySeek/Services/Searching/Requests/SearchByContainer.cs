@@ -51,11 +51,11 @@ public class SearchByContainer(
         {
             List<KeyValuePair<int, byte>> currentBundle = wordsBundle[queryWordPosition];
 
-            WordsSearchManager perfomancer = wordsSearchSettings.GetWordsSearchManager();
+            WordsSearchManager wsm = wordsSearchSettings.GetWordsSearchManager();
 
             for (int i = 0; i < currentBundle.Count; i++)
             {
-                if (!perfomancer.NeedContinue)
+                if (!wsm.NeedContinue)
                     break;
 
                 KeyValuePair<int, byte> indexWordInfo = currentBundle[i];
@@ -87,7 +87,7 @@ public class SearchByContainer(
                     searchContext.AddResult(entityKey, wcr);
                 }
 
-                if (isMatchedWord) perfomancer.IncrementMatch();
+                if (isMatchedWord) wsm.IncrementMatch();
             }
         }
     }

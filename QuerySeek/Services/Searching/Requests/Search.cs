@@ -24,11 +24,11 @@ public class Search(
         {
             List<KeyValuePair<int, byte>> currentSimilarWordsBundle = wordsBundle[queryWordPosition];
 
-            WordsSearchManager perfomancer = wordsSearchSettings.GetWordsSearchManager();
+            WordsSearchManager wsm = wordsSearchSettings.GetWordsSearchManager();
 
             for (int wbIndex = 0; wbIndex < currentSimilarWordsBundle.Count; wbIndex++)
             {
-                if (!perfomancer.NeedContinue)
+                if (!wsm.NeedContinue)
                     break;
 
                 KeyValuePair<int, byte> indexWordInfo = currentSimilarWordsBundle[wbIndex];
@@ -40,7 +40,7 @@ public class Search(
                 if (list is null)
                     continue;
 
-                perfomancer.IncrementMatch();
+                wsm.IncrementMatch();
 
                 foreach (WordMatchMeta wordMatchMeta in list)
                 {
