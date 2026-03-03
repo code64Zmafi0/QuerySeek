@@ -5,12 +5,12 @@ namespace QuerySeek.Services.Searching.Requests;
 /// <summary>
 /// Выполняет поиск сущностей целевого типа
 /// </summary>
-/// <param name="entityType">Целевой тип сущности</param>
+/// <param name="targetType">Целевой тип сущности</param>
 /// <param name="filter">Фильтр добавления в словарь найденных</param>
 public class Search(
-    byte entityType,
+    byte targetType,
     Func<Key, bool>? filter = null)
-    : RequestBase(entityType)
+    : RequestBase(targetType)
 {
     public override void ProcessRequest(
         SearchContextBase searchContext,
