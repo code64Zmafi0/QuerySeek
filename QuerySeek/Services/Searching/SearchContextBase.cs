@@ -12,7 +12,10 @@ namespace QuerySeek.Services.Searching;
 public class SearchContextBase(IndexInstance index, string query)
 {
     #region Overrides
-    public virtual HashSet<string> NotRealivatedWords { get; } = [];
+    /// <summary>
+    /// Мультиплеры для нереаливантных слов
+    /// </summary>
+    public virtual Dictionary<string, double> NotRealivatedWords { get; } = [];
 
     /// <summary>
     /// Альтернативные слова вида (III -> 3)

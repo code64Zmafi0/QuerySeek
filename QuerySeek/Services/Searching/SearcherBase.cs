@@ -117,7 +117,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         QueryWordContainer[] ngrammedWords = Array.ConvertAll(splittedQuery, i =>
         {
-            bool notRealivated = context.NotRealivatedWords.Contains(i);
+            double multipler = context.NotRealivatedWords.TryGetValue(i, out var m) ? m : 1;
 
             Word[] alterantivesMetas = [];
 
@@ -127,7 +127,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
             return new QueryWordContainer(
                 new Word(i),
                 alterantivesMetas,
-                notRealivated);
+                multipler);
         });
 
         context.NgrammedQuery = ngrammedWords;
@@ -201,7 +201,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
                 .OrderByDescending(i => i.Value.Score)
                 .Take(wordsSearchSettings.MaxCheckingWordsCount))
             {
-                result.Add(new(item.Key, item.Value.Score));
+                result.Add(new(item.Key, (byte)(item.Value.Score * wordContainer.Multipler)));
             }
 
             //Чистка переиспользуемого словаря
@@ -396,4 +396,4 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     #endregion
 }
 
-public record QueryWordContainer(Word QueryWord, Word[] Alternatives, bool NotRealivated);
+public record QueryWordContainer(Word QueryWord, Word[] Alternatives, double Multipler);
