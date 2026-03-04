@@ -133,7 +133,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         context.NgrammedQuery = ngrammedWords;
         context.SplittedAndNormalizedQuery = splittedQuery;
         context.Request = GetRequest(context);
-    }    
+    }
 
     public List<KeyValuePair<int, byte>>[] SearchSimlarIndexWordsByQuery(SearchContextBase searchContext, WordsSearchSettings wordsSearchSettings)
     {
@@ -193,8 +193,6 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void SearchSimilars(Word queryWord, int treshold, Dictionary<int, IndexWordSearchInfo> wordsSearchProcessDict)
         {
-            int queryLength = queryWord.NGrammsHashes.Length;
-
             Dictionary<int, IndexWordSearchInfo> similars = GetSimilarWords(index, queryWord, treshold, wordsSearchProcessDict);
 
             //Ищем бандл схожих слов и сортируем по количеству совпадений (вычисляется в свойстве Score. Попадания - наказание за промахи)
@@ -222,6 +220,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         Dictionary<int, IndexWordSearchInfo> wordsSearchProcessDict)
     {
         byte wordLength = (byte)queryWord.NGrammsHashes.Length;
+        treshold = wordLength - treshold;
 
         Dictionary<int, IndexWordSearchInfo> words = wordsSearchProcessDict;
 
@@ -389,7 +388,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     /// </summary>
     /// <param name="searchContext"></param>
     /// <returns></returns>
-    public virtual WordsSearchSettings GetWordsSearchSettings(SearchContextBase searchContext)
+    public virtual WordsSearchSettings GetWordsSearchSettings(TContext searchContext)
         => searchContext.NgrammedQuery.Length > 5
             ? WordsSearchSettings.Fast
             : WordsSearchSettings.Default;
