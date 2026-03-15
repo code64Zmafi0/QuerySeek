@@ -9,7 +9,7 @@ using QuerySeek.Services.Splitting;
 namespace QuerySeek.Services.Searching;
 
 /// <summary>
-/// Поисковик, позволяет переопределить сортировку.
+/// Позволяет определить стратегию поиска
 /// </summary>
 /// <typeparam name="TContext"></typeparam>
 /// <param name="splitter"></param>
@@ -24,7 +24,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     /// <param name="take"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public EntityMatchesBundle[] Search(
+    public EntitySearchResult[] Search(
         TContext context,
         int take,
         CancellationToken? cancellationToken = null)
@@ -33,11 +33,11 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         FillContext(context);
 
-        PerfomanceSettings perfomance = GetPerfomance(context);
+        WordsSearchSettings wordsSearchSettings = GetWordsSearchSettings(context);
 
-        List<KeyValuePair<int, byte>>[] wordsBundle = SearchSimlarIndexWordsByQuery(context, perfomance);
+        List<KeyValuePair<int, byte>>[] wordsBundle = SearchSimlarIndexWordsByQuery(context, wordsSearchSettings);
 
-        foreach (var i in context.Request) i.ProcessRequest(context, wordsBundle, perfomance, ct);
+        foreach (var i in context.Request) i.ProcessRequest(context, wordsBundle, wordsSearchSettings, ct);
 
         return PostProcessing(context, GetAllResults()
             .OrderByDescending(i =>
@@ -48,11 +48,11 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
             .Take(take)
             .ToArray();
 
-        IEnumerable<EntityMatchesBundle> GetAllResults()
+        IEnumerable<EntitySearchResult> GetAllResults()
         {
             foreach (var typeResults in context.SearchResult)
             {
-                foreach (var item in ResultVisionFilter(context, typeResults.Key, typeResults.Value.Values))
+                foreach (var item in TypeBundlePreprocessing(context, typeResults.Key, typeResults.Value.Values))
                     yield return item;
             }
         }
@@ -74,18 +74,18 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         FillContext(context);
 
-        PerfomanceSettings perfomance = GetPerfomance(context);
+        WordsSearchSettings wordsSearchSettings = GetWordsSearchSettings(context);
 
-        List<KeyValuePair<int, byte>>[] wordsBundle = SearchSimlarIndexWordsByQuery(context, perfomance);
+        List<KeyValuePair<int, byte>>[] wordsBundle = SearchSimlarIndexWordsByQuery(context, wordsSearchSettings);
 
-        foreach (var i in context.Request) i.ProcessRequest(context, wordsBundle, perfomance, ct);
+        foreach (var i in context.Request) i.ProcessRequest(context, wordsBundle, wordsSearchSettings, ct);
 
         var result = new TypeSearchResult[selectTypes.Length];
 
         for (int i = 0; i < selectTypes.Length; i++)
         {
             (byte Type, int Take) = selectTypes[i];
-            Dictionary<Key, EntityMatchesBundle>? typeSearchResult = context.GetResultsByType(Type);
+            Dictionary<Key, EntitySearchResult>? typeSearchResult = context.GetResultsByType(Type);
 
             if (typeSearchResult is null)
             {
@@ -94,7 +94,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
             }
 
             var typeResult =
-                PostProcessing(context, ResultVisionFilter(context, Type, typeSearchResult.Values)
+                PostProcessing(context, TypeBundlePreprocessing(context, Type, typeSearchResult.Values)
                     .OrderByDescending(matchBundle =>
                     {
                         matchBundle.Score = CalculateScore(context, matchBundle);
@@ -117,7 +117,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         QueryWordContainer[] ngrammedWords = Array.ConvertAll(splittedQuery, i =>
         {
-            bool notRealivated = context.NotRealivatedWords.Contains(i);
+            double multipler = context.NotRealivatedWords.TryGetValue(i, out var m) ? m : 1;
 
             Word[] alterantivesMetas = [];
 
@@ -127,21 +127,21 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
             return new QueryWordContainer(
                 new Word(i),
                 alterantivesMetas,
-                notRealivated);
+                multipler);
         });
 
         context.NgrammedQuery = ngrammedWords;
         context.SplittedAndNormalizedQuery = splittedQuery;
         context.Request = GetRequest(context);
-    }    
+    }
 
-    public List<KeyValuePair<int, byte>>[] SearchSimlarIndexWordsByQuery(SearchContextBase searchContext, PerfomanceSettings perfomance)
+    public List<KeyValuePair<int, byte>>[] SearchSimlarIndexWordsByQuery(SearchContextBase searchContext, WordsSearchSettings wordsSearchSettings)
     {
         var splittedQuery = searchContext.NgrammedQuery;
         var result = new List<KeyValuePair<int, byte>>[splittedQuery.Length];
 
         //Используем один словарь для расчета совпавщих нграмм для каждого слова дабы лишний раз не аллоцировать
-        Dictionary<int, IndexWordSearchInfo> wordsSearchProcessDict = new(perfomance.WordsSearchDictionaryPreallocate);
+        Dictionary<int, IndexWordSearchInfo> wordsSearchProcessDict = new(wordsSearchSettings.WordsSearchDictionaryPreallocate);
 
         for (int i = 0; i < result.Length; i++)
         {
@@ -162,7 +162,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
                 result[i] = SearchSimilarWordByQueryAndAlternatives(
                     searchContext.Index,
                     currentWord,
-                    perfomance,
+                    wordsSearchSettings,
                     wordsSearchProcessDict);
             }
         }
@@ -170,10 +170,10 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         return result;
     }
 
-    private List<KeyValuePair<int, byte>> SearchSimilarWordByQueryAndAlternatives(
+    private static List<KeyValuePair<int, byte>> SearchSimilarWordByQueryAndAlternatives(
         IndexInstance index,
         QueryWordContainer wordContainer,
-        PerfomanceSettings perfomance,
+        WordsSearchSettings wordsSearchSettings,
         Dictionary<int, IndexWordSearchInfo> wordsSearchProcessDict)
     {
         List<KeyValuePair<int, byte>> result = [];
@@ -184,7 +184,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         int treshold = wordContainer.QueryWord.IsDigit
             ? wordContainer.QueryWord.NGrammsHashes.Length - QS.NGRAM_LENGTH + 1
-            : (int)(wordContainer.QueryWord.NGrammsHashes.Length * SimilarityTreshold);
+            : (int)(wordContainer.QueryWord.NGrammsHashes.Length * wordsSearchSettings.Similarity);
 
         SearchSimilars(wordContainer.QueryWord, treshold, wordsSearchProcessDict);
 
@@ -193,17 +193,15 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void SearchSimilars(Word queryWord, int treshold, Dictionary<int, IndexWordSearchInfo> wordsSearchProcessDict)
         {
-            int queryLength = queryWord.NGrammsHashes.Length;
-
             Dictionary<int, IndexWordSearchInfo> similars = GetSimilarWords(index, queryWord, treshold, wordsSearchProcessDict);
 
             //Ищем бандл схожих слов и сортируем по количеству совпадений (вычисляется в свойстве Score. Попадания - наказание за промахи)
             foreach (KeyValuePair<int, IndexWordSearchInfo> item in similars
                 .Where(i => i.Value.Score >= treshold)
                 .OrderByDescending(i => i.Value.Score)
-                .Take(perfomance.MaxCheckingWordsCount))
+                .Take(wordsSearchSettings.MaxCheckingWordsCount))
             {
-                result.Add(new(item.Key, item.Value.Score));
+                result.Add(new(item.Key, (byte)(item.Value.Score * wordContainer.Multipler)));
             }
 
             //Чистка переиспользуемого словаря
@@ -222,6 +220,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         Dictionary<int, IndexWordSearchInfo> wordsSearchProcessDict)
     {
         byte wordLength = (byte)queryWord.NGrammsHashes.Length;
+        treshold = wordLength - treshold;
 
         Dictionary<int, IndexWordSearchInfo> words = wordsSearchProcessDict;
 
@@ -263,31 +262,26 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         return words;
     }
 
-    private int CalculateScore(TContext searchContext, EntityMatchesBundle entityMatchesBundle)
+    private int CalculateScore(TContext searchContext, EntitySearchResult entityMatchesBundle)
     {
         Key currentEntityKey = entityMatchesBundle.Key;
+        Key[] entityLinks = searchContext.Index.Entities[currentEntityKey].Links;
+
         Span<int> wordsScores = stackalloc int[searchContext.NgrammedQuery.Length];
 
         //Считаем количество всех совпадений в найденной сущности и заполняем wordsScores
-        CalculateNodeMatchesScore(in wordsScores, entityMatchesBundle.WordsMatches, 1);
+        CalculateEntityPartScore(in wordsScores, entityMatchesBundle.WordsMatches, 1);
 
         //Добавление матчей из связанных сущностей если они найдены в контексте
-        Key[] nodes = entityMatchesBundle.EntityMeta.Links;
-        foreach (Key nodeKey in nodes)
+        foreach (Key nodeKey in entityLinks)
         {
             if (searchContext.GetResultsByType(nodeKey.Type) is { } req
                 && req.TryGetValue(nodeKey, out var chaiedMathes))
             {
-                double nodeMultipler = GetLinkedEntityMatchMiltipler(currentEntityKey.Type, nodeKey.Type);
-                CalculateNodeMatchesScore(in wordsScores, chaiedMathes.WordsMatches, nodeMultipler);
-
-                if (OnLinkedEntityMatched(currentEntityKey, nodeKey) is { } chainedMatchRule)
-                    entityMatchesBundle.Rules.Add(chainedMatchRule);
+                double nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityKey.Type, nodeKey.Type);
+                CalculateEntityPartScore(in wordsScores, chaiedMathes.WordsMatches, nodeMultipler);
             }
         }
-
-        if (OnEntityProcessed(searchContext, entityMatchesBundle) is { } rule)
-            entityMatchesBundle.Rules.Add(rule);
 
         int resultScore = 0;
 
@@ -296,9 +290,11 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
             resultScore += ws;
 
         //Обрабатываем дополнительные правила
-        resultScore += entityMatchesBundle.RulesScore;
-        foreach (AdditionalRule item in entityMatchesBundle.Rules)
+        for (int i = 0; i < entityMatchesBundle.Rules.Count; i++)
         {
+            AdditionalRule item = entityMatchesBundle.Rules[i];
+
+            resultScore += item.Score;
             resultScore = (int)(resultScore * item.Multipler);
         }
 
@@ -306,7 +302,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void CalculateNodeMatchesScore(
+    private void CalculateEntityPartScore(
         in Span<int> wordsScores,
         List<WordCompareResult> wordsMatches,
         double nodeMultipler)
@@ -339,38 +335,38 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
     #region Overrides
     /// <summary>
-    /// Орпеделяет запрос на поиск в индексе
+    /// Определяет запрос на поиск в индексе - что ищем в индексе
     /// </summary>
     /// <param name="context"></param>
     /// <returns></returns>
     public abstract RequestBase[] GetRequest(TContext context);
 
     /// <summary>
-    /// Позволяет переопределить сортировку
+    /// Позволяет переопределить конечную сортировку
     /// </summary>
     /// <param name="context"></param>
     /// <param name="result">Отсортированный по количеству совпадений enumerable сущностей</param>
     /// <returns></returns>
-    public virtual IOrderedEnumerable<EntityMatchesBundle> PostProcessing(TContext context, IOrderedEnumerable<EntityMatchesBundle> result)
+    public virtual IOrderedEnumerable<EntitySearchResult> PostProcessing(TContext context, IOrderedEnumerable<EntitySearchResult> result)
         => result;
 
     /// <summary>
-    /// Позволяет отсортировать показ определенных типов
+    /// Позволяет осуществить предпроцессинг, указать выборку сущностей на сортировку, добавить правила
     /// </summary>
     /// <param name="context"></param>
     /// <param name="type"></param>
     /// <param name="result"></param>
     /// <returns></returns>
-    public virtual IEnumerable<EntityMatchesBundle> ResultVisionFilter(TContext context, byte type, IEnumerable<EntityMatchesBundle> result)
+    public virtual IEnumerable<EntitySearchResult> TypeBundlePreprocessing(TContext context, byte type, IEnumerable<EntitySearchResult> result)
         => result;
 
     /// <summary>
-    /// Множитель сопадений из связанных сущностей
+    /// Множитель совпадений из связанных сущностей
     /// </summary>
     /// <param name="entityType"></param>
     /// <param name="linkedType"></param>
     /// <returns></returns>
-    public virtual double GetLinkedEntityMatchMiltipler(byte entityType, byte linkedType)
+    public virtual double GetLinkedEntityMatchMultipler(byte entityType, byte linkedType)
         => 1;
 
     /// <summary>
@@ -382,46 +378,22 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         => 1;
 
     /// <summary>
-    /// Добавление правила если линк совпал
-    /// </summary>
-    /// <param name="entityKey"></param>
-    /// <param name="linkedKey"></param>
-    /// <returns></returns>
-    public virtual AdditionalRule? OnLinkedEntityMatched(Key entityKey, Key linkedKey)
-        => null;
-
-    /// <summary>
-    /// Добавление правила на совпадение сущности
-    /// </summary>
-    /// <param name="context"></param>
-    /// <param name="entityMatchesBundle"></param>
-    /// <returns></returns>
-    public virtual AdditionalRule? OnEntityProcessed(TContext context, EntityMatchesBundle entityMatchesBundle)
-        => null;
-
-    /// <summary>
     /// Таймаут если не передан ct
     /// </summary>
     public virtual int TimeoutMs
         => 1500;
 
     /// <summary>
-    /// Трешхолд совпадения слов
-    /// </summary>
-    public virtual double SimilarityTreshold
-        => 0.5;
-
-    /// <summary>
-    /// Определение настроек перфоманса
+    /// Определение настроек поиска по словам
     /// </summary>
     /// <param name="searchContext"></param>
     /// <returns></returns>
-    public virtual PerfomanceSettings GetPerfomance(SearchContextBase searchContext)
+    public virtual WordsSearchSettings GetWordsSearchSettings(TContext searchContext)
         => searchContext.NgrammedQuery.Length > 5
-            ? PerfomanceSettings.Fast
-            : PerfomanceSettings.Default;
+            ? WordsSearchSettings.Fast
+            : WordsSearchSettings.Default;
 
     #endregion
 }
 
-public record QueryWordContainer(Word QueryWord, Word[] Alternatives, bool NotRealivated);
+public record QueryWordContainer(Word QueryWord, Word[] Alternatives, double Multipler);

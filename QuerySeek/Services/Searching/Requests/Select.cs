@@ -12,7 +12,7 @@ public class Select(byte targetType, IEnumerable<int> ids) : RequestBase(targetT
     public override void ProcessRequest(
         SearchContextBase searchContext,
         List<KeyValuePair<int, byte>>[] wordsBundle,
-        PerfomanceSettings perfomanceSettings,
+        WordsSearchSettings wordsSearchSettings,
         CancellationToken ct)
     {
         Dictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
@@ -20,8 +20,11 @@ public class Select(byte targetType, IEnumerable<int> ids) : RequestBase(targetT
         foreach (int id in ids)
         {
             Key key = new(TargetType, id);
-            if (entities.TryGetValue(key, out EntityMeta? meta))
-                searchContext.AddResult(key, meta);
+
+            if (entities.ContainsKey(key))
+            {
+                searchContext.AddResult(key);
+            }
         }
     }
 }

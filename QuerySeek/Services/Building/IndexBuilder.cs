@@ -76,7 +76,7 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
 
         foreach (var entity in Entities.Values)
         {
-            entity.Childs = [.. entity.Childs.Where(i => CheckMeta(i, out _))];
+            entity.Links = [.. entity.Links.Where(i => CheckMeta(i, out _))];
         }
 
         foreach (KeyValuePair<Key, HashSet<Key>> item in Childs)

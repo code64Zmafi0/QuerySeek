@@ -2,28 +2,29 @@ using QuerySeek.Models;
 
 namespace QuerySeek.Services.Searching;
 
-public class TypeSearchResult(byte type, EntityMatchesBundle[] result)
+public class TypeSearchResult(byte type, EntitySearchResult[] result)
 {
     public byte Type { get; } = type;
 
-    public EntityMatchesBundle[] Result { get; } = result;
+    public EntitySearchResult[] Result { get; } = result;
 }
 
-public class EntityMatchesBundle(Key key, EntityMeta entityMeta)
+public class EntitySearchResult(Key key, EntityMeta meta)
 {
-    public EntityMeta EntityMeta { get; } = entityMeta;
+    public Key Key => key;
+
+    public EntityMeta Meta => meta;
 
     public List<WordCompareResult> WordsMatches { get; } = new(1);
 
     public List<AdditionalRule> Rules { get; } = [];
 
-    public Key Key => key;
-
-    public int RulesScore => Rules.Sum(i => i.Score);
-
     public int Prescore;
 
     public int Score;
+
+    public void AddRule(AdditionalRule rule)
+        => Rules.Add(rule);
 
     internal void AddMatch(in WordCompareResult wordCompareResult)
     {
@@ -37,7 +38,6 @@ public readonly record struct WordCompareResult(
     byte PhraseType,
     byte QueryWordPosition,
     byte MatchLength);
-
 
 public readonly record struct IndexWordSearchInfo(
     byte Mathes,

@@ -18,7 +18,7 @@ public class AppendChilds(
     public override void ProcessRequest(
         SearchContextBase searchContext,
         List<KeyValuePair<int, byte>>[] wordsBundle,
-        PerfomanceSettings perfomance,
+        WordsSearchSettings wordsSearchSettings,
         CancellationToken ct)
     {
         Dictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
@@ -48,9 +48,7 @@ public class AppendChilds(
 
                 foreach (Key child in appendFilter(parentEntityChilds.Where(i => i.Type == TargetType)))
                 {
-                    var entityMeta = entities[child];
-
-                    searchContext.AddResult(child, entityMeta);
+                    searchContext.AddResult(child);
                 }
             }
         }

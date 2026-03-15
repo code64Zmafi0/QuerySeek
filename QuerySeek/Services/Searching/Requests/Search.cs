@@ -5,31 +5,30 @@ namespace QuerySeek.Services.Searching.Requests;
 /// <summary>
 /// Выполняет поиск сущностей целевого типа
 /// </summary>
-/// <param name="entityType">Целевой тип сущности</param>
+/// <param name="targetType">Целевой тип сущности</param>
 /// <param name="filter">Фильтр добавления в словарь найденных</param>
 public class Search(
-    byte entityType,
+    byte targetType,
     Func<Key, bool>? filter = null)
-    : RequestBase(entityType)
+    : RequestBase(targetType)
 {
     public override void ProcessRequest(
         SearchContextBase searchContext,
         List<KeyValuePair<int, byte>>[] wordsBundle,
-        PerfomanceSettings perfomance,
+        WordsSearchSettings wordsSearchSettings,
         CancellationToken ct)
     {
         EntitiesByWordsIndex entitiesByWordsIndex = searchContext.Index.EntitiesByWordsIndex;
-        Dictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
 
         for (byte queryWordPosition = 0; queryWordPosition < wordsBundle.Length; queryWordPosition++)
         {
             List<KeyValuePair<int, byte>> currentSimilarWordsBundle = wordsBundle[queryWordPosition];
 
-            Perfomancer perfomancer = perfomance.GetPerfomancer();
+            WordsSearchManager wsm = wordsSearchSettings.GetWordsSearchManager();
 
             for (int wbIndex = 0; wbIndex < currentSimilarWordsBundle.Count; wbIndex++)
             {
-                if (!perfomancer.NeedContinue)
+                if (!wsm.NeedContinue)
                     break;
 
                 KeyValuePair<int, byte> indexWordInfo = currentSimilarWordsBundle[wbIndex];
@@ -41,7 +40,7 @@ public class Search(
                 if (list is null)
                     continue;
 
-                perfomancer.IncrementMatch();
+                wsm.IncrementMatch();
 
                 foreach (WordMatchMeta wordMatchMeta in list)
                 {
@@ -49,18 +48,17 @@ public class Search(
                         return;
 
                     Key entityKey = new(TargetType, wordMatchMeta.EntityId);
-                    EntityMeta entityMeta = entities[entityKey];
 
                     if (!((filter?.Invoke(entityKey)) ?? true))
                         continue;
 
-                    searchContext.AddResult(
-                        entityKey,
-                        entityMeta,
+                    WordCompareResult wcr = new(
                         wordMatchMeta.NameWordPosition,
                         wordMatchMeta.PhraseType,
                         queryWordPosition,
                         indexWordInfo.Value);
+
+                    searchContext.AddResult(entityKey, wcr);
                 }
             }
         }

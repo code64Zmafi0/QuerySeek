@@ -14,37 +14,48 @@ public class SearchByContainer(
     byte targetType,
     byte containerType,
     Func<Key, bool>? filter = null,
-    Func<IEnumerable<EntityMatchesBundle>, IEnumerable<EntityMatchesBundle>>? containersFilter = null) : RequestBase(targetType)
+    Func<IEnumerable<EntitySearchResult>, IEnumerable<EntitySearchResult>>? containersFilter = null) : RequestBase(targetType)
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public virtual Key[] SelectParents(Dictionary<Key, EntityMatchesBundle> byStrat)
-        => [.. containersFilter is null
-            ? byStrat.Keys
-            : containersFilter.Invoke(byStrat.Values).Select(i => i.Key)];
+    public virtual Key[] SelectParents(Dictionary<Key, EntitySearchResult> byStrat)
+    {
+        Key[] result = [];
+
+        if (containersFilter is null)
+        {
+            result = new Key[byStrat.Count];
+            byStrat.Keys.CopyTo(result, 0);
+        }
+        else
+        {
+            result = [.. containersFilter.Invoke(byStrat.Values).Select(i => i.Key)];
+        }
+
+        return result;
+    }
 
     public override void ProcessRequest(
         SearchContextBase searchContext,
         List<KeyValuePair<int, byte>>[] wordsBundle,
-        PerfomanceSettings perfomance,
+        WordsSearchSettings wordsSearchSettings,
         CancellationToken ct)
     {
-        Dictionary<Key, EntityMeta> entites = searchContext.Index.Entities;
         EntitiesByWordsIndex entitiesByWordsIndex = searchContext.Index.EntitiesByWordsIndex;
 
         if (!(searchContext.GetResultsByType(containerType) is { } byStrat))
             return;
 
-        Key[] parents = SelectParents(byStrat);
+        Key[] containers = SelectParents(byStrat);
 
         for (byte queryWordPosition = 0; queryWordPosition < wordsBundle.Length; queryWordPosition++)
         {
             List<KeyValuePair<int, byte>> currentBundle = wordsBundle[queryWordPosition];
 
-            Perfomancer perfomancer = perfomance.GetPerfomancer();
+            WordsSearchManager wsm = wordsSearchSettings.GetWordsSearchManager();
 
             for (int i = 0; i < currentBundle.Count; i++)
             {
-                if (!perfomancer.NeedContinue)
+                if (!wsm.NeedContinue)
                     break;
 
                 KeyValuePair<int, byte> indexWordInfo = currentBundle[i];
@@ -55,7 +66,7 @@ public class SearchByContainer(
                 foreach (var wordMatchMeta in entitiesByWordsIndex.GetMatchesByWordAndParents(
                     wordId,
                     TargetType,
-                    parents))
+                    containers))
                 {
                     if (ct.IsCancellationRequested)
                         return;
@@ -63,21 +74,20 @@ public class SearchByContainer(
                     isMatchedWord = true;
 
                     Key entityKey = new(TargetType, wordMatchMeta.EntityId);
-                    EntityMeta entityMeta = entites[entityKey];
 
                     if (!((filter?.Invoke(entityKey)) ?? true))
                         continue;
 
-                    searchContext.AddResult(
-                        entityKey,
-                        entityMeta,
+                    WordCompareResult wcr = new(
                         wordMatchMeta.NameWordPosition,
                         wordMatchMeta.PhraseType,
                         queryWordPosition,
                         indexWordInfo.Value);
+
+                    searchContext.AddResult(entityKey, wcr);
                 }
 
-                if (isMatchedWord) perfomancer.IncrementMatch();
+                if (isMatchedWord) wsm.IncrementMatch();
             }
         }
     }

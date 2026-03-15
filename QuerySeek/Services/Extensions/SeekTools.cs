@@ -19,8 +19,14 @@ public static class QS
     public static Phrase Phrase(string phrase)
         => new(phrase, 0);
 
+    public static byte Type<TType>(TType type)
+        => Convert.ToByte(type);
+
+    public static byte[] Keys<TType>(params TType[] types) where TType : Enum
+        => Array.ConvertAll(types, type => Type(type));
+
     public static Key Key<TType>(TType type, int id) where TType : Enum
-        => new(Convert.ToByte(type), id);
+        => new(Type(type), id);
 
     public static Key Key(byte type, int id)
         => new(type, id);
