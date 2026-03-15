@@ -1,3 +1,5 @@
+using QuerySeek.Models;
+
 namespace QuerySeek.Services.Searching.Requests;
 
 /// <summary>
@@ -13,9 +15,16 @@ public class Select(byte targetType, IEnumerable<int> ids) : RequestBase(targetT
         WordsSearchSettings wordsSearchSettings,
         CancellationToken ct)
     {
+        Dictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
+
         foreach (int id in ids)
         {
-            searchContext.AddResult(new(TargetType, id));
+            Key key = new(TargetType, id);
+
+            if (entities.ContainsKey(key))
+            {
+                searchContext.AddResult(key);
+            }
         }
     }
 }
