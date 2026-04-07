@@ -67,35 +67,48 @@ public static class QS
     #region NgrammsLogic
     public const short NGRAM_LENGTH = 3;
 
-    public static int[] GetNgrams(string word)
+    public static int[] GetNgramms(string word)
     {
-        var space = string.Concat(Enumerable.Repeat(' ', NGRAM_LENGTH - 1));
+        const char SpaceChar = ' ';
 
-        var normalized = $"{space}{word}{space}";
+        int spaceLength = NGRAM_LENGTH - 1;
+        int totalLength =  word.Length + spaceLength * 2;
 
+        //Буффер нормализации
+        Span<char> buffer = totalLength <= 256
+            ? stackalloc char[totalLength]
+            : new char[totalLength];
+
+        //Заполняем спейсы
+        buffer[..spaceLength].Fill(SpaceChar);
+        buffer[^spaceLength..].Fill(SpaceChar);
+
+        //Заполняем слово
+        word.CopyTo(buffer[spaceLength..]);
+
+        //Просчитываем результат слова
         int[] result = new int[word.Length + NGRAM_LENGTH - 1];
 
-        for (var i = 0; i <= normalized.Length - NGRAM_LENGTH; i++)
+        for (int i = 0; i <= buffer.Length - NGRAM_LENGTH; i++)
         {
-            var nGramm = normalized.AsSpan(i, NGRAM_LENGTH);
-            result[i] = GetNGrammHash(in nGramm);
+            //Вычисялем хеш нграмма
+            Span<char> nGramm = buffer.Slice(i, NGRAM_LENGTH);
+
+            int num = 5381;
+            int num2 = num;
+            for (int k = 0; k < nGramm.Length; k += 2)
+            {
+                num = (num << 5) + num ^ nGramm[k];
+
+                if (k + 1 < nGramm.Length)
+                    num2 = (num2 << 5) + num2 ^ nGramm[k + 1];
+            }
+            int hash = num + num2 * 1566083941;
+
+            result[i] = hash;
         }
 
         return result;
-    }
-
-    private static int GetNGrammHash(in ReadOnlySpan<char> value)
-    {
-        int num = 5381;
-        int num2 = num;
-        for (int i = 0; i < value.Length; i += 2)
-        {
-            num = (num << 5) + num ^ value[i];
-
-            if (i + 1 < value.Length)
-                num2 = (num2 << 5) + num2 ^ value[i + 1];
-        }
-        return num + num2 * 1566083941;
     }
     #endregion
 

@@ -91,7 +91,7 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
 
         foreach (var item in WordsBundle.GetWordsByIds())
         {
-            int[] ngramms = QS.GetNgrams(item.Key);
+            int[] ngramms = QS.GetNgramms(item.Key);
 
             for (int i = 0; i < ngramms.Length; i++)
             {
