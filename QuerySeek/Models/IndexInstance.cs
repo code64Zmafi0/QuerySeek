@@ -22,6 +22,8 @@ public class IndexInstance
     [IgnoreMember]
     public int EntitesCount => Entities.Count;
 
+    public int GetEntitesCount(byte type) => Entities.Keys.Count(i => i.Type == type);
+
     public void Trim()
     {
         foreach (EntityMeta meta in Entities.Values)
