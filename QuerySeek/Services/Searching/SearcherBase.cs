@@ -236,10 +236,13 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
                 if (!Unsafe.IsNullRef(ref matchInfo))
                 {
+                    byte matches = (byte)(matchInfo.Mathes + 1);
+                    byte misses = CalculateMiss(in matchInfo, queryWordNgrammIndex);
+
                     matchInfo = new()
                     {
-                        Mathes = (byte)(matchInfo.Mathes + 1),
-                        Misses = CalculateMiss(in matchInfo, queryWordNgrammIndex),
+                        Mathes = matches,
+                        Misses = misses,
                         PreviousMatch = queryWordNgrammIndex,
                     };
 
