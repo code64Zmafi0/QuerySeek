@@ -23,6 +23,12 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 
     public int Score;
 
+    public Key[] GetLinks()
+        => Meta.Links;
+
+    public Key[] GetChilds()
+        => Meta.Childs;
+
     public void AddRule(AdditionalRule rule)
         => Rules.Add(rule);
 

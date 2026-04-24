@@ -190,7 +190,6 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         return result;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void SearchSimilars(Word queryWord, int treshold, Dictionary<int, IndexWordSearchInfo> wordsSearchProcessDict)
         {
             Dictionary<int, IndexWordSearchInfo> similars = GetSimilarWords(index, queryWord, treshold, wordsSearchProcessDict);
@@ -267,8 +266,8 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
     private int CalculateScore(TContext searchContext, EntitySearchResult entityMatchesBundle)
     {
-        Key currentEntityKey = entityMatchesBundle.Key;
-        Key[] entityLinks = searchContext.Index.Entities[currentEntityKey].Links;
+        byte currentEntityType = entityMatchesBundle.Key.Type;
+        Key[] entityLinks = entityMatchesBundle.Meta.Links;
 
         Span<int> wordsScores = stackalloc int[searchContext.NgrammedQuery.Length];
 
@@ -279,10 +278,10 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         foreach (Key nodeKey in entityLinks)
         {
             if (searchContext.GetResultsByType(nodeKey.Type) is { } req
-                && req.TryGetValue(nodeKey, out var chaiedMathes))
+                && req.TryGetValue(nodeKey, out var chainedMathes))
             {
-                double nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityKey.Type, nodeKey.Type);
-                CalculateEntityPartScore(in wordsScores, chaiedMathes.WordsMatches, nodeMultipler);
+                double nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, nodeKey.Type);
+                CalculateEntityPartScore(in wordsScores, chainedMathes.WordsMatches, nodeMultipler);
             }
         }
 
