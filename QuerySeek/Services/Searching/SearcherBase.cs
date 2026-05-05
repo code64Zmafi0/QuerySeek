@@ -310,10 +310,8 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         double nodeMultipler)
     {
         //TODO: тут надо хорошо подумать как получше дистинктить слова
-        for (int wordMatchIndex = 0; wordMatchIndex < wordsMatches.Count; wordMatchIndex++)
+        foreach (WordCompareResult compareResult in wordsMatches)
         {
-            WordCompareResult compareResult = wordsMatches[wordMatchIndex];
-
             int score = compareResult.MatchLength;
 
             int queryWordPosition = compareResult.QueryWordPosition;

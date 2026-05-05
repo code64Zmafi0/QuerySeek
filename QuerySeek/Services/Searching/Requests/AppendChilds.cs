@@ -23,33 +23,33 @@ public class AppendChilds(
     {
         Dictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
 
-        if (searchContext.GetResultsByType(parentType) is { } from)
+        if (!(searchContext.GetResultsByType(parentType) is { } from))
+            return;
+
+        IEnumerable<Key> GetKeys()
         {
-            IEnumerable<Key> GetKeys()
+            if (parentTop < 1)
+                return from.Keys;
+            else
+                return from
+                    .OrderByDescending(i => i.Value.Prescore)
+                    .Take(parentTop)
+                    .Select(i => i.Key);
+        }
+
+        foreach (Key parentKey in GetKeys())
+        {
+            if (ct.IsCancellationRequested)
+                break;
+
+            if (!(entities.TryGetValue(parentKey, out var parentMeta)))
+                continue;
+
+            Key[] parentEntityChilds = parentMeta.Childs;
+
+            foreach (Key child in appendFilter(parentEntityChilds.Where(i => i.Type == TargetType)))
             {
-                if (parentTop < 1)
-                    return from.Keys;
-                else
-                    return from
-                        .OrderByDescending(i => i.Value.Prescore)
-                        .Take(parentTop)
-                        .Select(i => i.Key);
-            }
-
-            foreach (Key i in GetKeys())
-            {
-                if (ct.IsCancellationRequested)
-                    break;
-
-                if (!(entities.TryGetValue(i, out var byParent)))
-                    continue;
-
-                var parentEntityChilds = byParent.Childs;
-
-                foreach (Key child in appendFilter(parentEntityChilds.Where(i => i.Type == TargetType)))
-                {
-                    searchContext.AddResult(child);
-                }
+                searchContext.AddResult(child);
             }
         }
     }
