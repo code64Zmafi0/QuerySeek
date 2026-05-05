@@ -23,7 +23,6 @@ Linked data text search engine.
         - If you are using the extended phrase configuration QS.Phrase(string phrase, byte phraseType), use phraseType > 0
     - GetLinks() - Identify the keys that are associated with your entity (when creating an index, the entity will be a child of each element in the Links list)
     - GetContainer() - Define container. For using SearchByContainer
-    - GetParents() - Define parents. For using AppendChilds
 
 ### Build index
 
@@ -58,6 +57,7 @@ Also, you can redefine normalization and phrases splitting on words for use in y
     - SearchByContainer - search current type entities in parents hierarchy (parents must be found in the Search block above)
     - Select - performs forced addition of entities of the target type based on the passed ids
     - AppendChilds - use to force adding entities by parent
+    - AppendChilds - use to force adding entities by parent in containers
 - Override GetLinkedEntityMatchMiltipler(byte entityType, byte linkedType) for flexible scoring mathes of linked entities
 - Override GetPhraseTypeMultipler(byte phraseType) for flexible scoring by phrase types
 - Override OnLinkedEntityMatched(Key entityKey, Key linkedKey) to add individual sorting rules if linked entity is match

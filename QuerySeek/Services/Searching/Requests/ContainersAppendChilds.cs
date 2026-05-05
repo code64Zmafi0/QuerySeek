@@ -3,7 +3,7 @@
 namespace QuerySeek.Services.Searching.Requests;
 
 /// <summary>
-/// Выполняет принудительное добавление дочерних элементов по родителю и контейнерам в выдачу
+/// Выполняет принудительное добавление дочерних элементов по родителю в котейнерах в выдачу
 /// </summary>
 /// <param name="targetType">Целевой тип</param>
 /// <param name="parentType">Тип родителя</param>
