@@ -31,7 +31,7 @@ public class ContainersAppendChilds(
         {
             foreach(Key containerKey in parents)
             {
-                if (!entities.TryGetValue(containerKey, out EntityMeta? meta))
+                if (!entities.TryGetValue(containerKey, out EntityMeta meta))
                     continue;
 
                 foreach(Key child in meta.Childs.Where(i => i.Type == TargetType))

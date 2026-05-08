@@ -116,10 +116,10 @@ public static class QS
     public static void WriteIndex(IndexInstance index, string filePath)
         => WriteObject(filePath, index);
 
-    public static IndexInstance ReadIndex(string filePath)
+    public static IndexInstance ReadIndex(string filePath, bool gcCompactLOH = true)
     {
         IndexInstance index = ReadAndDeserializeObject<IndexInstance>(filePath);
-        index.Trim();
+        index.Trim(gcCompactLOH);
 
         return index;
     }

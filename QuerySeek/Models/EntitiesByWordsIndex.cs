@@ -8,8 +8,12 @@ namespace QuerySeek.Models;
 [MessagePackObject]
 public class EntitiesByWordsIndex()
 {
+    /// <summary>
+    /// Словарь WordId -> Types -> Containers -> MatchesToEntites
+    /// Так как ид слов последовательны использован массив вместо словоря - так как словарь большого размера в разы медленней на обращени
+    /// </summary>
     [Key(1)]
-    public KeyValuePair<byte /*TypeId*/, Dictionary</*ByNodeKey*/ Key, WordMatchMeta[]>>[/*WordId*/][] EntitiesByWords { get; set; } = [];
+    public KeyValuePair<byte /*TypeId*/, Dictionary</*ByNodeKey*/ Key, WordMatchMeta[]>>[][/*WordId*/] EntitiesByWords { get; set; } = [];
 
     public WordMatchMeta[]? GetMatchesByWord(int wordId, byte entityType)
     {
@@ -61,6 +65,12 @@ public class EntitiesByWordsIndex()
         }
     }
 
+    /// <summary>
+    /// Бинарный поиск для бандла типов
+    /// </summary>
+    /// <param name="sortedKeys"></param>
+    /// <param name="targetType"></param>
+    /// <returns></returns>
     public static int BinarySearch(KeyValuePair<byte /*TypeId*/, Dictionary</*ByNodeKey*/ Key, WordMatchMeta[]>>[] sortedKeys, byte targetType)
     {
         int left = 0;

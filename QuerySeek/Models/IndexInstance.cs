@@ -1,4 +1,6 @@
 using System.Runtime;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using MessagePack;
 
 namespace QuerySeek.Models;
@@ -24,22 +26,33 @@ public class IndexInstance
 
     public int GetEntitesCount(byte type) => Entities.Keys.Count(i => i.Type == type);
 
-    public void Trim()
+    /// <summary>
+    /// Сжатие данных после десериализации
+    /// </summary>
+    public void Trim(bool gcCompactLOH = true)
     {
-        foreach (EntityMeta meta in Entities.Values)
+        //Подменяем пустые массивы одной ссылкой
+        foreach (Key key in Entities.Keys)
         {
-            if (meta.Links.Length == 0)
-                meta.Links = Array.Empty<Key>();
+            ref EntityMeta meta = ref CollectionsMarshal.GetValueRefOrNullRef(Entities, key);
 
-            if (meta.Childs.Length == 0)
-                meta.Childs = Array.Empty<Key>();
+            if (!Unsafe.IsNullRef(ref meta))
+            {
+                meta = new(
+                    meta.Links.Length == 0 ? Array.Empty<Key>() : meta.Links,
+                    meta.Childs.Length == 0 ? Array.Empty<Key>() : meta.Childs);
+            }
         }
 
+        //Сжатие словарей
         Entities.TrimExcess();
         WordsIdsByNgramms.TrimExcess();
         EntitiesByWordsIndex.Trim();
 
-        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-        GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive);
+        if (gcCompactLOH)
+        {
+            GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+            GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive);
+        }
     }
 }

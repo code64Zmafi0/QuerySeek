@@ -159,7 +159,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
             if (result[i] is null)
             {
-                result[i] = SearchSimilarWordByQueryAndAlternatives(
+                result[i] = SearchSimilarsByQueryWordAndAlternatives(
                     searchContext.Index,
                     currentWord,
                     wordsSearchSettings,
@@ -170,7 +170,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         return result;
     }
 
-    private static List<KeyValuePair<int, byte>> SearchSimilarWordByQueryAndAlternatives(
+    private static List<KeyValuePair<int, byte>> SearchSimilarsByQueryWordAndAlternatives(
         IndexInstance index,
         QueryWordContainer wordContainer,
         WordsSearchSettings wordsSearchSettings,
@@ -192,10 +192,10 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         void SearchSimilars(Word queryWord, int treshold, Dictionary<int, IndexWordSearchInfo> wordsSearchProcessDict)
         {
-            Dictionary<int, IndexWordSearchInfo> similars = GetSimilarWords(index, queryWord, treshold, wordsSearchProcessDict);
+            NgrammSearch(index, queryWord, treshold, wordsSearchProcessDict);
 
             //Ищем бандл схожих слов и сортируем по количеству совпадений (вычисляется в свойстве Score. Попадания - наказание за промахи)
-            foreach (KeyValuePair<int, IndexWordSearchInfo> item in similars
+            foreach (KeyValuePair<int, IndexWordSearchInfo> item in wordsSearchProcessDict
                 .Where(i => i.Value.Score >= treshold)
                 .OrderByDescending(i => i.Value.Score)
                 .Take(wordsSearchSettings.MaxCheckingWordsCount))
@@ -212,7 +212,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     /// Метод отвечает за поиск похожих слов по n-gramm
     /// </summary>
     /// <returns>Словарь id слова количество совпадений и пропусков</returns>
-    private static Dictionary<int, IndexWordSearchInfo> GetSimilarWords(
+    private static void NgrammSearch(
         IndexInstance index,
         Word queryWord,
         int treshold,
@@ -231,7 +231,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
             foreach (int wordId in wordsIds)
             {
-                ref var matchInfo = ref CollectionsMarshal.GetValueRefOrNullRef(words, wordId);
+                ref IndexWordSearchInfo matchInfo = ref CollectionsMarshal.GetValueRefOrNullRef(words, wordId);
 
                 if (!Unsafe.IsNullRef(ref matchInfo))
                 {
@@ -260,8 +260,6 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
                     words[wordId] = new(1, 0, queryWordNgrammIndex);
             }
         }
-
-        return words;
     }
 
     private int CalculateScore(TContext searchContext, EntitySearchResult entityMatchesBundle)

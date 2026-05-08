@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using QuerySeek.Interfaces;
 using QuerySeek.Models;
@@ -67,23 +68,24 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
 
     public IndexInstance Build()
     {
-        bool CheckMeta(Key key, out EntityMeta? meta)
+        //Очистка возможной неконсистентности данных
+        foreach (Key entityKey in Entities.Keys)
         {
-            meta = null;
+            ref EntityMeta meta = ref CollectionsMarshal.GetValueRefOrNullRef(Entities, entityKey);
 
-            return Entities.TryGetValue(key, out meta);
-        }
-
-        foreach (var entity in Entities.Values)
-        {
-            entity.Links = [.. entity.Links.Where(i => CheckMeta(i, out _))];
+            if (!Unsafe.IsNullRef(ref meta))
+            {
+                meta = new([.. meta.Links.Where(Entities.ContainsKey)], meta.Childs);
+            }
         }
 
         foreach (KeyValuePair<Key, HashSet<Key>> item in Childs)
         {
-            if (CheckMeta(item.Key, out var meta))
+            ref EntityMeta meta = ref CollectionsMarshal.GetValueRefOrNullRef(Entities, item.Key);
+
+            if (!Unsafe.IsNullRef(ref meta))
             {
-                meta!.Childs = [.. item.Value.Where(i => CheckMeta(i, out _))];
+                meta = new(meta.Links, [.. item.Value.Where(Entities.ContainsKey)]);
             }
         };
 
