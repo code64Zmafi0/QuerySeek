@@ -6,13 +6,9 @@ namespace QuerySeek.Models;
 /// Храним линки и потомков
 /// </summary>
 [MessagePackObject]
-public readonly struct EntityMeta
+public class EntityMeta
 {
-    public EntityMeta() 
-    {
-        Links = Array.Empty<Key>();
-        Childs = Array.Empty<Key>();
-    }
+    public EntityMeta() { }
 
     public EntityMeta(Key[] links)
     {
@@ -20,15 +16,9 @@ public readonly struct EntityMeta
         Childs = Array.Empty<Key>();
     }
 
-    public EntityMeta(Key[] links, Key[] childs)
-    {
-        Links = links;
-        Childs = childs;
-    }
-
     [Key(1)]
-    public readonly Key[] Links;
+    public Key[] Links { get; set; } = Array.Empty<Key>();
 
     [Key(2)]
-    public readonly Key[] Childs;
+    public Key[] Childs { get; set; } = Array.Empty<Key>();
 }

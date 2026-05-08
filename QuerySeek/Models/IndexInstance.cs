@@ -38,9 +38,11 @@ public class IndexInstance
 
             if (!Unsafe.IsNullRef(ref meta))
             {
-                meta = new(
-                    meta.Links.Length == 0 ? Array.Empty<Key>() : meta.Links,
-                    meta.Childs.Length == 0 ? Array.Empty<Key>() : meta.Childs);
+                if (meta.Links.Length == 0)
+                    meta.Links = Array.Empty<Key>();
+
+                if (meta.Childs.Length == 0)
+                    meta.Childs = Array.Empty<Key>();
             }
         }
 

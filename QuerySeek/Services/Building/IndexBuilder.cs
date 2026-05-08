@@ -75,7 +75,7 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
 
             if (!Unsafe.IsNullRef(ref meta))
             {
-                meta = new([.. meta.Links.Where(Entities.ContainsKey)], meta.Childs);
+                meta.Links = [.. meta.Links.Where(Entities.ContainsKey)];
             }
         }
 
@@ -85,7 +85,7 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
 
             if (!Unsafe.IsNullRef(ref meta))
             {
-                meta = new(meta.Links, [.. item.Value.Where(Entities.ContainsKey)]);
+                meta.Childs = [.. item.Value.Where(Entities.ContainsKey)];
             }
         };
 
