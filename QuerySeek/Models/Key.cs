@@ -21,10 +21,10 @@ public readonly struct Key : IEquatable<Key>
     }
 
     [Key(2)]
-    public int Id { get; }
+    public readonly int Id;
 
     [Key(1)]
-    public byte Type { get; }
+    public readonly byte Type;
 
     public bool Equals(Key other)
         => Id == other!.Id && Type == other.Type;
