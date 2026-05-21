@@ -9,7 +9,7 @@ namespace QuerySeek.Services.Searching.Requests;
 /// <param name="parentType">Тип родителя</param>
 /// <param name="containerType">Тип контейнера</param>
 /// <param name="appendFilter">Фильтр дочерних сущностей КАЖДОГО родителя</param>
-public class ContainersAppendChilds(
+public class AppendChildsByContainers(
     byte targetType,
     byte parentType,
     byte containerType,
@@ -31,7 +31,7 @@ public class ContainersAppendChilds(
         {
             foreach(Key containerKey in parents)
             {
-                if (!entities.TryGetValue(containerKey, out EntityMeta meta))
+                if (!entities.TryGetValue(containerKey, out EntityMeta? meta))
                     continue;
 
                 foreach(Key child in meta.Childs.Where(i => i.Type == TargetType))
@@ -39,7 +39,7 @@ public class ContainersAppendChilds(
             }
         }
 
-        //Количество данных в контейнере меньше чем суммарно дочерних - реализация интерсект скрывает создание хешсет из втрого аргумента
+        //Количество данных в контейнере меньше чем суммарно связей - реализация интерсект скрывает создание хешсет из второго аргумента
         IEnumerable<Key> childs = GetChilds(from.Keys).Intersect(GetChilds(containers.Keys));
 
         foreach (Key child in appendFilter(childs))
