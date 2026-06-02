@@ -23,15 +23,15 @@ public class AppendChilds(
     {
         Dictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
 
-        if (!(searchContext.GetResultsByType(parentType) is { } from))
+        if (!(searchContext.GetResultsByType(parentType) is { } parents))
             return;
 
         IEnumerable<Key> GetKeys()
         {
             if (parentTop < 1)
-                return from.Keys;
+                return parents.Keys;
             else
-                return from
+                return parents
                     .OrderByDescending(i => i.Value.Prescore)
                     .Take(parentTop)
                     .Select(i => i.Key);

@@ -23,7 +23,7 @@ public class AppendChildsByContainers(
     {
         Dictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
 
-        if (!(searchContext.GetResultsByType(parentType) is { } from)
+        if (!(searchContext.GetResultsByType(parentType) is { } parents)
             || !(searchContext.GetResultsByType(containerType) is { } containers))
             return;
 
@@ -40,7 +40,7 @@ public class AppendChildsByContainers(
         }
 
         //Количество данных в контейнере меньше чем суммарно связей - реализация интерсект скрывает создание хешсет из второго аргумента
-        IEnumerable<Key> childs = GetChilds(from.Keys).Intersect(GetChilds(containers.Keys));
+        IEnumerable<Key> childs = GetChilds(parents.Keys).Intersect(GetChilds(containers.Keys));
 
         foreach (Key child in appendFilter(childs))
             searchContext.AddResult(child);

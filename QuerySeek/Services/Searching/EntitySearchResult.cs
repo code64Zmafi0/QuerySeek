@@ -45,7 +45,7 @@ public readonly record struct WordCompareResult(
     byte QueryWordPosition,
     byte MatchLength);
 
-public readonly record struct IndexWordSearchInfo(
+public readonly record struct WordNgrammSearchState(
     byte Mathes,
     byte Misses,
     byte PreviousMatch)
@@ -53,4 +53,4 @@ public readonly record struct IndexWordSearchInfo(
     public byte Score => (byte)(Mathes > Misses ? Mathes - (Misses * 0.5) : 0);
 }
 
-public record AdditionalRule(string Name, int Score, double Multipler = 1);
+public record AdditionalRule(string Name, int Score = 0, double Multipler = 1);

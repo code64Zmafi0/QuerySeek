@@ -17,18 +17,18 @@ public class SearchByContainer(
     Func<IEnumerable<EntitySearchResult>, IEnumerable<EntitySearchResult>>? containersFilter = null) : RequestBase(targetType)
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public virtual Key[] SelectParents(Dictionary<Key, EntitySearchResult> byStrat)
+    public virtual Key[] SelectParents(Dictionary<Key, EntitySearchResult> containers)
     {
         Key[] result = [];
 
         if (containersFilter is null)
         {
-            result = new Key[byStrat.Count];
-            byStrat.Keys.CopyTo(result, 0);
+            result = new Key[containers.Count];
+            containers.Keys.CopyTo(result, 0);
         }
         else
         {
-            result = [.. containersFilter.Invoke(byStrat.Values).Select(i => i.Key)];
+            result = [.. containersFilter.Invoke(containers.Values).Select(i => i.Key)];
         }
 
         return result;
@@ -42,10 +42,10 @@ public class SearchByContainer(
     {
         EntitiesByWordsIndex entitiesByWordsIndex = searchContext.Index.EntitiesByWordsIndex;
 
-        if (!(searchContext.GetResultsByType(containerType) is { } byStrat))
+        if (!(searchContext.GetResultsByType(containerType) is { } containersResult))
             return;
 
-        Key[] containers = SelectParents(byStrat);
+        Key[] containers = SelectParents(containersResult);
 
         for (byte queryWordPosition = 0; queryWordPosition < wordsBundle.Length; queryWordPosition++)
         {

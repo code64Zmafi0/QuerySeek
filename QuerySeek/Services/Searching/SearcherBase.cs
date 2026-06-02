@@ -141,7 +141,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         var result = new List<KeyValuePair<int, byte>>[splittedQuery.Length];
 
         //Используем один словарь для расчета совпавщих нграмм для каждого слова дабы лишний раз не аллоцировать
-        Dictionary<int, IndexWordSearchInfo> wordsSearchProcessDict = new(wordsSearchSettings.WordsSearchDictionaryPreallocate);
+        Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict = new(wordsSearchSettings.WordsSearchDictionaryPreallocate);
 
         for (int i = 0; i < result.Length; i++)
         {
@@ -174,7 +174,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         IndexInstance index,
         QueryWordContainer wordContainer,
         WordsSearchSettings wordsSearchSettings,
-        Dictionary<int, IndexWordSearchInfo> wordsSearchProcessDict)
+        Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict)
     {
         List<KeyValuePair<int, byte>> result = [];
 
@@ -190,12 +190,12 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         return result;
 
-        void SearchSimilars(Word queryWord, int treshold, Dictionary<int, IndexWordSearchInfo> wordsSearchProcessDict)
+        void SearchSimilars(Word queryWord, int treshold, Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict)
         {
             NgrammSearch(index, queryWord, treshold, wordsSearchProcessDict);
 
             //Ищем бандл схожих слов и сортируем по количеству совпадений (вычисляется в свойстве Score. Попадания - наказание за промахи)
-            foreach (KeyValuePair<int, IndexWordSearchInfo> item in wordsSearchProcessDict
+            foreach (KeyValuePair<int, WordNgrammSearchState> item in wordsSearchProcessDict
                 .Where(i => i.Value.Score >= treshold)
                 .OrderByDescending(i => i.Value.Score)
                 .Take(wordsSearchSettings.MaxCheckingWordsCount))
@@ -216,12 +216,12 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         IndexInstance index,
         Word queryWord,
         int treshold,
-        Dictionary<int, IndexWordSearchInfo> wordsSearchProcessDict)
+        Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict)
     {
         byte wordLength = (byte)queryWord.NGrammsHashes.Length;
         treshold = wordLength - treshold;
 
-        Dictionary<int, IndexWordSearchInfo> words = wordsSearchProcessDict;
+        Dictionary<int, WordNgrammSearchState> words = wordsSearchProcessDict;
 
         //Ищем в индексе слов, считаем совпавшие ngramm-ы и пропуски
         for (byte queryWordNgrammIndex = 0; queryWordNgrammIndex < wordLength; queryWordNgrammIndex++)
@@ -231,7 +231,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
             foreach (int wordId in wordsIds)
             {
-                ref IndexWordSearchInfo matchInfo = ref CollectionsMarshal.GetValueRefOrNullRef(words, wordId);
+                ref WordNgrammSearchState matchInfo = ref CollectionsMarshal.GetValueRefOrNullRef(words, wordId);
 
                 if (!Unsafe.IsNullRef(ref matchInfo))
                 {
@@ -246,7 +246,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
                     };
 
                     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                    static byte CalculateMiss(in IndexWordSearchInfo compareFactor, int queryWordNgrammIndex)
+                    static byte CalculateMiss(in WordNgrammSearchState compareFactor, int queryWordNgrammIndex)
                     {
                         if (queryWordNgrammIndex == 0) return 0;
 
@@ -301,7 +301,6 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         return resultScore;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void CalculateEntityPartScore(
         in Span<int> wordsScores,
         List<WordCompareResult> wordsMatches,
