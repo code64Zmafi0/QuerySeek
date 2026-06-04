@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace QuerySeek.Services.Splitting;
+namespace QuerySeek.Services.Normalizing;
 
 public class DefaultPhraseSplitter : IPhraseSplitter
 {

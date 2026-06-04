@@ -1,4 +1,4 @@
-﻿namespace QuerySeek.Services.Splitting;
+﻿namespace QuerySeek.Services.Normalizing;
 
 public interface IPhraseSplitter
 {

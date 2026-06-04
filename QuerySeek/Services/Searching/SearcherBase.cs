@@ -1,7 +1,6 @@
 using QuerySeek.Models;
 using QuerySeek.Services.Normalizing;
 using QuerySeek.Services.Searching.Requests;
-using QuerySeek.Services.Splitting;
 
 namespace QuerySeek.Services.Searching;
 

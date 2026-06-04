@@ -5,7 +5,6 @@ using QuerySeek.Models;
 using QuerySeek.Services.Extensions;
 using QuerySeek.Services.Normalizing;
 using QuerySeek.Services.Searching;
-using QuerySeek.Services.Splitting;
 
 namespace QuerySeek.Services.Building;
 
