@@ -23,7 +23,7 @@ public class EntitiesByWordsIndex()
         int index = BinarySearch(wordMatches, entityType);
         if (index == -1) return null;
 
-        if (wordMatches[index].Value.TryGetValue(Key.Default, out var matches))
+        if (wordMatches[index].Value.TryGetValue(Key.Default, out WordMatchMeta[]? matches))
         {
             return matches;
         }
@@ -42,11 +42,11 @@ public class EntitiesByWordsIndex()
         int index = BinarySearch(wordMatches, entityType);
         if (index == -1) yield break;
 
-        var matchesBundle = wordMatches[index].Value;
+        Dictionary<Key, WordMatchMeta[]> matchesBundle = wordMatches[index].Value;
 
         foreach (Key byKey in parentKeys)
         {
-            if (!matchesBundle.TryGetValue(byKey, out var entityMatches))
+            if (!matchesBundle.TryGetValue(byKey, out WordMatchMeta[]? entityMatches))
                 continue;
 
             foreach (WordMatchMeta wordMatchMeta in entityMatches)
@@ -56,9 +56,9 @@ public class EntitiesByWordsIndex()
 
     public void Trim()
     {
-        foreach (var collection in EntitiesByWords)
+        foreach (KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[] collection in EntitiesByWords)
         {
-            foreach (var item in collection)
+            foreach (KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>> item in collection)
             {
                 item.Value.TrimExcess();
             }
