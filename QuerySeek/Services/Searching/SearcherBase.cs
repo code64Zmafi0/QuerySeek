@@ -1,7 +1,4 @@
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using QuerySeek.Models;
-using QuerySeek.Services.Extensions;
 using QuerySeek.Services.Normalizing;
 using QuerySeek.Services.Searching.Requests;
 using QuerySeek.Services.Splitting;
@@ -26,18 +23,17 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     /// <returns></returns>
     public EntitySearchResult[] Search(
         TContext context,
+        string query,
         int take,
         CancellationToken? cancellationToken = null)
     {
-        var ct = cancellationToken ?? new CancellationTokenSource(TimeoutMs).Token;
+        CancellationToken ct = cancellationToken ?? CancellationToken.None;
 
-        FillContext(context);
+        FillContext(context, query);
 
-        WordsSearchSettings wordsSearchSettings = GetWordsSearchSettings(context);
+        List<KeyValuePair<int, byte>>[] wordsBundle = SearchSimlarIndexWordsByQuery(context);
 
-        List<KeyValuePair<int, byte>>[] wordsBundle = SearchSimlarIndexWordsByQuery(context, wordsSearchSettings);
-
-        foreach (var i in context.Request) i.ProcessRequest(context, wordsBundle, wordsSearchSettings, ct);
+        foreach (RequestBase i in context.Request) i.ProcessRequest(context, wordsBundle, ct);
 
         return PostProcessing(context, GetAllResults()
             .OrderByDescending(i =>
@@ -50,9 +46,9 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         IEnumerable<EntitySearchResult> GetAllResults()
         {
-            foreach (var typeResults in context.SearchResult)
+            foreach (KeyValuePair<byte, Dictionary<Key, EntitySearchResult>> typeResults in context.SearchResult)
             {
-                foreach (var item in TypeBundlePreprocessing(context, typeResults.Key, typeResults.Value.Values))
+                foreach (EntitySearchResult item in TypeBundlePreprocessing(context, typeResults.Key, typeResults.Value.Values))
                     yield return item;
             }
         }
@@ -67,18 +63,17 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     /// <returns></returns>
     public TypeSearchResult[] SearchTypes(
         TContext context,
+        string query,
         (byte Type, int Take)[] selectTypes,
         CancellationToken? cancellationToken = null)
     {
-        var ct = cancellationToken ?? new CancellationTokenSource(TimeoutMs).Token;
+        CancellationToken ct = cancellationToken ?? CancellationToken.None;
 
-        FillContext(context);
+        FillContext(context, query);
 
-        WordsSearchSettings wordsSearchSettings = GetWordsSearchSettings(context);
+        List<KeyValuePair<int, byte>>[] wordsBundle = SearchSimlarIndexWordsByQuery(context);
 
-        List<KeyValuePair<int, byte>>[] wordsBundle = SearchSimlarIndexWordsByQuery(context, wordsSearchSettings);
-
-        foreach (var i in context.Request) i.ProcessRequest(context, wordsBundle, wordsSearchSettings, ct);
+        foreach (RequestBase i in context.Request) i.ProcessRequest(context, wordsBundle, ct);
 
         var result = new TypeSearchResult[selectTypes.Length];
 
@@ -93,7 +88,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
                 continue;
             }
 
-            var typeResult =
+            EntitySearchResult[] typeResult =
                 PostProcessing(context, TypeBundlePreprocessing(context, Type, typeSearchResult.Values)
                     .OrderByDescending(matchBundle =>
                     {
@@ -110,22 +105,26 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         return result;
     }
 
-    public void FillContext(TContext context)
+    public void FillContext(TContext context, string query)
     {
+        context.Query = query;
         string normalizedQuery = normalizer.Normalize(context.Query);
         string[] splittedQuery = splitter.Tokenize(normalizedQuery);
 
-        QueryWordContainer[] ngrammedWords = Array.ConvertAll(splittedQuery, i =>
+        Dictionary<string, string[]> alternativeWords = GetWordsAlternativesPairs();
+        Dictionary<string, double> queryWordMultiplers = GetQueryWordsMultiplers();
+
+        QueryWordContainer[] ngrammedWords = Array.ConvertAll(splittedQuery, word =>
         {
-            double multipler = context.NotRealivatedWords.TryGetValue(i, out var m) ? m : 1;
+            double multipler = queryWordMultiplers.TryGetValue(word, out var m) ? m : 1;
 
             Word[] alterantivesMetas = [];
 
-            if (context.AlternativeWords.TryGetValue(i, out var alternatives))
+            if (alternativeWords.TryGetValue(word, out string[]? alternatives))
                 alterantivesMetas = Array.ConvertAll(alternatives, alt => new Word(normalizer.Normalize(alt)));
 
             return new QueryWordContainer(
-                new Word(i),
+                new Word(word),
                 alterantivesMetas,
                 multipler);
         });
@@ -133,14 +132,18 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         context.NgrammedQuery = ngrammedWords;
         context.SplittedAndNormalizedQuery = splittedQuery;
         context.Request = GetRequest(context);
+        context.WordsSearchSettings = GetWordsSearchSettings(context);
     }
 
-    public List<KeyValuePair<int, byte>>[] SearchSimlarIndexWordsByQuery(SearchContextBase searchContext, WordsSearchSettings wordsSearchSettings)
+    public List<KeyValuePair<int, byte>>[] SearchSimlarIndexWordsByQuery(SearchContextBase searchContext)
     {
-        var splittedQuery = searchContext.NgrammedQuery;
+        QueryWordContainer[] splittedQuery = searchContext.NgrammedQuery;
+        WordsSearchSettings wordsSearchSettings = searchContext.WordsSearchSettings;
+        Dictionary<int, int[]> wordsIdsByNgramms = searchContext.Index.WordsIdsByNgramms;
+
         var result = new List<KeyValuePair<int, byte>>[splittedQuery.Length];
 
-        //Используем один словарь для расчета совпавщих нграмм для каждого слова дабы лишний раз не аллоцировать
+        //Используем один словарь для расчета совпавщих слов для каждого слова из запроса дабы лишний раз не аллоцировать
         Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict = new(wordsSearchSettings.WordsSearchDictionaryPreallocate);
 
         for (int i = 0; i < result.Length; i++)
@@ -160,10 +163,10 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
             if (result[i] is null)
             {
                 result[i] = SearchSimilarsByQueryWordAndAlternatives(
-                    searchContext.Index,
+                    wordsSearchProcessDict,
+                    wordsIdsByNgramms,
                     currentWord,
-                    wordsSearchSettings,
-                    wordsSearchProcessDict);
+                    wordsSearchSettings);
             }
         }
 
@@ -171,28 +174,28 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     }
 
     private static List<KeyValuePair<int, byte>> SearchSimilarsByQueryWordAndAlternatives(
-        IndexInstance index,
+        Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict,
+        Dictionary<int, int[]> wordsIdsByNgramms,
         QueryWordContainer wordContainer,
-        WordsSearchSettings wordsSearchSettings,
-        Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict)
+        WordsSearchSettings wordsSearchSettings)
     {
         List<KeyValuePair<int, byte>> result = [];
 
         //Ищем по одной четкой алтернативе
         foreach (Word altWord in wordContainer.Alternatives)
-            SearchSimilars(altWord, (byte)wordContainer.QueryWord.NGrammsHashes.Length, wordsSearchProcessDict);
+            SearchSimilars(wordsSearchProcessDict, altWord, (byte)wordContainer.QueryWord.NGrammsHashes.Length);
 
         int treshold = wordContainer.QueryWord.IsDigit
-            ? wordContainer.QueryWord.NGrammsHashes.Length - QS.NGRAM_LENGTH + 1
+            ? wordContainer.QueryWord.NGrammsHashes.Length - Ngramms.NGRAM_LENGTH + 1
             : (int)(wordContainer.QueryWord.NGrammsHashes.Length * wordsSearchSettings.Similarity);
 
-        SearchSimilars(wordContainer.QueryWord, treshold, wordsSearchProcessDict);
+        SearchSimilars(wordsSearchProcessDict, wordContainer.QueryWord, treshold);
 
         return result;
 
-        void SearchSimilars(Word queryWord, int treshold, Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict)
+        void SearchSimilars(Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict, Word queryWord, int treshold)
         {
-            NgrammSearch(index, queryWord, treshold, wordsSearchProcessDict);
+            Ngramms.NgrammSearch(wordsSearchProcessDict, wordsIdsByNgramms, queryWord, treshold);
 
             //Ищем бандл схожих слов и сортируем по количеству совпадений (вычисляется в свойстве Score. Попадания - наказание за промахи)
             foreach (KeyValuePair<int, WordNgrammSearchState> item in wordsSearchProcessDict
@@ -208,61 +211,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         }
     }
 
-    /// <summary>
-    /// Метод отвечает за поиск похожих слов по n-gramm
-    /// </summary>
-    /// <returns>Словарь id слова количество совпадений и пропусков</returns>
-    private static void NgrammSearch(
-        IndexInstance index,
-        Word queryWord,
-        int treshold,
-        Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict)
-    {
-        byte wordLength = (byte)queryWord.NGrammsHashes.Length;
-        treshold = wordLength - treshold;
-
-        Dictionary<int, WordNgrammSearchState> words = wordsSearchProcessDict;
-
-        //Ищем в индексе слов, считаем совпавшие ngramm-ы и пропуски
-        for (byte queryWordNgrammIndex = 0; queryWordNgrammIndex < wordLength; queryWordNgrammIndex++)
-        {
-            if (!index.WordsIdsByNgramms.TryGetValue(queryWord.NGrammsHashes[queryWordNgrammIndex], out int[]? wordsIds))
-                continue;
-
-            foreach (int wordId in wordsIds)
-            {
-                ref WordNgrammSearchState matchInfo = ref CollectionsMarshal.GetValueRefOrNullRef(words, wordId);
-
-                if (!Unsafe.IsNullRef(ref matchInfo))
-                {
-                    byte matches = (byte)(matchInfo.Mathes + 1);
-                    byte misses = CalculateMiss(in matchInfo, queryWordNgrammIndex);
-
-                    matchInfo = new()
-                    {
-                        Mathes = matches,
-                        Misses = misses,
-                        PreviousMatch = queryWordNgrammIndex,
-                    };
-
-                    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                    static byte CalculateMiss(in WordNgrammSearchState compareFactor, int queryWordNgrammIndex)
-                    {
-                        if (queryWordNgrammIndex == 0) return 0;
-
-                        byte missCount = (byte)(queryWordNgrammIndex - compareFactor.PreviousMatch - 1);
-
-                        return (byte)(compareFactor.Misses + missCount);
-                    }
-                }
-                //Попытка отбить добавление в словарь уже точно не совпавщих по treshold
-                else if (queryWordNgrammIndex == 0 || (!queryWord.IsDigit && queryWordNgrammIndex <= treshold))
-                    words[wordId] = new(1, 0, queryWordNgrammIndex);
-            }
-        }
-    }
-
-    private int CalculateScore(TContext searchContext, EntitySearchResult entityMatchesBundle)
+    public int CalculateScore(TContext searchContext, EntitySearchResult entityMatchesBundle)
     {
         byte currentEntityType = entityMatchesBundle.Key.Type;
         Key[] entityLinks = entityMatchesBundle.Meta.Links;
@@ -276,7 +225,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         foreach (Key nodeKey in entityLinks)
         {
             if (searchContext.GetResultsByType(nodeKey.Type) is { } req
-                && req.TryGetValue(nodeKey, out var chainedMathes))
+                && req.TryGetValue(nodeKey, out EntitySearchResult? chainedMathes))
             {
                 double nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, nodeKey.Type);
                 CalculateEntityPartScore(in wordsScores, chainedMathes.WordsMatches, nodeMultipler);
@@ -375,12 +324,6 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         => 1;
 
     /// <summary>
-    /// Таймаут если не передан ct
-    /// </summary>
-    public virtual int TimeoutMs
-        => 1500;
-
-    /// <summary>
     /// Определение настроек поиска по словам
     /// </summary>
     /// <param name="searchContext"></param>
@@ -389,6 +332,20 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         => searchContext.NgrammedQuery.Length > 5
             ? WordsSearchSettings.Fast
             : WordsSearchSettings.Default;
+
+    /// <summary>
+    /// Определяем возможные альтернативные слова для слов из запроса
+    /// </summary>
+    /// <returns></returns>
+    public virtual Dictionary<string, string[]> GetWordsAlternativesPairs()
+        => [];
+
+    /// <summary>
+    /// Определяем моножители для слов из запроса (можем уменьшать значимость предлогов и тд)
+    /// </summary>
+    /// <returns></returns>
+    public virtual Dictionary<string, double> GetQueryWordsMultiplers()
+        => [];
 
     #endregion
 }

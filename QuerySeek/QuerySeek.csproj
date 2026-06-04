@@ -9,10 +9,10 @@
     <Authors>code64Zmafi0</Authors>
     <Description>Linked data text search engine.</Description>
     <RepositoryUrl>https://github.com/code64Zmafi0/QuerySeek</RepositoryUrl>
-    <PackageTags>search; index; relations; data;</PackageTags>
+    <PackageTags>Text search; Index; Relations; Data;</PackageTags>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
 	<PackageIcon>Logo.png</PackageIcon>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

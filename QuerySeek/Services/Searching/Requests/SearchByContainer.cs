@@ -37,7 +37,6 @@ public class SearchByContainer(
     public override void ProcessRequest(
         SearchContextBase searchContext,
         List<KeyValuePair<int, byte>>[] wordsBundle,
-        WordsSearchSettings wordsSearchSettings,
         CancellationToken ct)
     {
         EntitiesByWordsIndex entitiesByWordsIndex = searchContext.Index.EntitiesByWordsIndex;
@@ -51,7 +50,7 @@ public class SearchByContainer(
         {
             List<KeyValuePair<int, byte>> currentBundle = wordsBundle[queryWordPosition];
 
-            WordsSearchManager wsm = wordsSearchSettings.GetWordsSearchManager();
+            WordsSearchManager wsm = searchContext.WordsSearchSettings.GetWordsSearchManager();
 
             for (int i = 0; i < currentBundle.Count; i++)
             {

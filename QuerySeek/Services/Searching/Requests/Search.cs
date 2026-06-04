@@ -15,7 +15,6 @@ public class Search(
     public override void ProcessRequest(
         SearchContextBase searchContext,
         List<KeyValuePair<int, byte>>[] wordsBundle,
-        WordsSearchSettings wordsSearchSettings,
         CancellationToken ct)
     {
         EntitiesByWordsIndex entitiesByWordsIndex = searchContext.Index.EntitiesByWordsIndex;
@@ -24,7 +23,7 @@ public class Search(
         {
             List<KeyValuePair<int, byte>> currentSimilarWordsBundle = wordsBundle[queryWordPosition];
 
-            WordsSearchManager wsm = wordsSearchSettings.GetWordsSearchManager();
+            WordsSearchManager wsm = searchContext.WordsSearchSettings.GetWordsSearchManager();
 
             for (int wbIndex = 0; wbIndex < currentSimilarWordsBundle.Count; wbIndex++)
             {

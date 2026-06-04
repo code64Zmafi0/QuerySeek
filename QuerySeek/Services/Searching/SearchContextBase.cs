@@ -8,31 +8,41 @@ namespace QuerySeek.Services.Searching;
 /// Контекст поиска, можем хранить дополнительные свойства при переопределении
 /// </summary>
 /// <param name="index"></param>
-/// <param name="query"></param>
-public class SearchContextBase(IndexInstance index, string query)
+public class SearchContextBase(IndexInstance index)
 {
-    #region Overrides
     /// <summary>
-    /// Мультиплеры для нереаливантных слов
+    /// Инстанс индекса
     /// </summary>
-    public virtual Dictionary<string, double> NotRealivatedWords { get; } = [];
+    public IndexInstance Index { get; internal set; } = index;
 
     /// <summary>
-    /// Альтернативные слова вида (III -> 3)
+    /// Входящий текстовый запрос
     /// </summary>
-    public virtual Dictionary<string, string[]> AlternativeWords { get; } = [];
-    #endregion
+    public string Query { get; internal set; } = string.Empty;
 
+    /// <summary>
+    /// Запрос на поиск в индексе
+    /// </summary>
     public RequestBase[] Request { get; internal set; } = [];
 
-    public IndexInstance Index { get; set; } = index;
+    /// <summary>
+    /// Нормализованный и разбитый по словам запрос
+    /// </summary>
+    public string[] SplittedAndNormalizedQuery { get; internal set; } = [];
 
-    public string Query { get; set; } = query;
+    /// <summary>
+    /// Бандлы слов с альтернативами
+    /// </summary>
+    public QueryWordContainer[] NgrammedQuery { get; internal set; } = [];
 
-    public string[] SplittedAndNormalizedQuery { get; set; } = [];
+    /// <summary>
+    /// Настройки поиска слов
+    /// </summary>
+    public WordsSearchSettings WordsSearchSettings { get; internal set; } = WordsSearchSettings.Default;
 
-    public QueryWordContainer[] NgrammedQuery { get; set; } = [];
-
+    /// <summary>
+    /// Бандл результатов поиска сущностей в индексе
+    /// </summary>
     public Dictionary<byte, Dictionary<Key, EntitySearchResult>> SearchResult { get; set; } = [];
 
     #region Search Tools

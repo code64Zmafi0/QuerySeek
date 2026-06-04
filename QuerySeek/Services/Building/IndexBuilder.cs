@@ -4,6 +4,7 @@ using QuerySeek.Interfaces;
 using QuerySeek.Models;
 using QuerySeek.Services.Extensions;
 using QuerySeek.Services.Normalizing;
+using QuerySeek.Services.Searching;
 using QuerySeek.Services.Splitting;
 
 namespace QuerySeek.Services.Building;
@@ -27,7 +28,7 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
 
         foreach (Key parent in linksKeys)
         {
-            ref var set = ref CollectionsMarshal.GetValueRefOrAddDefault(Childs, parent, out var exists);
+            ref HashSet<Key>? set = ref CollectionsMarshal.GetValueRefOrAddDefault(Childs, parent, out var exists);
 
             if (!exists)
                 set = [];
@@ -45,7 +46,7 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
             for (byte wordNamePosition = 0; wordNamePosition < phrase.Length && wordNamePosition < byte.MaxValue; wordNamePosition++)
             {
                 string word = phrase[wordNamePosition];
-                var wordId = WordsBundle.GetWordId(word);
+                int wordId = WordsBundle.GetWordId(word);
 
                 WordMatchMeta wordMatchMeta = new(key.Id, wordNamePosition, phraseType);
                 EntitiesByWordsIndex.AddMatch(wordId, key.Type, containerKey, wordMatchMeta);
@@ -87,18 +88,19 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
             {
                 meta.Childs = [.. item.Value.Where(Entities.ContainsKey)];
             }
-        };
+        }
+        ;
 
         Dictionary<int, HashSet<int>> wordsIdsByNgramms = [];
 
-        foreach (var item in WordsBundle.GetWordsByIds())
+        foreach (KeyValuePair<string, int> item in WordsBundle.GetWordsByIds())
         {
-            int[] ngramms = QS.GetNgramms(item.Key);
+            int[] ngramms = Ngramms.GetNgramms(item.Key);
 
             for (int i = 0; i < ngramms.Length; i++)
             {
                 int ngramm = ngramms[i];
-                ref var words = ref CollectionsMarshal.GetValueRefOrAddDefault(wordsIdsByNgramms, ngramm, out var exists);
+                ref HashSet<int>? words = ref CollectionsMarshal.GetValueRefOrAddDefault(wordsIdsByNgramms, ngramm, out var exists);
 
                 if (!exists)
                     words = [];
@@ -134,7 +136,7 @@ public class WordsBuildBundle()
 
     public IEnumerable<KeyValuePair<string, int>> GetWordsByIds()
     {
-        foreach (var wordIdPair in Pairs.OrderBy(i => i.Key))
+        foreach (KeyValuePair<string, int> wordIdPair in Pairs.OrderBy(i => i.Key))
             yield return wordIdPair;
     }
 }
