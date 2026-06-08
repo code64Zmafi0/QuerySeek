@@ -84,7 +84,9 @@ public static class Ngramms
                 if (!Unsafe.IsNullRef(ref matchInfo))
                 {
                     byte matches = (byte)(matchInfo.Mathes + 1);
-                    byte misses = CalculateMiss(in matchInfo, queryWordNgrammIndex);
+                    byte misses = (byte)(queryWordNgrammIndex == 0
+                        ? 0
+                        : matchInfo.Misses + queryWordNgrammIndex - matchInfo.PreviousMatch - 1);
 
                     matchInfo = new()
                     {
@@ -92,16 +94,6 @@ public static class Ngramms
                         Misses = misses,
                         PreviousMatch = queryWordNgrammIndex,
                     };
-
-                    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                    static byte CalculateMiss(in WordNgrammSearchState compareFactor, int queryWordNgrammIndex)
-                    {
-                        if (queryWordNgrammIndex == 0) return 0;
-
-                        byte missCount = (byte)(queryWordNgrammIndex - compareFactor.PreviousMatch - 1);
-
-                        return (byte)(compareFactor.Misses + missCount);
-                    }
                 }
                 //Попытка отбить добавление в словарь уже точно не совпавщих по treshold
                 else if (queryWordNgrammIndex == 0 || (!queryWord.IsDigit && queryWordNgrammIndex <= treshold))
