@@ -46,11 +46,11 @@ public readonly record struct WordCompareResult(
     byte MatchLength);
 
 public readonly record struct WordNgrammSearchState(
-    byte Mathes,
+    byte Matches,
     byte Misses,
     byte PreviousMatch)
 {
-    public byte Score => (byte)(Mathes > Misses ? Mathes - (Misses * 0.5) : 0);
+    public byte Score => (byte)(Matches > Misses ? Matches - (Misses * 0.5) : 0);
 }
 
 public record AdditionalRule(string Name, int Score = 0, double Multipler = 1);

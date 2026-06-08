@@ -83,14 +83,14 @@ public static class Ngramms
 
                 if (!Unsafe.IsNullRef(ref matchInfo))
                 {
-                    byte matches = (byte)(matchInfo.Mathes + 1);
+                    byte matches = (byte)(matchInfo.Matches + 1);
                     byte misses = (byte)(queryWordNgrammIndex == 0
                         ? 0
                         : matchInfo.Misses + queryWordNgrammIndex - matchInfo.PreviousMatch - 1);
 
                     matchInfo = new()
                     {
-                        Mathes = matches,
+                        Matches = matches,
                         Misses = misses,
                         PreviousMatch = queryWordNgrammIndex,
                     };
