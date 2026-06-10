@@ -17,7 +17,7 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
     public void AddEntity(in IIndexedEntity indexedEntity)
     {
         Key key = indexedEntity.GetKey();
-        Key? containerKey = indexedEntity.GetContainer();
+        Key containerKey = indexedEntity.GetContainer() ?? Key.Default;
 
         if (Entities.ContainsKey(key))
             return;

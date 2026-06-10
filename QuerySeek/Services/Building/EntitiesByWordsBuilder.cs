@@ -7,9 +7,8 @@ public class EntitiesByWordsBuilder()
 {
     public Dictionary<int /*WordId*/, Dictionary<byte /*TypeId*/, Dictionary</*ByNodeKey*/ Key, List<WordMatchMeta>>>> EntitiesByWords { get; } = [];
 
-    public void AddMatch(int wordId, byte entityType, Key? containerKey, WordMatchMeta wordMatch)
+    public void AddMatch(int wordId, byte entityType, Key containerKey, WordMatchMeta wordMatch)
     {
-        containerKey ??= Key.Default;
         ref var wordMatches = ref CollectionsMarshal.GetValueRefOrAddDefault(EntitiesByWords, wordId, out var exists);
 
         if (!exists)
@@ -20,7 +19,7 @@ public class EntitiesByWordsBuilder()
         if (!exists)
             matchesBundle = [];
 
-        ref var matches = ref CollectionsMarshal.GetValueRefOrAddDefault(matchesBundle!, containerKey.Value, out exists);
+        ref var matches = ref CollectionsMarshal.GetValueRefOrAddDefault(matchesBundle!, containerKey, out exists);
 
         if (!exists)
             matches = [];
