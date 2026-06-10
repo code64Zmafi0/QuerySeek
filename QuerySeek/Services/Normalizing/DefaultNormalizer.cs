@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Buffers;
+using System.Globalization;
+using System.Text;
 
 namespace QuerySeek.Services.Normalizing;
 
@@ -6,88 +8,56 @@ public class DefaultNormalizer : INormalizer
 {
     public static readonly DefaultNormalizer Instance = new();
 
-    private static readonly List<(string Find, string Replace)> _replaces =
-    [
-        ("Й", "И"),
-        ("Ё", "Е"),
-        (".", " "),
-        ("'", " "),
-        (",", " "),
-        ("№", " "),
-        ("-", " "),
-        ("(", " "),
-        (")", " "),
-        ("[", " "),
-        ("]", " "),
-        ("{", " "),
-        ("}", " "),
-        ("ç", "C"),
-        ("ə", "E"),
-        ("ğ", "G"),
-        ("ı", "I"),
-        ("ş", "S"),
-        ("ü", "U"),
-        ("Ç", "C"),
-        ("Ə", "E"),
-        ("Ğ", "G"),
-        ("İ", "I"),
-        ("Ö", "O"),
-        ("Ş", "S"),
-        ("Ü", "U"),
-        ("í", "I"),
-        ("ó", "O"),
-        ("ç", "C"),
-        ("ã", "A"),
-        ("á", "A"),
-        ("é", "E"),
-    ];
 
-    private const char SPACE_CHAR = ' ';
+    private static readonly ArrayPool<char> _pool = ArrayPool<char>.Shared;
 
-    /// <summary>
-    /// Данная функция оптимальным образом делает замены без создания тысячи строк
-    /// </summary>
-    /// <param name="phrase"></param>
-    /// <returns></returns>
-    public string Normalize(string phrase)
+    public string Normalize(string input)
     {
-        if (string.IsNullOrWhiteSpace(phrase)) return string.Empty;
+        if (string.IsNullOrWhiteSpace(input)) return string.Empty;
 
-        var resultBuilder = new StringBuilder();
-        var lastWasSpace = false;
-        for (var i = 0; i < phrase.Length;)
+        // 1. Декомпозиция (FormD) разделяет базовые символы и их акценты.
+        string normalizedString = input.Normalize(NormalizationForm.FormD);
+
+        int maxLength = normalizedString.Length;
+        char[]? rentedArray = null;
+
+        // Используем stackalloc для коротких строк (до 512 символов), 
+        // чтобы вообще не трогать кучу. Для длинных - берем из пула.
+        Span<char> destination = maxLength <= 512
+            ? stackalloc char[maxLength]
+            : (rentedArray = _pool.Rent(maxLength));
+
+        try
         {
-            if (resultBuilder.Length == 0 && phrase[i] == SPACE_CHAR)
-            {
-                i++;
-                continue;
-            }
+            int pointer = 0;
 
-            var replaced = false;
-            for (var j = 0; j < _replaces.Count; j++)
+            foreach (char c in normalizedString)
             {
-                var r = _replaces[j];
-                if (phrase.IndexOf(r.Find, i, StringComparison.OrdinalIgnoreCase) == i)
+                double numericValue = char.GetNumericValue(c);
+
+                if (numericValue >= 0 && numericValue <= 9)
                 {
-                    i += r.Find.Length;
-                    if (r.Replace.Length == 1 && r.Replace[0] != SPACE_CHAR || !lastWasSpace) resultBuilder.Append(r.Replace);
-                    replaced = true;
+                    destination[pointer++] = (char)('0' + (int)numericValue);
+                    continue;
                 }
+
+                UnicodeCategory category = CharUnicodeInfo.GetUnicodeCategory(c);
+
+                // Пропускаем "NonSpacingMark" (удаляемые акценты "диакритики")
+                if (category == UnicodeCategory.NonSpacingMark)
+                    continue;
+
+                destination[pointer++] = char.ToUpperInvariant(c);
             }
 
-            if (replaced) continue;
-
-            lastWasSpace = phrase[i] == SPACE_CHAR;
-            resultBuilder.Append(char.ToUpperInvariant(phrase[i]));
-            i++;
+            return pointer <= 0
+                ? string.Empty
+                : new string(destination[0..pointer].Trim());
         }
-
-        var indexOfLastSpace = resultBuilder.Length - 1;
-        while (indexOfLastSpace >= 0 && resultBuilder[indexOfLastSpace] == ' ')
+        finally
         {
-            indexOfLastSpace--;
+            if (rentedArray != null)
+                _pool.Return(rentedArray);
         }
-
-        return resultBuilder.ToString(0, indexOfLastSpace + 1);
     }
 }

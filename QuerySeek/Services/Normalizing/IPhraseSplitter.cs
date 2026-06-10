@@ -2,5 +2,5 @@
 
 public interface IPhraseSplitter
 {
-    string[] Tokenize(string? value);
+    IEnumerable<string> Tokenize(string? value);
 }

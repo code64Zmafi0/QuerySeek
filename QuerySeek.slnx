@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="QuerySeek.UnitTests/QuerySeek.UnitTests.csproj" Id="200192fa-46c6-4d97-b99e-9bcc47408094" />
   <Project Path="QuerySeek/QuerySeek.csproj" />
 </Solution>

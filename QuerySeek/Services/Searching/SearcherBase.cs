@@ -107,8 +107,8 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     public void FillContext(TContext context, string query)
     {
         context.Query = query;
-        string normalizedQuery = normalizer.Normalize(context.Query);
-        string[] splittedQuery = splitter.Tokenize(normalizedQuery);
+
+        string[] splittedQuery = TextPreprocessor.PreprocessPhrase(splitter, normalizer, query);
 
         Dictionary<string, string[]> alternativeWords = GetWordsAlternativesPairs();
         Dictionary<string, double> queryWordMultiplers = GetQueryWordsMultiplers();

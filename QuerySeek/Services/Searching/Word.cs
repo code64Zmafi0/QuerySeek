@@ -28,5 +28,5 @@ public class Word(string word) : IEquatable<Word>
     }
 
     public override int GetHashCode()
-        => NGrammsHashes.Length;
+        => QueryWord.GetHashCode();
 }

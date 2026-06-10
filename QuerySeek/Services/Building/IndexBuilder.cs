@@ -4,7 +4,6 @@ using QuerySeek.Interfaces;
 using QuerySeek.Models;
 using QuerySeek.Services.Extensions;
 using QuerySeek.Services.Normalizing;
-using QuerySeek.Services.Searching;
 
 namespace QuerySeek.Services.Building;
 
@@ -13,7 +12,7 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
     private readonly Dictionary<Key, EntityMeta> Entities = [];
     private readonly Dictionary<Key, HashSet<Key>> Childs = [];
     private readonly EntitiesByWordsBuilder EntitiesByWordsIndex = new();
-    private readonly WordsBuildBundle WordsBundle = new();
+    private readonly WordsIndexBuilder WordsBundle = new();
 
     public void AddEntity(in IIndexedEntity indexedEntity)
     {
@@ -61,8 +60,7 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
         IPhraseSplitter phraseSplitter)
         => [.. phrases.Select(phrase =>
         {
-            string normalizedPhrase = normalizer.Normalize(phrase.Text!);
-            string[] tokenizedPhrase = phraseSplitter.Tokenize(normalizedPhrase);
+            string[] tokenizedPhrase = TextPreprocessor.PreprocessPhrase(phraseSplitter, normalizer, phrase.Text);
             return (tokenizedPhrase, phrase.PhraseType);
         })];
 
@@ -90,52 +88,11 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
         }
         ;
 
-        Dictionary<int, HashSet<int>> wordsIdsByNgramms = [];
-
-        foreach (KeyValuePair<string, int> item in WordsBundle.GetWordsByIds())
-        {
-            int[] ngramms = Ngramms.GetNgramms(item.Key);
-
-            for (int i = 0; i < ngramms.Length; i++)
-            {
-                int ngramm = ngramms[i];
-                ref HashSet<int>? words = ref CollectionsMarshal.GetValueRefOrAddDefault(wordsIdsByNgramms, ngramm, out var exists);
-
-                if (!exists)
-                    words = [];
-
-                words!.Add(item.Value);
-            }
-        }
-
         return new IndexInstance()
         {
             Entities = Entities,
             EntitiesByWordsIndex = EntitiesByWordsIndex.CreateIndex(),
-            WordsIdsByNgramms = wordsIdsByNgramms.ToDictionary(i => i.Key, i => i.Value.ToArray()),
+            WordsIdsByNgramms = WordsBundle.GetWordsByNgramms(),
         };
-    }
-}
-
-public class WordsBuildBundle()
-{
-    private int CurrentId = 0;
-
-    public readonly Dictionary<string, int> Pairs = [];
-
-    public int GetWordId(string word)
-    {
-        ref var id = ref CollectionsMarshal.GetValueRefOrAddDefault(Pairs, word, out var exists);
-        if (exists)
-            return id;
-
-        id = CurrentId++;
-        return id;
-    }
-
-    public IEnumerable<KeyValuePair<string, int>> GetWordsByIds()
-    {
-        foreach (KeyValuePair<string, int> wordIdPair in Pairs.OrderBy(i => i.Key))
-            yield return wordIdPair;
     }
 }
