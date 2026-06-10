@@ -9,10 +9,7 @@ namespace QuerySeek.Services.Searching.Requests;
 /// <param name="ids"></param>
 public class Select(byte targetType, IEnumerable<int> ids) : RequestBase(targetType)
 {
-    public override void ProcessRequest(
-        SearchContextBase searchContext,
-        List<KeyValuePair<int, byte>>[] wordsBundle,
-        CancellationToken ct)
+    public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
         Dictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
 

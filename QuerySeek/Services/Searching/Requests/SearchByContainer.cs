@@ -17,7 +17,7 @@ public class SearchByContainer(
     Func<IEnumerable<EntitySearchResult>, IEnumerable<EntitySearchResult>>? containersFilter = null) : RequestBase(targetType)
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public virtual Key[] SelectParents(Dictionary<Key, EntitySearchResult> containers)
+    public virtual Key[] SelectContainers(Dictionary<Key, EntitySearchResult> containers)
     {
         Key[] result = [];
 
@@ -34,17 +34,15 @@ public class SearchByContainer(
         return result;
     }
 
-    public override void ProcessRequest(
-        SearchContextBase searchContext,
-        List<KeyValuePair<int, byte>>[] wordsBundle,
-        CancellationToken ct)
+    public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
+        List<KeyValuePair<int, byte>>[] wordsBundle = searchContext.SearchWordsBundle;
         EntitiesByWordsIndex entitiesByWordsIndex = searchContext.Index.EntitiesByWordsIndex;
 
         if (!(searchContext.GetResultsByType(containerType) is { } containersResult))
             return;
 
-        Key[] containers = SelectParents(containersResult);
+        Key[] containers = SelectContainers(containersResult);
 
         for (byte queryWordPosition = 0; queryWordPosition < wordsBundle.Length; queryWordPosition++)
         {

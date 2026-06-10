@@ -36,6 +36,11 @@ public class SearchContextBase(IndexInstance index)
     public QueryWordContainer[] NgrammedQuery { get; internal set; } = [];
 
     /// <summary>
+    /// Набор схожих слов для каждого слова из запроса
+    /// </summary>
+    public List<KeyValuePair<int, byte>>[] SearchWordsBundle { get; internal set; } = [];
+
+    /// <summary>
     /// Настройки поиска слов
     /// </summary>
     public WordsSearchSettings WordsSearchSettings { get; internal set; } = WordsSearchSettings.Default;

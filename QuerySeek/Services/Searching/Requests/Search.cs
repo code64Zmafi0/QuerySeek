@@ -12,11 +12,9 @@ public class Search(
     Func<Key, bool>? filter = null)
     : RequestBase(targetType)
 {
-    public override void ProcessRequest(
-        SearchContextBase searchContext,
-        List<KeyValuePair<int, byte>>[] wordsBundle,
-        CancellationToken ct)
+    public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
+        List<KeyValuePair<int, byte>>[] wordsBundle = searchContext.SearchWordsBundle;
         EntitiesByWordsIndex entitiesByWordsIndex = searchContext.Index.EntitiesByWordsIndex;
 
         for (byte queryWordPosition = 0; queryWordPosition < wordsBundle.Length; queryWordPosition++)

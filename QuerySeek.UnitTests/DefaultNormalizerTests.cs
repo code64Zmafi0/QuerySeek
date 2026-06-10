@@ -12,7 +12,7 @@ public class DefaultNormalizerTests
     [TestCase("rôle", ExpectedResult = "ROLE")]
     [TestCase("café", ExpectedResult = "CAFE")]
     [TestCase("München", ExpectedResult = "MUNCHEN")]
-    [TestCase("الـْكِتَابُ", ExpectedResult = "الـكتاب")]
+    [TestCase("الـْكِتَابُ", ExpectedResult = "الكتاب")]
     [TestCase("੪", ExpectedResult = "4")]
     [TestCase("۷۶", ExpectedResult = "76")]
     public string TestNormalize(string input)

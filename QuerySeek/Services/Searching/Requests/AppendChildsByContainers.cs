@@ -15,10 +15,7 @@ public class AppendChildsByContainers(
     byte containerType,
     Func<IEnumerable<Key>, IEnumerable<Key>> appendFilter) : RequestBase(targetType)
 {
-    public override void ProcessRequest(
-        SearchContextBase searchContext,
-        List<KeyValuePair<int, byte>>[] wordsBundle,
-        CancellationToken ct)
+    public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
         Dictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
 

@@ -13,6 +13,7 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
     private readonly Dictionary<Key, HashSet<Key>> Childs = [];
     private readonly EntitiesByWordsBuilder EntitiesByWordsIndex = new();
     private readonly WordsIndexBuilder WordsBundle = new();
+    private readonly StringArraySequenceComparer PhrasesComparer = new();
 
     public void AddEntity(in IIndexedEntity indexedEntity)
     {
@@ -54,15 +55,17 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
         Entities.Add(key, new([.. linksKeys]));
     }
 
-    private static (string[] TokenizedPhrase, byte PhraseType)[] GetNamesToBuild(
+    private (string[] TokenizedPhrase, byte PhraseType)[] GetNamesToBuild(
         IEnumerable<Phrase> phrases,
         INormalizer normalizer,
         IPhraseSplitter phraseSplitter)
-        => [.. phrases.Select(phrase =>
-        {
-            string[] tokenizedPhrase = TextPreprocessor.PreprocessPhrase(phraseSplitter, normalizer, phrase.Text);
-            return (tokenizedPhrase, phrase.PhraseType);
-        })];
+        => [.. phrases
+            .Select(phrase =>
+            {
+                string[] tokenizedPhrase = TextPreprocessor.PreprocessPhrase(phraseSplitter, normalizer, phrase.Text);
+                return (tokenizedPhrase, phrase.PhraseType);
+            })
+            .DistinctBy(i => i.tokenizedPhrase, PhrasesComparer)];
 
     public IndexInstance Build()
     {
@@ -86,7 +89,6 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
                 meta.Childs = [.. item.Value.Where(Entities.ContainsKey)];
             }
         }
-        ;
 
         return new IndexInstance()
         {

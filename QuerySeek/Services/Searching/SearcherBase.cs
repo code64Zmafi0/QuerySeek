@@ -30,9 +30,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         FillContext(context, query);
 
-        List<KeyValuePair<int, byte>>[] wordsBundle = SearchSimlarIndexWordsByQuery(context);
-
-        foreach (RequestBase i in context.Request) i.ProcessRequest(context, wordsBundle, ct);
+        foreach (RequestBase i in context.Request) i.ProcessRequest(context, ct);
 
         return PostProcessing(context, GetAllResults()
             .OrderByDescending(i =>
@@ -70,9 +68,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         FillContext(context, query);
 
-        List<KeyValuePair<int, byte>>[] wordsBundle = SearchSimlarIndexWordsByQuery(context);
-
-        foreach (RequestBase i in context.Request) i.ProcessRequest(context, wordsBundle, ct);
+        foreach (RequestBase i in context.Request) i.ProcessRequest(context, ct);
 
         var result = new TypeSearchResult[selectTypes.Length];
 
@@ -132,6 +128,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         context.SplittedAndNormalizedQuery = splittedQuery;
         context.Request = GetRequest(context);
         context.WordsSearchSettings = GetWordsSearchSettings(context);
+        context.SearchWordsBundle = SearchSimlarIndexWordsByQuery(context);
     }
 
     public List<KeyValuePair<int, byte>>[] SearchSimlarIndexWordsByQuery(SearchContextBase searchContext)

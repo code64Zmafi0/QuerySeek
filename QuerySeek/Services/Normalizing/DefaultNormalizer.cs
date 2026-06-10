@@ -47,7 +47,13 @@ public class DefaultNormalizer : INormalizer
                 if (category == UnicodeCategory.NonSpacingMark)
                     continue;
 
-                destination[pointer++] = char.ToUpperInvariant(c);
+                if (category == UnicodeCategory.UppercaseLetter ||
+                    category == UnicodeCategory.LowercaseLetter ||
+                    category == UnicodeCategory.DecimalDigitNumber ||
+                    category == UnicodeCategory.OtherLetter)
+                {
+                    destination[pointer++] = char.ToUpperInvariant(c);
+                }
             }
 
             return pointer <= 0

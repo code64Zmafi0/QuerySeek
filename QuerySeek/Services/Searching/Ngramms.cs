@@ -6,6 +6,7 @@ namespace QuerySeek.Services.Searching;
 public static class Ngramms
 {
     public const byte NGRAM_LENGTH = 3;
+    public const byte MAX_WORD_LENGTH = 250;
 
     /// <summary>
     /// Преобразовние строки в массив нграммов (их хеш кодов)
@@ -16,23 +17,25 @@ public static class Ngramms
     {
         const char SpaceChar = ' ';
 
+        ReadOnlySpan<char> wordSpan = word.Length > MAX_WORD_LENGTH
+            ? word.AsSpan(0, MAX_WORD_LENGTH)
+            : word;
+
         int spaceLength = NGRAM_LENGTH - 1;
-        int totalLength = word.Length + spaceLength * 2;
+        int totalLength = wordSpan.Length + spaceLength * 2;
 
         //Буффер нормализации
-        Span<char> buffer = totalLength <= 256
-            ? stackalloc char[totalLength]
-            : new char[totalLength];
+        Span<char> buffer = stackalloc char[totalLength];
 
         //Заполняем спейсы
         buffer[..spaceLength].Fill(SpaceChar);
         buffer[^spaceLength..].Fill(SpaceChar);
 
         //Заполняем слово
-        word.CopyTo(buffer[spaceLength..]);
+        wordSpan.CopyTo(buffer[spaceLength..]);
 
         //Просчитываем результат слова
-        int[] result = new int[word.Length + NGRAM_LENGTH - 1];
+        int[] result = new int[wordSpan.Length + NGRAM_LENGTH - 1];
 
         for (int i = 0; i <= buffer.Length - NGRAM_LENGTH; i++)
         {
