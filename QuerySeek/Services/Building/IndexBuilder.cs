@@ -37,14 +37,11 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
 
         IEnumerable<Phrase> names = indexedEntity.GetNames();
 
-        (string[] TokenizedPhrase, byte PhraseType)[] namesToBuild = GetNamesToBuild(names, normalizer, phraseSplitter);
-        for (int nameIndex = 0; nameIndex < namesToBuild.Length; nameIndex++)
+        foreach ((string[] tokenizedPhrase, byte phraseType) in GetNamesToBuild(names, normalizer, phraseSplitter))
         {
-            (string[] phrase, byte phraseType) = namesToBuild[nameIndex];
-
-            for (byte wordNamePosition = 0; wordNamePosition < phrase.Length && wordNamePosition < byte.MaxValue; wordNamePosition++)
+            for (byte wordNamePosition = 0; wordNamePosition < tokenizedPhrase.Length && wordNamePosition < byte.MaxValue; wordNamePosition++)
             {
-                string word = phrase[wordNamePosition];
+                string word = tokenizedPhrase[wordNamePosition];
                 int wordId = WordsBundle.GetWordId(word);
 
                 WordMatchMeta wordMatchMeta = new(key.Id, wordNamePosition, phraseType);
@@ -55,7 +52,7 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
         Entities.Add(key, new([.. linksKeys]));
     }
 
-    private (string[] TokenizedPhrase, byte PhraseType)[] GetNamesToBuild(
+    private IEnumerable<(string[] TokenizedPhrase, byte PhraseType)> GetNamesToBuild(
         IEnumerable<Phrase> phrases,
         INormalizer normalizer,
         IPhraseSplitter phraseSplitter)
