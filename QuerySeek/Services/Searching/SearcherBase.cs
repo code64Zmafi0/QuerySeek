@@ -179,17 +179,17 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         //Ищем по одной четкой алтернативе
         foreach (Word altWord in wordContainer.Alternatives)
-            SearchSimilars(wordsSearchProcessDict, altWord, (byte)altWord.NGrammsHashes.Length);
+            SearchSimilars(altWord, (byte)altWord.NGrammsHashes.Length);
 
         int treshold = wordContainer.QueryWord.IsDigit
             ? wordContainer.QueryWord.NGrammsHashes.Length - Ngramms.NGRAM_LENGTH + 1
             : (int)(wordContainer.QueryWord.NGrammsHashes.Length * wordsSearchSettings.Similarity);
 
-        SearchSimilars(wordsSearchProcessDict, wordContainer.QueryWord, treshold);
+        SearchSimilars(wordContainer.QueryWord, treshold);
 
         return result;
 
-        void SearchSimilars(Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict, Word queryWord, int treshold)
+        void SearchSimilars(Word queryWord, int treshold)
         {
             Ngramms.NgrammSearch(wordsSearchProcessDict, wordsIdsByNgramms, queryWord, treshold);
 
