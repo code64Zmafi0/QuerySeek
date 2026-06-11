@@ -62,6 +62,7 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
                 string[] tokenizedPhrase = TextPreprocessor.PreprocessPhrase(phraseSplitter, normalizer, phrase.Text);
                 return (tokenizedPhrase, phrase.PhraseType);
             })
+            //Если после нормализации получились одинаковые - убираем дубликаты
             .DistinctBy(i => i.tokenizedPhrase, PhrasesComparer)];
 
     public IndexInstance Build()

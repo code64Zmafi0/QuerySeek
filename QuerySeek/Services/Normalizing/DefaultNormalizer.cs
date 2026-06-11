@@ -8,7 +8,6 @@ public class DefaultNormalizer : INormalizer
 {
     public static readonly DefaultNormalizer Instance = new();
 
-
     private static readonly ArrayPool<char> _pool = ArrayPool<char>.Shared;
 
     public string Normalize(string input)
@@ -42,10 +41,6 @@ public class DefaultNormalizer : INormalizer
                 }
 
                 UnicodeCategory category = CharUnicodeInfo.GetUnicodeCategory(c);
-
-                // Пропускаем "NonSpacingMark" (удаляемые акценты "диакритики")
-                if (category == UnicodeCategory.NonSpacingMark)
-                    continue;
 
                 if (category == UnicodeCategory.UppercaseLetter ||
                     category == UnicodeCategory.LowercaseLetter ||
