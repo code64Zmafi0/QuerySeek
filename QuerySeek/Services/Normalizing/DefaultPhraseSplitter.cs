@@ -1,11 +1,16 @@
-﻿using System.Globalization;
+﻿using System.Buffers;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 
 namespace QuerySeek.Services.Normalizing;
 
-public class DefaultPhraseSplitter : IPhraseSplitter
+/// <summary>
+/// Стандартный разделитель слов, разбивает по сиволам не являющимся буквами и цифрами
+/// </summary>
+/// <param name="notSplittingChars">Позволяет указать символы которые не будут являться сепараторами</param>
+public class DefaultPhraseSplitter(ReadOnlySpan<char> notSplittingChars) : IPhraseSplitter
 {
-    public static readonly DefaultPhraseSplitter Instance = new();
+    public static readonly DefaultPhraseSplitter Instance = new(string.Empty);
 
     public IEnumerable<string> Tokenize(string? value)
     {
@@ -59,11 +64,12 @@ public class DefaultPhraseSplitter : IPhraseSplitter
         Separator = 0,
         Letter = 1,
         Digit = 2,
-        Ideograph = 3
+        Ideograph = 3,
+        Custom = 4,
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static CharClass ClassifyAt(string s, int index, out int charLength)
+    private CharClass ClassifyAt(string s, int index, out int charLength)
     {
         char c = s[index];
 
@@ -71,12 +77,7 @@ public class DefaultPhraseSplitter : IPhraseSplitter
         if (char.IsHighSurrogate(c))
         {
             charLength = 2;
-            if (index + 1 < s.Length && char.IsLowSurrogate(s[index + 1]))
-            {
-                int cp = char.ConvertToUtf32(c, s[index + 1]);
-                return ClassifyCodePoint(cp);
-            }
-            return CharClass.Separator; // битая пара
+            return CharClass.Separator;
         }
 
         charLength = 1;
@@ -84,41 +85,40 @@ public class DefaultPhraseSplitter : IPhraseSplitter
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static CharClass ClassifyChar(char c)
+    private CharClass ClassifyChar(char c)
     {
         // CJK в BMP
         if (IsCjkBmp(c))
             return CharClass.Ideograph;
 
         // Остальной Unicode
-        return CategorizeUnicode(CharUnicodeInfo.GetUnicodeCategory(c));
+        return CategorizeUnicode(c);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static CharClass ClassifyCodePoint(int cp)
-    {
-        // CJK Extension B–H (SIP: U+20000 – U+3134F)
-        if (cp >= 0x20000 && cp <= 0x3134F)
-            return CharClass.Ideograph;
+    private readonly SearchValues<char> CustomSumbols = SearchValues.Create(notSplittingChars);
 
-        return CategorizeUnicode(CharUnicodeInfo.GetUnicodeCategory(cp));
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private CharClass CategorizeUnicode(char c)
+    {
+        if (CustomSumbols.Contains(c))
+            return CharClass.Custom;
+
+        UnicodeCategory cat = CharUnicodeInfo.GetUnicodeCategory(c);
+        return cat switch
+        {
+            UnicodeCategory.UppercaseLetter => CharClass.Letter,
+            UnicodeCategory.LowercaseLetter => CharClass.Letter,
+            UnicodeCategory.TitlecaseLetter => CharClass.Letter,
+            UnicodeCategory.ModifierLetter => CharClass.Letter,
+            UnicodeCategory.OtherLetter => CharClass.Letter,
+            UnicodeCategory.NonSpacingMark => CharClass.Letter,
+            UnicodeCategory.SpacingCombiningMark => CharClass.Letter,
+            UnicodeCategory.EnclosingMark => CharClass.Letter,
+            UnicodeCategory.LetterNumber => CharClass.Letter,
+            UnicodeCategory.DecimalDigitNumber => CharClass.Digit,
+            _ => CharClass.Separator
+        };
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static CharClass CategorizeUnicode(UnicodeCategory cat) => cat switch
-    {
-        UnicodeCategory.UppercaseLetter => CharClass.Letter,
-        UnicodeCategory.LowercaseLetter => CharClass.Letter,
-        UnicodeCategory.TitlecaseLetter => CharClass.Letter,
-        UnicodeCategory.ModifierLetter => CharClass.Letter,
-        UnicodeCategory.OtherLetter => CharClass.Letter,
-        UnicodeCategory.NonSpacingMark => CharClass.Letter,
-        UnicodeCategory.SpacingCombiningMark => CharClass.Letter,
-        UnicodeCategory.EnclosingMark => CharClass.Letter,
-        UnicodeCategory.LetterNumber => CharClass.Letter,
-        UnicodeCategory.DecimalDigitNumber => CharClass.Digit,
-        _ => CharClass.Separator
-    };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsCjkBmp(char c) =>
