@@ -27,8 +27,8 @@ public class AppendChilds(
             if (parentTop < 1)
                 return parents.Keys;
             else
-                return parents
-                    .OrderByDescending(i => i.Value.Prescore)
+                return parents.Values
+                    .OrderByDescending(i => i.Prescore)
                     .Take(parentTop)
                     .Select(i => i.Key);
         }

@@ -53,6 +53,9 @@ public class SearchContextBase(IndexInstance index)
     #region Search Tools
     public int FullQueryScore => NgrammedQuery.Sum(i => i.QueryWord.NGrammsHashes.Length);
 
+    public bool ContainsEntity(Key key)
+        => SearchResult.TryGetValue(key.Type, out var entities) && entities.ContainsKey(key);
+
     public Dictionary<Key, EntitySearchResult>? GetResultsByType(byte type)
     {
         if (SearchResult.TryGetValue(type, out var result))
