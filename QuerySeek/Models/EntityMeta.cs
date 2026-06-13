@@ -17,8 +17,8 @@ public class EntityMeta
     }
 
     [Key(1)]
-    public Key[] Links { get; set; } = Array.Empty<Key>();
+    public Key[] Links { get; internal set; } = Array.Empty<Key>();
 
     [Key(2)]
-    public Key[] Childs { get; set; } = Array.Empty<Key>();
+    public Key[] Childs { get; internal set; } = Array.Empty<Key>();
 }
