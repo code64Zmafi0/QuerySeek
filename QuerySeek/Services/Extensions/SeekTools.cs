@@ -18,7 +18,7 @@ public static class QS
     public static Phrase Phrase(string phrase)
         => new(phrase, 0);
 
-    public static byte Type<TType>(TType type)
+    public static byte Type<TType>(TType type) where TType : Enum
         => Convert.ToByte(type);
 
     public static byte[] Types<TType>(params TType[] types) where TType : Enum
