@@ -6,7 +6,7 @@ namespace QuerySeek.Models;
 /// Индекс сущностей по словам. id слова - индекс массива, внутри разложены матчи отдельно для каждого типа, внутри словари по контейнерам
 /// </summary>
 [MessagePackObject]
-public class EntitiesByWordsIndex()
+public class EntitiesByWordsSearchMap()
 {
     /// <summary>
     /// Словарь WordId -> Types -> Containers -> MatchesToEntites

@@ -3,7 +3,7 @@ using QuerySeek.Models;
 
 namespace QuerySeek.Services.Building;
 
-public class EntitiesByWordsBuilder()
+public class EntitiesByWordsSearchMapBuilder()
 {
     public Dictionary<int /*WordId*/, Dictionary<byte /*TypeId*/, Dictionary</*ByNodeKey*/ Key, List<WordMatchMeta>>>> EntitiesByWords { get; } = [];
 
@@ -27,7 +27,7 @@ public class EntitiesByWordsBuilder()
         matches!.Add(wordMatch);
     }
 
-    public EntitiesByWordsIndex CreateIndex()
+    public EntitiesByWordsSearchMap CreateMap()
     {
         var entitiesByWords = new KeyValuePair<byte /*TypeId*/, Dictionary</*ContainerKey*/ Key, WordMatchMeta[]>>[EntitiesByWords.Count][];
 

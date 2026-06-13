@@ -15,7 +15,7 @@ public class Search(
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
         List<KeyValuePair<int, byte>>[] wordsBundle = searchContext.SearchWordsBundle;
-        EntitiesByWordsIndex entitiesByWordsIndex = searchContext.Index.EntitiesByWordsIndex;
+        EntitiesByWordsSearchMap entitiesSearchMap = searchContext.Index.EntitiesByWordsSearchMap;
 
         for (byte queryWordPosition = 0; queryWordPosition < wordsBundle.Length; queryWordPosition++)
         {
@@ -32,7 +32,7 @@ public class Search(
 
                 int wordId = indexWordInfo.Key;
 
-                WordMatchMeta[]? list = entitiesByWordsIndex.GetMatchesByWord(wordId, TargetType);
+                WordMatchMeta[]? list = entitiesSearchMap.GetMatchesByWord(wordId, TargetType);
 
                 if (list is null)
                     continue;

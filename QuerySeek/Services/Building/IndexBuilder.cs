@@ -11,7 +11,7 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
 {
     private readonly Dictionary<Key, EntityMeta> Entities = [];
     private readonly Dictionary<Key, HashSet<Key>> Childs = [];
-    private readonly EntitiesByWordsBuilder EntitiesByWordsIndex = new();
+    private readonly EntitiesByWordsSearchMapBuilder EntitiesByWordsSearchMapBuilder = new();
     private readonly WordsIndexBuilder WordsBundle = new();
     private readonly StringArraySequenceComparer PhrasesComparer = new();
 
@@ -45,7 +45,7 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
                 int wordId = WordsBundle.GetWordId(word);
 
                 WordMatchMeta wordMatchMeta = new(key.Id, wordNamePosition, phraseType);
-                EntitiesByWordsIndex.AddMatch(wordId, key.Type, containerKey, wordMatchMeta);
+                EntitiesByWordsSearchMapBuilder.AddMatch(wordId, key.Type, containerKey, wordMatchMeta);
             }
         }
 
@@ -91,7 +91,7 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
         return new IndexInstance()
         {
             Entities = Entities,
-            EntitiesByWordsIndex = EntitiesByWordsIndex.CreateIndex(),
+            EntitiesByWordsSearchMap = EntitiesByWordsSearchMapBuilder.CreateMap(),
             WordsIdsByNgramms = WordsBundle.GetWordsByNgramms(),
         };
     }

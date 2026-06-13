@@ -37,7 +37,7 @@ public class SearchByContainer(
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
         List<KeyValuePair<int, byte>>[] wordsBundle = searchContext.SearchWordsBundle;
-        EntitiesByWordsIndex entitiesByWordsIndex = searchContext.Index.EntitiesByWordsIndex;
+        EntitiesByWordsSearchMap entitiesSearchMap = searchContext.Index.EntitiesByWordsSearchMap;
 
         if (!(searchContext.GetResultsByType(containerType) is { } containersResult))
             return;
@@ -60,7 +60,7 @@ public class SearchByContainer(
                 int wordId = indexWordInfo.Key;
 
                 bool isMatchedWord = false;
-                foreach (var wordMatchMeta in entitiesByWordsIndex.GetMatchesByWordAndParents(
+                foreach (var wordMatchMeta in entitiesSearchMap.GetMatchesByWordAndParents(
                     wordId,
                     TargetType,
                     containers))

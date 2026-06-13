@@ -6,22 +6,22 @@ namespace QuerySeek.Interfaces;
 public interface IIndexedEntity
 {
     /// <summary>
-    /// Entity key.
+    /// Entity key
     /// </summary>
     Key GetKey();
 
     /// <summary>
-    /// Entity names.
+    /// Entity names
     /// </summary>
     IEnumerable<Phrase> GetNames();
 
     /// <summary>
-    /// Components of entity.
+    /// Components of entity
     /// </summary>
     IEnumerable<Key> GetLinks();
 
     /// <summary>
-    /// The container to which the entity is bound. For using SearchByContainer request.
+    /// The container to which the entity is bound. For using SearchByContainer request
     /// </summary>
     Key? GetContainer();
 }

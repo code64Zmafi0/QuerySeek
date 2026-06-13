@@ -13,13 +13,13 @@ public class IndexInstance
     public IndexInstance() { }
 
     [Key(1)]
-    public Dictionary<Key, EntityMeta> Entities { get; set; } = [];
+    public Dictionary<Key, EntityMeta> Entities { get; internal set; } = [];
 
     [Key(2)]
-    public Dictionary<int, int[]> WordsIdsByNgramms { get; set; } = [];
+    public Dictionary<int, int[]> WordsIdsByNgramms { get; internal set; } = [];
 
     [Key(3)]
-    public EntitiesByWordsIndex EntitiesByWordsIndex { get; set; } = new();
+    public EntitiesByWordsSearchMap EntitiesByWordsSearchMap { get; internal set; } = new();
 
     [IgnoreMember]
     public int EntitesCount => Entities.Count;
@@ -49,7 +49,7 @@ public class IndexInstance
         //Сжатие словарей
         Entities.TrimExcess();
         WordsIdsByNgramms.TrimExcess();
-        EntitiesByWordsIndex.Trim();
+        EntitiesByWordsSearchMap.Trim();
 
         if (gcCompactLOH)
         {
