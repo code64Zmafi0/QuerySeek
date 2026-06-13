@@ -17,4 +17,12 @@ public class DefaultPhraseSplitterTests
     [TestCase("۷۶", ExpectedResult = new string[] { "۷۶" })]
     public string[] SplitTest(string input)
         => [.. DefaultPhraseSplitter.Instance.Tokenize(input)];
+
+    [TestCase("номер/123", "/", ExpectedResult = new string[] { "номер", "/", "123" })]
+    public string[] TestSplitCustomValues(string input, string customChars)
+    {
+        DefaultPhraseSplitter splitter = new(customChars);
+
+        return [.. splitter.Tokenize(input)];
+    }
 }
