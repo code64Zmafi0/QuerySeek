@@ -10,10 +10,10 @@ public class EntitiesByWordsSearchMap()
 {
     /// <summary>
     /// Словарь WordId -> Types -> Containers -> MatchesToEntites
-    /// Так как ид слов последовательны использован массив вместо словоря - так как словарь большого размера в разы медленней на обращени
+    /// Так как ид слов последовательны использован массив вместо словаря - так как словарь большого размера в разы медленней на обращени и занимает больше места
     /// </summary>
     [Key(1)]
-    public KeyValuePair<byte /*TypeId*/, Dictionary</*ByNodeKey*/ Key, WordMatchMeta[]>>[][/*WordId*/] EntitiesByWords { get; set; } = [];
+    public KeyValuePair<byte /*TypeId*/, Dictionary</*ContainerKey*/ Key, WordMatchMeta[]>>[][/*WordId*/] EntitiesByWords { get; set; } = [];
 
     public WordMatchMeta[]? GetMatchesByWord(int wordId, byte entityType)
     {
