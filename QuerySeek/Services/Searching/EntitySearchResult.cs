@@ -4,20 +4,20 @@ namespace QuerySeek.Services.Searching;
 
 public class TypeSearchResult(byte type, EntitySearchResult[] result)
 {
-    public byte Type { get; } = type;
+    public readonly byte Type = type;
 
-    public EntitySearchResult[] Result { get; } = result;
+    public readonly EntitySearchResult[] Result = result;
 }
 
 public class EntitySearchResult(Key key, EntityMeta meta)
 {
-    public Key Key => key;
+    public readonly Key Key = key;
 
-    public EntityMeta Meta => meta;
+    public readonly EntityMeta Meta = meta;
 
-    public List<WordCompareResult> WordsMatches { get; } = new(1);
+    public readonly List<WordCompareResult> WordsMatches = new(1);
 
-    public List<AdditionalRule> Rules { get; } = [];
+    public readonly List<AdditionalRule> Rules = [];
 
     public int Prescore;
 
@@ -32,7 +32,7 @@ public class EntitySearchResult(Key key, EntityMeta meta)
     public void AddRule(AdditionalRule rule)
         => Rules.Add(rule);
 
-    internal void AddMatch(in WordCompareResult wordCompareResult)
+    internal void AddMatch(WordCompareResult wordCompareResult)
     {
         WordsMatches.Add(wordCompareResult);
         Prescore += wordCompareResult.MatchLength;
