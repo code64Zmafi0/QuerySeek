@@ -57,12 +57,11 @@ Also, you can redefine normalization and phrases splitting on words for use in y
     - SearchByContainer - search current type entities in parents hierarchy (parents must be found in the Search block above)
     - Select - performs forced addition of entities of the target type based on the passed ids
     - AppendChilds - use to force adding entities by parent
-    - AppendChilds - use to force adding entities by parent in containers
+    - AppendChildsByContainers - use to force adding entities by parent in containers
 - Override GetLinkedEntityMatchMiltipler(byte entityType, byte linkedType) for flexible scoring mathes of linked entities
 - Override GetPhraseTypeMultipler(byte phraseType) for flexible scoring by phrase types
-- Override OnLinkedEntityMatched(Key entityKey, Key linkedKey) to add individual sorting rules if linked entity is match
-- Override OnEntityProcessed(EntityMatchesBundle entityMatchesBundle) to add individual sorting rules
-- Override ResultVisionFilter(byte type, IEnumerable<EntityMatchesBundle> result) to filter the results that will be output as a result
+- Override TypeBundlePreprocessing(TContext context, byte type, IEnumerable<EntitySearchResult> result) to add rules or filter the results that will be output as a result
+- Override PostProcessing(TContext context, IOrderedEnumerable<EntitySearchResult> result) for additional final sorting
 
 **Search**
 
@@ -73,4 +72,4 @@ Also, you can redefine normalization and phrases splitting on words for use in y
 ## Optimizations
 
 - If your entity cannot be found if the hierarchy parent is not found, be sure to set the IIndexedEntity.GetContainer method to improve performance.
-- If you using overrides OnLinkedEntityMatched or OnEntityProcessed use a static AdditionalRule intances for smaller memory 
+- If you using AdditionalRule use a static intances for smaller memory 
