@@ -108,8 +108,8 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         string[] splittedQuery = TextPreprocessor.PreprocessPhrase(splitter, normalizer, query);
 
-        Dictionary<string, string[]> alternativeWords = GetWordsAlternativesPairs();
-        Dictionary<string, double> queryWordMultiplers = GetQueryWordsMultiplers();
+        Dictionary<string, string[]> alternativeWords = GetWordsAlternativesPairs(context);
+        Dictionary<string, double> queryWordMultiplers = GetQueryWordsMultiplers(context);
 
         QueryWordContainer[] ngrammedWords = Array.ConvertAll(splittedQuery, word =>
         {
@@ -128,9 +128,9 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         context.NgrammedQuery = ngrammedWords;
         context.SplittedAndNormalizedQuery = splittedQuery;
-        context.Request = GetRequest(context);
         context.WordsSearchSettings = GetWordsSearchSettings(context);
         context.SearchWordsBundle = SearchSimlarIndexWordsByQuery(context);
+        context.Request = GetRequest(context);
     }
 
     public List<KeyValuePair<int, byte>>[] SearchSimlarIndexWordsByQuery(SearchContextBase searchContext)
