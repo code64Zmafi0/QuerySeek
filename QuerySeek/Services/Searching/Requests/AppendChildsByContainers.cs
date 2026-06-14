@@ -33,7 +33,7 @@ public class AppendChildsByContainers(
         {
             IEnumerable<EntitySearchResult> fromData = selector is null
                 ? from
-                : selector(parents.Values);
+                : selector(from);
 
             foreach (EntitySearchResult containerInfo in fromData)
             {
