@@ -8,12 +8,12 @@ namespace QuerySeek.Services.Searching.Requests;
 /// <param name="targetType">Целевой тип</param>
 /// <param name="parentType">Тип родителя</param>
 /// <param name="appendFilter">Фильтр дочерних сущностей КАЖДОГО родителя</param>
-/// <param name="parentTop">Топ родителей по prescore для добавления дочерних</param>
+/// <param name="parentsFilter">Фильтр родителей по которым отбираем дочерние сущности</param>
 public class AppendChilds(
     byte targetType,
     byte parentType,
     Func<IEnumerable<Key>, IEnumerable<Key>> appendFilter,
-    int parentTop = 0) : RequestBase(targetType)
+    Func<IEnumerable<EntitySearchResult>, IEnumerable<EntitySearchResult>>? parentsFilter = null) : RequestBase(targetType)
 {
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
@@ -22,26 +22,17 @@ public class AppendChilds(
         if (!(searchContext.GetResultsByType(parentType) is { } parents))
             return;
 
-        IEnumerable<Key> GetKeys()
-        {
-            if (parentTop < 1)
-                return parents.Keys;
-            else
-                return parents.Values
-                    .OrderByDescending(i => i.Prescore)
-                    .Take(parentTop)
-                    .Select(i => i.Key);
-        }
+        IEnumerable<EntitySearchResult> GetParents()
+            => parentsFilter is null
+                ? parents.Values
+                : parentsFilter(parents.Values);
 
-        foreach (Key parentKey in GetKeys())
+        foreach (EntitySearchResult parent in GetParents())
         {
             if (ct.IsCancellationRequested)
                 break;
 
-            if (!(entities.TryGetValue(parentKey, out var parentMeta)))
-                continue;
-
-            Key[] parentEntityChilds = parentMeta.Childs;
+            Key[] parentEntityChilds = parent.Meta.Childs;
 
             foreach (Key child in appendFilter(parentEntityChilds.Where(i => i.Type == TargetType)))
             {

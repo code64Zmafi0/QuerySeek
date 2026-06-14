@@ -9,11 +9,15 @@ namespace QuerySeek.Services.Searching.Requests;
 /// <param name="parentType">Тип родителя</param>
 /// <param name="containerType">Тип контейнера</param>
 /// <param name="appendFilter">Фильтр дочерних сущностей КАЖДОГО родителя</param>
+/// <param name="parentsFilter">Фильтр родителей</param>
+/// <param name="containersFilter">Фильтр контейнеров/param>
 public class AppendChildsByContainers(
     byte targetType,
     byte parentType,
     byte containerType,
-    Func<IEnumerable<Key>, IEnumerable<Key>> appendFilter) : RequestBase(targetType)
+    Func<IEnumerable<Key>, IEnumerable<Key>> appendFilter,
+    Func<IEnumerable<EntitySearchResult>, IEnumerable<EntitySearchResult>>? parentsFilter = null,
+    Func<IEnumerable<EntitySearchResult>, IEnumerable<EntitySearchResult>>? containersFilter = null) : RequestBase(targetType)
 {
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
@@ -23,20 +27,23 @@ public class AppendChildsByContainers(
             || !(searchContext.GetResultsByType(containerType) is { } containers))
             return;
 
-        IEnumerable<Key> GetChilds(IEnumerable<Key> parents)
+        IEnumerable<Key> GetChilds(
+            IEnumerable<EntitySearchResult> from,
+            Func<IEnumerable<EntitySearchResult>, IEnumerable<EntitySearchResult>>? selector)
         {
-            foreach(Key containerKey in parents)
-            {
-                if (!entities.TryGetValue(containerKey, out EntityMeta? meta))
-                    continue;
+            IEnumerable<EntitySearchResult> fromData = selector is null
+                ? from
+                : selector(parents.Values);
 
-                foreach(Key child in meta.Childs.Where(i => i.Type == TargetType))
+            foreach (EntitySearchResult containerInfo in fromData)
+            {
+                foreach(Key child in containerInfo.Meta.Childs.Where(i => i.Type == TargetType))
                     yield return child;
             }
         }
 
         //Количество данных в контейнере меньше чем суммарно связей - реализация интерсект скрывает создание хешсет из второго аргумента
-        IEnumerable<Key> childs = GetChilds(parents.Keys).Intersect(GetChilds(containers.Keys));
+        IEnumerable<Key> childs = GetChilds(parents.Values, parentsFilter).Intersect(GetChilds(containers.Values, containersFilter));
 
         foreach (Key child in appendFilter(childs))
             searchContext.AddResult(child);
