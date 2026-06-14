@@ -17,6 +17,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     /// Поиск топа всех типов
     /// </summary>
     /// <param name="context"></param>
+    /// <param name="query"></param>
     /// <param name="take"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
@@ -55,6 +56,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     /// Поиск топов по типам
     /// </summary>
     /// <param name="context"></param>
+    /// <param name="query"></param>
     /// <param name="selectTypes"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
@@ -333,14 +335,14 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     /// Определяем возможные альтернативные слова для слов из запроса
     /// </summary>
     /// <returns></returns>
-    public virtual Dictionary<string, string[]> GetWordsAlternativesPairs()
+    public virtual Dictionary<string, string[]> GetWordsAlternativesPairs(TContext searchContext)
         => [];
 
     /// <summary>
     /// Определяем моножители для слов из запроса (можем уменьшать значимость предлогов и тд)
     /// </summary>
     /// <returns></returns>
-    public virtual Dictionary<string, double> GetQueryWordsMultiplers()
+    public virtual Dictionary<string, double> GetQueryWordsMultiplers(TContext searchContext)
         => [];
 
     #endregion
