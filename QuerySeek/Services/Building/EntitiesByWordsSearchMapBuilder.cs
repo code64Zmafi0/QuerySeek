@@ -27,7 +27,7 @@ public class EntitiesByWordsSearchMapBuilder()
         matches!.Add(wordMatch);
     }
 
-    public EntitiesByWordsSearchMap CreateMap()
+    public KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] CreateMap()
     {
         var entitiesByWords = new KeyValuePair<byte /*TypeId*/, Dictionary</*ContainerKey*/ Key, WordMatchMeta[]>>[EntitiesByWords.Count][];
 
@@ -43,9 +43,6 @@ public class EntitiesByWordsSearchMapBuilder()
                 .ToArray();
         }
 
-        return new()
-        {
-            EntitiesByWords = entitiesByWords
-        };
+        return entitiesByWords;
     }
 }

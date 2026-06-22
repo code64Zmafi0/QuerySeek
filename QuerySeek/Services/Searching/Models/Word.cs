@@ -1,4 +1,14 @@
-namespace QuerySeek.Services.Searching;
+using QuerySeek.Services.Helpers;
+
+namespace QuerySeek.Services.Searching.Models;
+
+/// <summary>
+/// Контейнер слова из запроса с альтернативами и множителем
+/// </summary>
+/// <param name="QueryWord"></param>
+/// <param name="Alternatives"></param>
+/// <param name="Multipler"></param>
+public record QueryWordContainer(Word QueryWord, Word[] Alternatives, double Multipler);
 
 /// <summary>
 /// Слово из запроса интерпретированное в нграммы
@@ -8,7 +18,7 @@ public class Word(string word) : IEquatable<Word>
 {
     public readonly string QueryWord = word;
 
-    public readonly int[] NGrammsHashes = Ngramms.GetNgramms(word);
+    public readonly int[] NGrammsHashes = NgrammsHelper.GetNgramms(word);
 
     public readonly bool IsDigit = int.TryParse(word, out _);
 

@@ -12,14 +12,24 @@ public class IndexInstance
 
     public IndexInstance() { }
 
+    /// <summary>
+    /// Информация для сущностей о линках и потомках
+    /// </summary>
     [Key(1)]
     public Dictionary<Key, EntityMeta> Entities { get; internal set; } = [];
 
+    /// <summary>
+    /// ID слов по хешу нграмма
+    /// </summary>
     [Key(2)]
     public Dictionary<int, int[]> WordsIdsByNgramms { get; internal set; } = [];
 
+    /// <summary>
+    /// Словарь WordId -> Types -> Containers -> MatchesToEntites
+    /// Так как ид слов последовательны использован массив вместо словаря - так как словарь большого размера в разы медленней на обращени и занимает больше места
+    /// </summary>
     [Key(3)]
-    public EntitiesByWordsSearchMap EntitiesByWordsSearchMap { get; internal set; } = new();
+    public KeyValuePair<byte /*TypeId*/, Dictionary</*ContainerKey*/ Key, WordMatchMeta[]>>[][/*WordId*/] EntitiesSearchMap { get; set; } = [];
 
     [IgnoreMember]
     public int EntitesCount => Entities.Count;
@@ -34,9 +44,7 @@ public class IndexInstance
         //Подменяем пустые массивы одной ссылкой
         foreach (Key key in Entities.Keys)
         {
-            ref EntityMeta meta = ref CollectionsMarshal.GetValueRefOrNullRef(Entities, key);
-
-            if (!Unsafe.IsNullRef(ref meta))
+            if (Entities.TryGetValue(key, out EntityMeta? meta))
             {
                 if (meta.Links.Length == 0)
                     meta.Links = Array.Empty<Key>();
@@ -46,10 +54,18 @@ public class IndexInstance
             }
         }
 
+        //Сжимаем словари поисковой мапы
+        foreach (KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[] collection in EntitiesSearchMap)
+        {
+            foreach (KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>> item in collection)
+            {
+                item.Value.TrimExcess();
+            }
+        }
+
         //Сжатие словарей
         Entities.TrimExcess();
         WordsIdsByNgramms.TrimExcess();
-        EntitiesByWordsSearchMap.Trim();
 
         if (gcCompactLOH)
         {

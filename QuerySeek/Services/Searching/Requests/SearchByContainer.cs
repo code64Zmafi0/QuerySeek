@@ -1,5 +1,7 @@
 using System.Runtime.CompilerServices;
 using QuerySeek.Models;
+using QuerySeek.Services.Helpers;
+using QuerySeek.Services.Searching.Models;
 
 namespace QuerySeek.Services.Searching.Requests;
 
@@ -37,7 +39,7 @@ public class SearchByContainer(
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
         List<KeyValuePair<int, byte>>[] wordsBundle = searchContext.SearchWordsBundle;
-        EntitiesByWordsSearchMap entitiesSearchMap = searchContext.Index.EntitiesByWordsSearchMap;
+        KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] entitiesSearchMap = searchContext.Index.EntitiesSearchMap;
 
         if (!(searchContext.GetResultsByType(containerType) is { } containersResult))
             return;

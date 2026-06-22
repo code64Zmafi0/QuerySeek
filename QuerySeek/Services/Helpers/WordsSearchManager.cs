@@ -1,4 +1,4 @@
-namespace QuerySeek.Services.Searching;
+namespace QuerySeek.Services.Helpers;
 
 public class WordsSearchManager(int quantity)
 {

@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using QuerySeek.Models;
+using QuerySeek.Services.Searching.Models;
 using QuerySeek.Services.Searching.Requests;
 
 namespace QuerySeek.Services.Searching;
@@ -11,14 +12,14 @@ namespace QuerySeek.Services.Searching;
 public class SearchContextBase(IndexInstance index)
 {
     /// <summary>
-    /// Инстанс индекса
-    /// </summary>
-    public IndexInstance Index { get; internal set; } = index;
-
-    /// <summary>
     /// Входящий текстовый запрос
     /// </summary>
     public string Query { get; internal set; } = string.Empty;
+
+    /// <summary>
+    /// Инстанс индекса
+    /// </summary>
+    public IndexInstance Index { get; internal set; } = index;
 
     /// <summary>
     /// Запрос на поиск в индексе

@@ -1,4 +1,6 @@
 using QuerySeek.Models;
+using QuerySeek.Services.Helpers;
+using QuerySeek.Services.Searching.Models;
 
 namespace QuerySeek.Services.Searching.Requests;
 
@@ -15,7 +17,7 @@ public class Search(
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
         List<KeyValuePair<int, byte>>[] wordsBundle = searchContext.SearchWordsBundle;
-        EntitiesByWordsSearchMap entitiesSearchMap = searchContext.Index.EntitiesByWordsSearchMap;
+        KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] entitiesSearchMap = searchContext.Index.EntitiesSearchMap;
 
         for (byte queryWordPosition = 0; queryWordPosition < wordsBundle.Length; queryWordPosition++)
         {

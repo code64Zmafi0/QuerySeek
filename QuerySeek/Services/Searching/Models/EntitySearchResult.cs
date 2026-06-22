@@ -1,6 +1,6 @@
 using QuerySeek.Models;
 
-namespace QuerySeek.Services.Searching;
+namespace QuerySeek.Services.Searching.Models;
 
 public class TypeSearchResult(byte type, EntitySearchResult[] result)
 {
@@ -44,13 +44,5 @@ public readonly record struct WordCompareResult(
     byte PhraseType,
     byte QueryWordPosition,
     byte MatchLength);
-
-public readonly record struct WordNgrammSearchState(
-    byte Matches,
-    byte Misses,
-    byte PreviousMatch)
-{
-    public byte Score => (byte)(Matches > Misses ? Matches - (Misses * 0.5) : 0);
-}
 
 public record AdditionalRule(string Name, int Score = 0, double Multipler = 1);

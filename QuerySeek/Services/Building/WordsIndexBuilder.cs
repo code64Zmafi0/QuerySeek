@@ -1,5 +1,5 @@
 ﻿using System.Runtime.InteropServices;
-using QuerySeek.Services.Searching;
+using QuerySeek.Services.Helpers;
 
 namespace QuerySeek.Services.Building;
 
@@ -25,7 +25,7 @@ public class WordsIndexBuilder()
 
         foreach (KeyValuePair<string, int> item in Pairs.OrderBy(i => i.Key))
         {
-            int[] ngramms = Ngramms.GetNgramms(item.Key);
+            int[] ngramms = NgrammsHelper.GetNgramms(item.Key);
 
             for (int i = 0; i < ngramms.Length; i++)
             {

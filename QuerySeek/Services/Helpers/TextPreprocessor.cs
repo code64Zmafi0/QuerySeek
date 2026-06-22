@@ -1,4 +1,6 @@
-﻿namespace QuerySeek.Services.Normalizing;
+﻿using QuerySeek.Services.Normalizing;
+
+namespace QuerySeek.Services.Helpers;
 
 public static class TextPreprocessor
 {

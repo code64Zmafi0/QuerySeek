@@ -1,4 +1,5 @@
 using QuerySeek.Models;
+using QuerySeek.Services.Searching.Models;
 
 namespace QuerySeek.Services.Searching.Requests;
 
@@ -7,7 +8,7 @@ namespace QuerySeek.Services.Searching.Requests;
 /// </summary>
 /// <param name="targetType">Целевой тип</param>
 /// <param name="parentType">Тип родителя</param>
-/// <param name="appendFilter">Фильтр дочерних сущностей КАЖДОГО родителя</param>
+/// <param name="appendFilter">Фильтр добавляемых сущностей для каждого родителя</param>
 /// <param name="parentsFilter">Фильтр родителей по которым отбираем дочерние сущности</param>
 public class AppendChilds(
     byte targetType,

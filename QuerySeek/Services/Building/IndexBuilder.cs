@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using QuerySeek.Interfaces;
 using QuerySeek.Models;
 using QuerySeek.Services.Extensions;
+using QuerySeek.Services.Helpers;
 using QuerySeek.Services.Normalizing;
 
 namespace QuerySeek.Services.Building;
@@ -91,7 +92,7 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
         return new IndexInstance()
         {
             Entities = Entities,
-            EntitiesByWordsSearchMap = EntitiesByWordsSearchMapBuilder.CreateMap(),
+            EntitiesSearchMap = EntitiesByWordsSearchMapBuilder.CreateMap(),
             WordsIdsByNgramms = WordsBundle.GetWordsByNgramms(),
         };
     }
