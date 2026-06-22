@@ -1,7 +1,6 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using QuerySeek.Services.Searching;
-using QuerySeek.Services.Searching.Models;
 
 namespace QuerySeek.Services.Helpers;
 

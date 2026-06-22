@@ -1,6 +1,5 @@
 using System.Runtime.InteropServices;
 using QuerySeek.Models;
-using QuerySeek.Services.Searching.Models;
 using QuerySeek.Services.Searching.Requests;
 
 namespace QuerySeek.Services.Searching;

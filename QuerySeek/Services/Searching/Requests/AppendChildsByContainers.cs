@@ -1,5 +1,4 @@
-﻿using QuerySeek.Models;
-using QuerySeek.Services.Searching.Models;
+using QuerySeek.Models;
 
 namespace QuerySeek.Services.Searching.Requests;
 

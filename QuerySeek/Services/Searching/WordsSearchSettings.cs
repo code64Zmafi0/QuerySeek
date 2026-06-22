@@ -1,6 +1,6 @@
 using QuerySeek.Services.Helpers;
 
-namespace QuerySeek.Services.Searching.Models;
+namespace QuerySeek.Services.Searching;
 
 public record WordsSearchSettings(
     int MaxCheckingWordsCount,
