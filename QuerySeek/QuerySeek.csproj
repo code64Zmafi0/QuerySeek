@@ -12,7 +12,7 @@
     <PackageTags>Text search; Index; Relations; Data;</PackageTags>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
 	<PackageIcon>Logo.png</PackageIcon>
-    <Version>1.2.1</Version>
+    <Version>1.2.2</Version>
   </PropertyGroup>
 
   <ItemGroup>
