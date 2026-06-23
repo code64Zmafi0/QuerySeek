@@ -1,5 +1,5 @@
 ﻿using QuerySeek.Models;
-using QuerySeek.Services.Extensions;
+using QuerySeek.Services.Building;
 
 namespace QuerySeek.Interfaces;
 

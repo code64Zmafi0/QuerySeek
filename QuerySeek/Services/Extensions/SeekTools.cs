@@ -97,5 +97,3 @@ public static class QS
     }
     #endregion
 }
-
-public readonly record struct Phrase(string Text, byte PhraseType);

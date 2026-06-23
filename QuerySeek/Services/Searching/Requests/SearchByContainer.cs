@@ -61,7 +61,7 @@ public class SearchByContainer(
                 int wordId = indexWordInfo.Key;
 
                 bool isMatchedWord = false;
-                foreach (var wordMatchMeta in entitiesSearchMap.GetMatchesByWordAndParents(
+                foreach (WordMatchMeta wordMatchMeta in entitiesSearchMap.GetMatchesByWordAndParents(
                     wordId,
                     TargetType,
                     containers))

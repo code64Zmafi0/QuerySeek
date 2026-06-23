@@ -33,14 +33,14 @@ public class Search(
 
                 int wordId = indexWordInfo.Key;
 
-                WordMatchMeta[]? list = entitiesSearchMap.GetMatchesByWord(wordId, TargetType);
+                WordMatchMeta[]? matches = entitiesSearchMap.GetMatchesByWord(wordId, TargetType);
 
-                if (list is null)
+                if (matches is null)
                     continue;
 
                 wsm.IncrementMatch();
 
-                foreach (WordMatchMeta wordMatchMeta in list)
+                foreach (WordMatchMeta wordMatchMeta in matches)
                 {
                     if (ct.IsCancellationRequested)
                         return;
