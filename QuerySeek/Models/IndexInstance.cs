@@ -1,6 +1,4 @@
 using System.Runtime;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using MessagePack;
 
 namespace QuerySeek.Models;
@@ -42,16 +40,13 @@ public class IndexInstance
     public void Trim(bool gcCompactLOH = true)
     {
         //Подменяем пустые массивы одной ссылкой
-        foreach (Key key in Entities.Keys)
+        foreach (EntityMeta meta in Entities.Values)
         {
-            if (Entities.TryGetValue(key, out EntityMeta? meta))
-            {
-                if (meta.Links.Length == 0)
-                    meta.Links = Array.Empty<Key>();
+            if (meta.Links.Length == 0)
+                meta.Links = Array.Empty<Key>();
 
-                if (meta.Childs.Length == 0)
-                    meta.Childs = Array.Empty<Key>();
-            }
+            if (meta.Childs.Length == 0)
+                meta.Childs = Array.Empty<Key>();
         }
 
         //Сжимаем словари поисковой мапы
