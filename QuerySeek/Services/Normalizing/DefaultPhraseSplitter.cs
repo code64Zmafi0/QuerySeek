@@ -37,8 +37,8 @@ public class DefaultPhraseSplitter(ReadOnlySpan<char> notSplittingChars) : IPhra
             int start = pos;
             CharClass startClass = ClassifyAt(value, pos, out int charLen);
 
-            // CJK: каждый иероглиф — отдельный токен
-            if (startClass == CharClass.Ideograph)
+            // CJK: каждый иероглиф или кастомный символ — отдельный токен
+            if (startClass is CharClass.Ideograph or CharClass.Custom)
             {
                 pos += charLen;
                 yield return value[start..pos];

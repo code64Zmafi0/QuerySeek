@@ -17,8 +17,7 @@ public class SearchByContainer(
     Func<Key, bool>? filter = null,
     Func<IEnumerable<EntitySearchResult>, IEnumerable<EntitySearchResult>>? containersFilter = null) : RequestBase(targetType)
 {
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public virtual Key[] SelectContainers(Dictionary<Key, EntitySearchResult> containers)
+    public Key[] SelectContainers(Dictionary<Key, EntitySearchResult> containers)
     {
         Key[] result = [];
 
