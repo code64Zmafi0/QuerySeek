@@ -58,7 +58,7 @@ public class SearchContextBase(IndexInstance index)
 
     public Dictionary<Key, EntitySearchResult>? GetResultsByType(byte type)
     {
-        if (SearchResult.TryGetValue(type, out var result))
+        if (SearchResult.TryGetValue(type, out Dictionary<Key, EntitySearchResult>? result))
             return result;
 
         return null;

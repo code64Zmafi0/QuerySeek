@@ -23,7 +23,7 @@ public static class EntitiesSearchMapHelper
         return null;
     }
 
-    public static IEnumerable<WordMatchMeta> GetMatchesByWordAndParents(
+    public static IEnumerable<WordMatchMeta> GetMatchesByWordAndContainers(
         this KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] searchMap,
         int wordId,
         byte entityType,

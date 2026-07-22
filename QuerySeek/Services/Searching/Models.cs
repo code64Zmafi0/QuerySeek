@@ -77,7 +77,7 @@ public class Word(string word) : IEquatable<Word>
 {
     public readonly string QueryWord = word;
 
-    public readonly int[] NGrammsHashes = NgrammsHelper.GetNgramms(word);
+    public readonly int[] NGrammsHashes = NgrammsWordsSearchHelper.GetNgramms(word);
 
     public readonly bool IsDigit = int.TryParse(word, out _);
 

@@ -25,7 +25,7 @@ public class WordsIndexBuilder()
 
         foreach (KeyValuePair<string, int> item in Pairs.OrderBy(i => i.Key))
         {
-            int[] ngramms = NgrammsHelper.GetNgramms(item.Key);
+            int[] ngramms = NgrammsWordsSearchHelper.GetNgramms(item.Key);
 
             for (int i = 0; i < ngramms.Length; i++)
             {

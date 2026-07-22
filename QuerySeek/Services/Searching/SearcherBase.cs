@@ -17,9 +17,9 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     /// <summary>
     /// Поиск топа всех типов
     /// </summary>
-    /// <param name="context"></param>
-    /// <param name="query"></param>
-    /// <param name="take"></param>
+    /// <param name="context">Контекст поиска</param>
+    /// <param name="query">Текстовый запрос</param>
+    /// <param name="take">Количество элементов</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     public EntitySearchResult[] Search(
@@ -34,14 +34,16 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         foreach (RequestBase i in context.Request) i.ProcessRequest(context, ct);
 
-        return PostProcessing(context, GetAllResults()
-            .OrderByDescending(i =>
-            {
-                i.Score = CalculateScore(context, i);
-                return i.Score;
-            }))
+        return 
+        [.. 
+            PostProcessing(context, GetAllResults().OrderByDescending(i =>
+                {
+                    i.Score = CalculateScore(context, i);
+                    return i.Score;
+                })
+            )
             .Take(take)
-            .ToArray();
+        ];
 
         IEnumerable<EntitySearchResult> GetAllResults()
         {
@@ -56,15 +58,15 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
     /// <summary>
     /// Поиск топов по типам
     /// </summary>
-    /// <param name="context"></param>
-    /// <param name="query"></param>
-    /// <param name="selectTypes"></param>
+    /// <param name="context">Контекст поиска</param>
+    /// <param name="query">Текстовый запрос</param>
+    /// <param name="take">Количество элементов каждого типа</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     public TypeSearchResult[] SearchTypes(
         TContext context,
         string query,
-        (byte Type, int Take)[] selectTypes,
+        int take,
         CancellationToken? cancellationToken = null)
     {
         CancellationToken ct = cancellationToken ?? CancellationToken.None;
@@ -73,33 +75,25 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         foreach (RequestBase i in context.Request) i.ProcessRequest(context, ct);
 
-        var result = new TypeSearchResult[selectTypes.Length];
-
-        for (int i = 0; i < selectTypes.Length; i++)
+        TypeSearchResult[] result = [.. context.SearchResult.Select(typeSearchResult =>
         {
-            (byte Type, int Take) = selectTypes[i];
-            Dictionary<Key, EntitySearchResult>? typeSearchResult = context.GetResultsByType(Type);
-
-            if (typeSearchResult is null)
-            {
-                result[i] = new(Type, []);
-                continue;
-            }
+            byte currentType = typeSearchResult.Key;
 
             EntitySearchResult[] typeResult =
-                PostProcessing(context, TypeBundlePreprocessing(context, Type, typeSearchResult.Values)
-                    .OrderByDescending(matchBundle =>
-                    {
-                        matchBundle.Score = CalculateScore(context, matchBundle);
-                        return matchBundle.Score;
-                    })
+            [..
+                PostProcessing(context,
+                    TypeBundlePreprocessing(context, currentType, typeSearchResult.Value.Values)
+                        .OrderByDescending(matchBundle =>
+                        {
+                            matchBundle.Score = CalculateScore(context, matchBundle);
+                            return matchBundle.Score;
+                        })
                 )
-                .Take(Take)
-                .ToArray();
+                .Take(take)
+            ];
 
-            result[i] = new(Type, typeResult);
-        }
-
+            return new TypeSearchResult(currentType, typeResult);
+        })];
         return result;
     }
 
@@ -130,7 +124,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         context.SplittedAndNormalizedQuery = splittedQuery;
         context.NgrammedQuery = ngrammedWords;
         context.WordsSearchSettings = GetWordsSearchSettings(context);
-        context.SearchWordsBundle = NgrammsHelper.SearchSimlarIndexWordsByQuery(
+        context.SearchWordsBundle = NgrammsWordsSearchHelper.SearchSimlarIndexWordsByQuery(
             context.NgrammedQuery,
             context.WordsSearchSettings,
             context.Index.WordsIdsByNgramms);
