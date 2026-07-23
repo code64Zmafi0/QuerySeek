@@ -1,3 +1,4 @@
+using System.Xml.Linq;
 using QuerySeek.Models;
 using QuerySeek.Services.Helpers;
 using QuerySeek.Services.Normalizing;
@@ -81,19 +82,19 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
             EntitySearchResult[] typeResult =
             [..
-                PostProcessing(context,
-                    TypeBundlePreprocessing(context, currentType, typeSearchResult.Value.Values)
-                        .OrderByDescending(matchBundle =>
-                        {
-                            matchBundle.Score = CalculateScore(context, matchBundle);
-                            return matchBundle.Score;
-                        })
+                PostProcessing(context, TypeBundlePreprocessing(context, currentType, typeSearchResult.Value.Values)
+                    .OrderByDescending(matchBundle =>
+                    {
+                        matchBundle.Score = CalculateScore(context, matchBundle);
+                        return matchBundle.Score;
+                    })
                 )
                 .Take(take)
             ];
 
             return new TypeSearchResult(currentType, typeResult);
         })];
+
         return result;
     }
 
@@ -144,8 +145,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         //Добавление матчей из связанных сущностей если они найдены в контексте
         foreach (Key nodeKey in entityLinks)
         {
-            if (searchContext.GetResultsByType(nodeKey.Type) is { } req
-                && req.TryGetValue(nodeKey, out EntitySearchResult? chainedMathes))
+            if (searchContext.ContainsEntity(nodeKey, out EntitySearchResult? chainedMathes))
             {
                 double nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, nodeKey.Type);
                 CalculateEntityPartScore(in wordsScores, chainedMathes.WordsMatches, nodeMultipler);

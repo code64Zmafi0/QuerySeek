@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using QuerySeek.Models;
 using QuerySeek.Services.Searching.Requests;
@@ -53,8 +54,11 @@ public class SearchContextBase(IndexInstance index)
     #region Search Tools
     public int FullQueryScore => NgrammedQuery.Sum(i => i.QueryWord.NGrammsHashes.Length);
 
-    public bool ContainsEntity(Key key)
-        => SearchResult.TryGetValue(key.Type, out var entities) && entities.ContainsKey(key);
+    public bool ContainsEntity(Key key, [NotNullWhen(true)] out EntitySearchResult? searchResult)
+    {
+        searchResult = null;
+        return SearchResult.TryGetValue(key.Type, out var entities) && entities.TryGetValue(key, out searchResult);
+    }
 
     public Dictionary<Key, EntitySearchResult>? GetResultsByType(byte type)
     {
