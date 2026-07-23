@@ -89,7 +89,7 @@ public static class NgrammsWordsSearchHelper
         WordsSearchSettings wordsSearchSettings,
         Dictionary<int, int[]> wordsIdsByNgramms)
     {
-        var result = new List<KeyValuePair<int, byte>>[splittedQuery.Length];
+        List<KeyValuePair<int, byte>>[] result = new List<KeyValuePair<int, byte>>[splittedQuery.Length];
 
         //Используем один словарь для расчета совпавщих слов для каждого слова из запроса дабы лишний раз не аллоцировать
         Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict = new(wordsSearchSettings.WordsSearchDictionaryPreallocate);

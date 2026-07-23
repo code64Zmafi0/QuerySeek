@@ -7,8 +7,8 @@ namespace QuerySeek.Services.Searching.Requests;
 /// Выполняет поиск сущностей целевого типа по найденным контейнерам
 /// </summary>
 /// <param name="targetType">Целевой тип сущности</param>
-/// <param name="containerType">Тип сущности родителя (Parent)</param>
-/// <param name="containersFilter">Фильтр родителей по которым осуществляем поиск</param>
+/// <param name="containerType">Тип сущности контейнера</param>
+/// <param name="containersFilter">Фильтр контейнеров по которым осуществляем поиск</param>
 public class SearchByContainer(
     byte targetType,
     byte containerType,
