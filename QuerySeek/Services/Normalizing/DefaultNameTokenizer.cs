@@ -8,9 +8,9 @@ namespace QuerySeek.Services.Normalizing;
 /// Стандартный разделитель слов, разбивает по сиволам не являющимся буквами и цифрами
 /// </summary>
 /// <param name="notSplittingChars">Позволяет указать символы которые не будут являться сепараторами</param>
-public class DefaultPhraseSplitter(ReadOnlySpan<char> notSplittingChars) : IPhraseSplitter
+public class DefaultNameTokenizer(ReadOnlySpan<char> notSplittingChars) : INameTokenizer
 {
-    public static readonly DefaultPhraseSplitter Instance = new(string.Empty);
+    public static readonly DefaultNameTokenizer Instance = new(string.Empty);
 
     public IEnumerable<string> Tokenize(string? value)
     {

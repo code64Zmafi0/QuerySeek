@@ -13,7 +13,7 @@ public interface IIndexedEntity
     /// <summary>
     /// Entity names
     /// </summary>
-    IEnumerable<Phrase> GetNames();
+    IEnumerable<Name> GetNames();
 
     /// <summary>
     /// Components of entity

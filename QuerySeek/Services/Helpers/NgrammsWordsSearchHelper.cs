@@ -13,6 +13,7 @@ public static class NgrammsWordsSearchHelper
     /// Производит расчет минимальной схожести для слов с заданным минимальным совпадением 
     /// </summary>
     /// <param name="word"></param>
+    /// <param name="minSimilarity"></param>
     /// <returns>Минимальное количество нграмм для совпадения</returns>
     public static int CalculateWordSimilarityTreshold(Word word, double minSimilarity)
         => (int)(word.NGrammsHashes.Length * minSimilarity);
@@ -77,7 +78,7 @@ public static class NgrammsWordsSearchHelper
     }
 
     /// <summary>
-    /// Поиск схожих слов в индексе по словам из запроса
+    /// Поиск схожих слов в индексе слов для слов из запроса
     /// </summary>
     /// <param name="splittedQuery"></param>
     /// <param name="wordsSearchSettings"></param>
@@ -120,6 +121,14 @@ public static class NgrammsWordsSearchHelper
         return result;
     }
 
+    /// <summary>
+    /// Поиск схожих слов и альтернатив для слова из запроса
+    /// </summary>
+    /// <param name="wordsSearchProcessDict"></param>
+    /// <param name="wordsIdsByNgramms"></param>
+    /// <param name="wordContainer"></param>
+    /// <param name="wordsSearchSettings"></param>
+    /// <returns></returns>
     private static List<KeyValuePair<int, byte>> SearchSimilarsByQueryWordAndAlternatives(
         Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict,
         Dictionary<int, int[]> wordsIdsByNgramms,
@@ -128,7 +137,7 @@ public static class NgrammsWordsSearchHelper
     {
         List<KeyValuePair<int, byte>> result = [];
 
-        //Ищем по одной полностью совпавшей алтернативе
+        //Ищем по одной полностью совпавшей альтернативе
         foreach (Word altWord in wordContainer.Alternatives)
             SearchSimilars(altWord, (byte)altWord.NGrammsHashes.Length);
 

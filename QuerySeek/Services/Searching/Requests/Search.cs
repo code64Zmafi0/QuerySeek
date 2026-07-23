@@ -7,10 +7,7 @@ namespace QuerySeek.Services.Searching.Requests;
 /// Выполняет поиск сущностей целевого типа
 /// </summary>
 /// <param name="targetType">Целевой тип сущности</param>
-/// <param name="filter">Фильтр добавления в словарь найденных</param>
-public class Search(
-    byte targetType,
-    Func<Key, bool>? filter = null)
+public class Search(byte targetType)
     : RequestBase(targetType)
 {
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
@@ -46,13 +43,9 @@ public class Search(
                         return;
 
                     Key entityKey = new(TargetType, wordMatchMeta.EntityId);
-
-                    if (!((filter?.Invoke(entityKey)) ?? true))
-                        continue;
-
                     WordCompareResult wcr = new(
                         wordMatchMeta.NameWordPosition,
-                        wordMatchMeta.PhraseType,
+                        wordMatchMeta.NameType,
                         queryWordPosition,
                         indexWordInfo.Value);
 

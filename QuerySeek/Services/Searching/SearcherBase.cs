@@ -10,10 +10,80 @@ namespace QuerySeek.Services.Searching;
 /// Позволяет определить стратегию поиска
 /// </summary>
 /// <typeparam name="TContext"></typeparam>
-/// <param name="splitter"></param>
+/// <param name="nameTokenizer"></param>
 /// <param name="normalizer"></param>
-public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normalizer) where TContext : SearchContextBase
+public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INormalizer normalizer) where TContext : SearchContextBase
 {
+    #region Overrides
+    /// <summary>
+    /// Определяет запрос на поиск в индексе - что ищем в индексе
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
+    public abstract IEnumerable<RequestBase> GetRequest(TContext context);
+
+    /// <summary>
+    /// Позволяет переопределить конечную сортировку
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="result">Отсортированный по количеству совпадений enumerable сущностей</param>
+    /// <returns></returns>
+    public virtual IOrderedEnumerable<EntitySearchResult> PostProcessing(TContext context, IOrderedEnumerable<EntitySearchResult> result)
+        => result;
+
+    /// <summary>
+    /// Позволяет осуществить предпроцессинг, указать выборку сущностей на сортировку, добавить правила
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="type"></param>
+    /// <param name="result"></param>
+    /// <returns></returns>
+    public virtual IEnumerable<EntitySearchResult> TypeBundlePreprocessing(TContext context, byte type, IEnumerable<EntitySearchResult> result)
+        => result;
+
+    /// <summary>
+    /// Множитель совпадений из связанных сущностей
+    /// </summary>
+    /// <param name="entityType"></param>
+    /// <param name="linkedType"></param>
+    /// <returns></returns>
+    public virtual double GetLinkedEntityMatchMultipler(byte entityType, byte linkedType)
+        => 1;
+
+    /// <summary>
+    /// Множитель типа имени
+    /// </summary>
+    /// <param name="nameType"></param>
+    /// <returns></returns>
+    public virtual double GetNameTypeMultipler(byte nameType)
+        => 1;
+
+    /// <summary>
+    /// Определение настроек поиска по словам
+    /// </summary>
+    /// <param name="searchContext"></param>
+    /// <returns></returns>
+    public virtual WordsSearchSettings GetWordsSearchSettings(TContext searchContext)
+        => searchContext.NgrammedQuery.Length > 5
+            ? WordsSearchSettings.Fast
+            : WordsSearchSettings.Default;
+
+    /// <summary>
+    /// Определяем возможные альтернативные слова для слов из запроса
+    /// </summary>
+    /// <returns></returns>
+    public virtual Dictionary<string, string[]> GetWordsAlternativesPairs(TContext searchContext)
+        => [];
+
+    /// <summary>
+    /// Определяем моножители для слов из запроса (можем уменьшать значимость предлогов и тд)
+    /// </summary>
+    /// <returns></returns>
+    public virtual Dictionary<string, double> GetQueryWordsMultiplers(TContext searchContext)
+        => [];
+
+    #endregion
+
     #region Search logic
     /// <summary>
     /// Поиск топа всех типов
@@ -35,8 +105,8 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
         foreach (RequestBase i in context.Request) i.ProcessRequest(context, ct);
 
-        return 
-        [.. 
+        return
+        [..
             PostProcessing(context, GetAllResults().OrderByDescending(i =>
                 {
                     i.Score = CalculateScore(context, i);
@@ -100,7 +170,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
     public void FillContext(TContext context, string query)
     {
-        string[] splittedQuery = TextPreprocessor.PreprocessPhrase(splitter, normalizer, query);
+        string[] splittedQuery = TextPreprocessor.PreprocessName(nameTokenizer, normalizer, query);
 
         Dictionary<string, string[]> alternativeWords = GetWordsAlternativesPairs(context);
         Dictionary<string, double> queryWordMultiplers = GetQueryWordsMultiplers(context);
@@ -180,91 +250,22 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
             int score = compareResult.MatchLength;
 
             int queryWordPosition = compareResult.QueryWordPosition;
-            double phraseMultipler = GetPhraseMultiplerInternal(compareResult.PhraseType);
+            double nameTypeMultipler = GetNameMultiplerInternal(compareResult.NameType);
 
-            score = (int)(score * phraseMultipler * nodeMultipler);
+            score = (int)(score * nameTypeMultipler * nodeMultipler);
 
             if (wordsScores[queryWordPosition] < score)
                 wordsScores[queryWordPosition] = score;
         }
     }
 
-    internal double GetPhraseMultiplerInternal(byte phraseType)
+    internal double GetNameMultiplerInternal(byte nameType)
     {
-        if (phraseType == 0)
+        if (nameType == 0)
             return 1;
 
-        return GetPhraseTypeMultipler(phraseType);
+        return GetNameTypeMultipler(nameType);
     }
     #endregion
 
-    #region Overrides
-    /// <summary>
-    /// Определяет запрос на поиск в индексе - что ищем в индексе
-    /// </summary>
-    /// <param name="context"></param>
-    /// <returns></returns>
-    public abstract RequestBase[] GetRequest(TContext context);
-
-    /// <summary>
-    /// Позволяет переопределить конечную сортировку
-    /// </summary>
-    /// <param name="context"></param>
-    /// <param name="result">Отсортированный по количеству совпадений enumerable сущностей</param>
-    /// <returns></returns>
-    public virtual IOrderedEnumerable<EntitySearchResult> PostProcessing(TContext context, IOrderedEnumerable<EntitySearchResult> result)
-        => result;
-
-    /// <summary>
-    /// Позволяет осуществить предпроцессинг, указать выборку сущностей на сортировку, добавить правила
-    /// </summary>
-    /// <param name="context"></param>
-    /// <param name="type"></param>
-    /// <param name="result"></param>
-    /// <returns></returns>
-    public virtual IEnumerable<EntitySearchResult> TypeBundlePreprocessing(TContext context, byte type, IEnumerable<EntitySearchResult> result)
-        => result;
-
-    /// <summary>
-    /// Множитель совпадений из связанных сущностей
-    /// </summary>
-    /// <param name="entityType"></param>
-    /// <param name="linkedType"></param>
-    /// <returns></returns>
-    public virtual double GetLinkedEntityMatchMultipler(byte entityType, byte linkedType)
-        => 1;
-
-    /// <summary>
-    /// Множитель типа фразы
-    /// </summary>
-    /// <param name="phraseType"></param>
-    /// <returns></returns>
-    public virtual double GetPhraseTypeMultipler(byte phraseType)
-        => 1;
-
-    /// <summary>
-    /// Определение настроек поиска по словам
-    /// </summary>
-    /// <param name="searchContext"></param>
-    /// <returns></returns>
-    public virtual WordsSearchSettings GetWordsSearchSettings(TContext searchContext)
-        => searchContext.NgrammedQuery.Length > 5
-            ? WordsSearchSettings.Fast
-            : WordsSearchSettings.Default;
-
-    /// <summary>
-    /// Определяем возможные альтернативные слова для слов из запроса
-    /// </summary>
-    /// <returns></returns>
-    public virtual Dictionary<string, string[]> GetWordsAlternativesPairs(TContext searchContext)
-        => [];
-
-    /// <summary>
-    /// Определяем моножители для слов из запроса (можем уменьшать значимость предлогов и тд)
-    /// </summary>
-    /// <returns></returns>
-    public virtual Dictionary<string, double> GetQueryWordsMultiplers(TContext searchContext)
-        => [];
-
-    #endregion
 }

@@ -9,14 +9,14 @@ namespace QuerySeek.Services.Extensions;
 public static class QS
 {
     #region Tools
-    public static Phrase Phrase<TPhraseType>(string phrase, TPhraseType phraseType) where TPhraseType : Enum
-        => new(phrase, Type(phraseType));
+    public static Name Name<TNameType>(string name, TNameType nameType) where TNameType : Enum
+        => new(name, Type(nameType));
 
-    public static Phrase Phrase(string phrase, byte phraseType)
-        => new(phrase, phraseType);
+    public static Name Name(string name, byte nameType)
+        => new(name, nameType);
 
-    public static Phrase Phrase(string phrase)
-        => new(phrase, 0);
+    public static Name Name(string name)
+        => new(name, 0);
 
     public static byte Type<TType>(TType type) where TType : Enum
         => Convert.ToByte(type);
@@ -38,12 +38,12 @@ public static class QS
     #endregion
 
     #region Build
-    public static IndexBuilder GetBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter)
-        => new(normalizer, phraseSplitter);
+    public static IndexBuilder GetBuilder(INormalizer normalizer, INameTokenizer nameTokenizer)
+        => new(normalizer, nameTokenizer);
 
-    public static IndexInstance Build(INormalizer normalizer, IPhraseSplitter phraseSplitter, IEnumerable<IIndexedEntity> entities)
+    public static IndexInstance Build(INormalizer normalizer, INameTokenizer nameTokenizer, IEnumerable<IIndexedEntity> entities)
     {
-        var builder = new IndexBuilder(normalizer, phraseSplitter);
+        var builder = new IndexBuilder(normalizer, nameTokenizer);
 
         foreach (var entity in entities)
             builder.AddEntity(entity);
@@ -51,9 +51,9 @@ public static class QS
         return builder.Build();
     }
 
-    public static async Task<IndexInstance> BuildAsync(INormalizer normalizer, IPhraseSplitter phraseSplitter, IAsyncEnumerable<IIndexedEntity> entities)
+    public static async Task<IndexInstance> BuildAsync(INormalizer normalizer, INameTokenizer nameTokenizer, IAsyncEnumerable<IIndexedEntity> entities)
     {
-        var builder = new IndexBuilder(normalizer, phraseSplitter);
+        var builder = new IndexBuilder(normalizer, nameTokenizer);
 
         await foreach (var entity in entities)
             builder.AddEntity(entity);

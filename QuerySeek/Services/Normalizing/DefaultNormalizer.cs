@@ -10,12 +10,12 @@ public class DefaultNormalizer : INormalizer
 
     private static readonly ArrayPool<char> _pool = ArrayPool<char>.Shared;
 
-    public string Normalize(string input)
+    public string Normalize(string value)
     {
-        if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
 
         // 1. Декомпозиция (FormD) разделяет базовые символы и их акценты.
-        string normalizedString = input.Normalize(NormalizationForm.FormD);
+        string normalizedString = value.Normalize(NormalizationForm.FormD);
 
         int maxLength = normalizedString.Length;
         char[]? rentedArray = null;

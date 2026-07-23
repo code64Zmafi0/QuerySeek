@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using QuerySeek.Models;
 using QuerySeek.Services.Helpers;
 
@@ -9,12 +8,10 @@ namespace QuerySeek.Services.Searching.Requests;
 /// </summary>
 /// <param name="targetType">Целевой тип сущности</param>
 /// <param name="containerType">Тип сущности родителя (Parent)</param>
-/// <param name="filter">Фильтр добавления в словарь найденных</param>
 /// <param name="containersFilter">Фильтр родителей по которым осуществляем поиск</param>
 public class SearchByContainer(
     byte targetType,
     byte containerType,
-    Func<Key, bool>? filter = null,
     Func<IEnumerable<EntitySearchResult>, IEnumerable<EntitySearchResult>>? containersFilter = null) : RequestBase(targetType)
 {
     public Key[] SelectContainers(Dictionary<Key, EntitySearchResult> containers)
@@ -71,13 +68,9 @@ public class SearchByContainer(
                     isMatchedWord = true;
 
                     Key entityKey = new(TargetType, wordMatchMeta.EntityId);
-
-                    if (!((filter?.Invoke(entityKey)) ?? true))
-                        continue;
-
                     WordCompareResult wcr = new(
                         wordMatchMeta.NameWordPosition,
-                        wordMatchMeta.PhraseType,
+                        wordMatchMeta.NameType,
                         queryWordPosition,
                         indexWordInfo.Value);
 

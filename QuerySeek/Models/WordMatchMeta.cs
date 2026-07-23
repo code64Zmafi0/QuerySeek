@@ -4,7 +4,7 @@ using MessagePack;
 namespace QuerySeek.Models;
 
 /// <summary>
-/// Информация о совпадении слова с сущностью (EntityId, WordPositionInName, PhraseType)
+/// Информация о совпадении слова с сущностью (EntityId, WordPositionInName, NameType)
 /// </summary>
 [MessagePackObject]
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -15,11 +15,11 @@ public readonly struct WordMatchMeta
     public WordMatchMeta(
         int entityId,
         byte nameWordPosition,
-        byte phraseType)
+        byte nameType)
     {
         EntityId = entityId;
         NameWordPosition = nameWordPosition;
-        PhraseType = phraseType;
+        NameType = nameType;
     }
 
     [Key(1)]
@@ -29,5 +29,5 @@ public readonly struct WordMatchMeta
     public byte NameWordPosition { get; }
 
     [Key(3)]
-    public byte PhraseType {  get; }
+    public byte NameType {  get; }
 }

@@ -10,6 +10,20 @@ public class TypeSearchResult(byte type, EntitySearchResult[] result)
     public readonly EntitySearchResult[] Result = result;
 }
 
+/// <summary>
+/// Описывает найденную сущность
+/// </summary>
+/// <remarks>
+/// Содержит:
+/// Key - ключ сущности; 
+/// Meta - информацию о линках и потомков;
+/// WordsMatches - совпавшие слова из имен сущности;
+/// Rules - Дополнительные правила;
+/// Prescore - Суммарная дистанция сопадениий из имен;
+/// Score - Конечный скор для сортировки;
+/// </remarks>
+/// <param name="key"></param>
+/// <param name="meta"></param>
 public class EntitySearchResult(Key key, EntityMeta meta)
 {
     public readonly Key Key = key;
@@ -24,11 +38,21 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 
     public int Score;
 
-    public Key[] GetLinks()
-        => Meta.Links;
+    public Key? TryGetLink(byte type)
+    {
+        foreach (Key link in Meta.Links)
+            if (link.Type == type) return link;
 
-    public Key[] GetChilds()
-        => Meta.Childs;
+        return null;
+    }
+
+    public Key? TryGetChild(byte type)
+    {
+        foreach (Key link in Meta.Childs)
+            if (link.Type == type) return link;
+
+        return null;
+    }
 
     public void AddRule(AdditionalRule rule)
         => Rules.Add(rule);
@@ -41,15 +65,18 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 }
 
 /// <summary>
-/// Описывает совпавщее слово в сущности
+/// Описывает совпавщее слово c именем сущности
 /// </summary>
+/// <remarks>
+/// Содержит: Позицию слова в имени; Тип имени; Позицию слова в запросе; Дистанцию совпадения - скоринг за совпавшие ngamm-ы.
+/// </remarks>
 /// <param name="NameWordPosition">Позиция совпавшего слова в имени</param>
-/// <param name="PhraseType">Тип фразы</param>
+/// <param name="NameType">Тип имени</param>
 /// <param name="QueryWordPosition">Позиция совпавшего слова из запроса</param>
 /// <param name="MatchLength">Длина совпадения (по количеству свопавщих нграмм)</param>
 public readonly record struct WordCompareResult(
     byte NameWordPosition,
-    byte PhraseType,
+    byte NameType,
     byte QueryWordPosition,
     byte MatchLength);
 

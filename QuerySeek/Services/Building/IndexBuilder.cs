@@ -8,13 +8,13 @@ using QuerySeek.Services.Normalizing;
 
 namespace QuerySeek.Services.Building;
 
-public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter)
+public class IndexBuilder(INormalizer normalizer, INameTokenizer nameTokenizer)
 {
     private readonly Dictionary<Key, EntityMeta> Entities = [];
     private readonly Dictionary<Key, HashSet<Key>> Childs = [];
     private readonly EntitiesByWordsSearchMapBuilder EntitiesByWordsSearchMapBuilder = new();
     private readonly WordsIndexBuilder WordsBundle = new();
-    private readonly StringArraySequenceComparer PhrasesComparer = new();
+    private readonly StringArraySequenceComparer NamesComparer = new();
 
     public void AddEntity(in IIndexedEntity indexedEntity)
     {
@@ -36,16 +36,16 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
             set!.Add(key);
         }
 
-        IEnumerable<Phrase> names = indexedEntity.GetNames();
+        IEnumerable<Name> names = indexedEntity.GetNames();
 
-        foreach ((string[] tokenizedPhrase, byte phraseType) in GetNamesToBuild(names, normalizer, phraseSplitter))
+        foreach ((string[] tokenizedName, byte nameType) in GetNamesToBuild(names, normalizer, nameTokenizer))
         {
-            for (byte wordNamePosition = 0; wordNamePosition < tokenizedPhrase.Length && wordNamePosition < byte.MaxValue; wordNamePosition++)
+            for (byte wordNamePosition = 0; wordNamePosition < tokenizedName.Length && wordNamePosition < byte.MaxValue; wordNamePosition++)
             {
-                string word = tokenizedPhrase[wordNamePosition];
+                string word = tokenizedName[wordNamePosition];
                 int wordId = WordsBundle.GetWordId(word);
 
-                WordMatchMeta wordMatchMeta = new(key.Id, wordNamePosition, phraseType);
+                WordMatchMeta wordMatchMeta = new(key.Id, wordNamePosition, nameType);
                 EntitiesByWordsSearchMapBuilder.AddMatch(wordId, key.Type, containerKey, wordMatchMeta);
             }
         }
@@ -53,18 +53,18 @@ public class IndexBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter
         Entities.Add(key, new([.. linksKeys]));
     }
 
-    private IEnumerable<(string[] TokenizedPhrase, byte PhraseType)> GetNamesToBuild(
-        IEnumerable<Phrase> phrases,
+    private IEnumerable<(string[] TokenizedName, byte NameType)> GetNamesToBuild(
+        IEnumerable<Name> names,
         INormalizer normalizer,
-        IPhraseSplitter phraseSplitter)
-        => [.. phrases
-            .Select(phrase =>
+        INameTokenizer nameTokenizer)
+        => [.. names
+            .Select(name =>
             {
-                string[] tokenizedPhrase = TextPreprocessor.PreprocessPhrase(phraseSplitter, normalizer, phrase.Text);
-                return (tokenizedPhrase, phrase.PhraseType);
+                string[] tokenizedName = TextPreprocessor.PreprocessName(nameTokenizer, normalizer, name.Text);
+                return (tokenizedName, name.NameType);
             })
             //Если после нормализации получились одинаковые - убираем дубликаты
-            .DistinctBy(i => i.tokenizedPhrase, PhrasesComparer)];
+            .DistinctBy(i => i.tokenizedName, NamesComparer)];
 
     public IndexInstance Build()
     {

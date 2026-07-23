@@ -5,7 +5,7 @@ namespace QuerySeek.Services.Helpers;
 public static class EntitiesSearchMapHelper
 {
     public static WordMatchMeta[]? GetMatchesByWord(
-        this KeyValuePair<byte, Dictionary< Key, WordMatchMeta[]>>[][] searchMap,
+        this KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] searchMap,
         int wordId,
         byte entityType)
     {
@@ -48,7 +48,7 @@ public static class EntitiesSearchMapHelper
     }
 
     /// <summary>
-    /// Бинарный поиск для бандла типов
+    /// Бинарный поиск индекса нужного типа для бандла типов
     /// </summary>
     /// <param name="sortedKeys"></param>
     /// <param name="targetType"></param>

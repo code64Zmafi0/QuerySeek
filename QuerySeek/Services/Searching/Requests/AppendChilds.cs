@@ -17,8 +17,6 @@ public class AppendChilds(
 {
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
-        Dictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
-
         if (!(searchContext.GetResultsByType(parentType) is { } parents))
             return;
 
