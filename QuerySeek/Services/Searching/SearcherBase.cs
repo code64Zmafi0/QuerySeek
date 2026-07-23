@@ -214,11 +214,10 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         //Добавление матчей из связанных сущностей если они найдены в контексте
         foreach (Key nodeKey in entityLinks)
         {
-            if (searchContext.ContainsEntity(nodeKey, out EntitySearchResult? chainedMathes))
-            {
-                double nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, nodeKey.Type);
+            double nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, nodeKey.Type);
+
+            if (nodeMultipler > 0 && searchContext.ContainsEntity(nodeKey, out EntitySearchResult? chainedMathes))
                 CalculateEntityPartScore(in wordsScores, chainedMathes.WordsMatches, nodeMultipler);
-            }
         }
 
         int resultScore = 0;
