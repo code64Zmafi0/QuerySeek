@@ -51,7 +51,7 @@ public static class QS
         return builder.Build();
     }
 
-    public static async Task<IndexInstance> Build(INormalizer normalizer, IPhraseSplitter phraseSplitter, IAsyncEnumerable<IIndexedEntity> entities)
+    public static async Task<IndexInstance> BuildAsync(INormalizer normalizer, IPhraseSplitter phraseSplitter, IAsyncEnumerable<IIndexedEntity> entities)
     {
         var builder = new IndexBuilder(normalizer, phraseSplitter);
 

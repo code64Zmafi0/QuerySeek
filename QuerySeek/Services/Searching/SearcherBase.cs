@@ -100,8 +100,6 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
 
     public void FillContext(TContext context, string query)
     {
-        context.Query = query;
-
         string[] splittedQuery = TextPreprocessor.PreprocessPhrase(splitter, normalizer, query);
 
         Dictionary<string, string[]> alternativeWords = GetWordsAlternativesPairs(context);
@@ -122,6 +120,7 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
                 multipler);
         });
 
+        context.Query = query;
         context.SplittedAndNormalizedQuery = splittedQuery;
         context.NgrammedQuery = ngrammedWords;
         context.WordsSearchSettings = GetWordsSearchSettings(context);
