@@ -2,7 +2,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using QuerySeek.Interfaces;
 using QuerySeek.Models;
-using QuerySeek.Services.Extensions;
 using QuerySeek.Services.Helpers;
 using QuerySeek.Services.Normalizing;
 
