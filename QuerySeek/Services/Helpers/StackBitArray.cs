@@ -29,32 +29,4 @@ public readonly ref struct StackBitArray
             _storage[elementIndex] &= ~bitMask;
         }
     }
-
-    /// <summary>
-    /// Возвращает совпавшие типы
-    /// </summary>
-    /// <returns></returns>
-    public List<int> GetTrueIndices()
-    {
-        List<int> result = [];
-
-        for (byte i = 0; i < 4; i++)
-        {
-            int currentInt = _storage[i];
-
-            if (currentInt == 0) continue;
-
-            int baseIndex = i << 5;
-
-            for (int bit = 0; bit < 32; bit++)
-            {
-                if ((currentInt & (1 << bit)) != 0)
-                {
-                    result.Add(baseIndex + bit);
-                }
-            }
-        }
-
-        return result;
-    }
 }
