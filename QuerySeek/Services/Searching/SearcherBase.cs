@@ -42,6 +42,15 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         => result;
 
     /// <summary>
+    /// Позволяет при совпадении линка, добавить просчет его линков
+    /// </summary>
+    /// <param name="entityType"></param>
+    /// <param name="linkedType"></param>
+    /// <returns></returns>
+    public virtual bool OnLinkedMatchNeedMergeLinks(byte entityType, byte linkedType)
+        => false;
+
+    /// <summary>
     /// Множитель совпадений из связанных сущностей
     /// </summary>
     /// <param name="entityType"></param>
@@ -109,7 +118,7 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         [..
             PostProcessing(context, GetAllResults().OrderByDescending(i =>
                 {
-                    i.Score = CalculateScore(context, i);
+                    CalculateScore(context, i);
                     return i.Score;
                 })
             )
@@ -155,7 +164,7 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
                 PostProcessing(context, TypeBundlePreprocessing(context, currentType, typeSearchResult.Value.Values)
                     .OrderByDescending(matchBundle =>
                     {
-                        matchBundle.Score = CalculateScore(context, matchBundle);
+                        CalculateScore(context, matchBundle);
                         return matchBundle.Score;
                     })
                 )
@@ -201,12 +210,13 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         context.Request = GetRequest(context);
     }
 
-    public int CalculateScore(TContext searchContext, EntitySearchResult entityMatchesBundle)
+    public void CalculateScore(TContext searchContext, EntitySearchResult entityMatchesBundle)
     {
         byte currentEntityType = entityMatchesBundle.Key.Type;
         Key[] entityLinks = entityMatchesBundle.Meta.Links;
 
-        Span<int> wordsScores = stackalloc int[searchContext.NgrammedQuery.Length];
+        StackBitArray matchedTypes = new(stackalloc int[8]);
+        Span<byte> wordsScores = stackalloc byte[searchContext.NgrammedQuery.Length];
 
         //Считаем количество всех совпадений в найденной сущности и заполняем wordsScores
         CalculateEntityPartScore(in wordsScores, entityMatchesBundle.WordsMatches, 1);
@@ -216,8 +226,32 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         {
             double nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, nodeKey.Type);
 
-            if (nodeMultipler > 0 && searchContext.ContainsEntity(nodeKey, out EntitySearchResult? chainedMathes))
-                CalculateEntityPartScore(in wordsScores, chainedMathes.WordsMatches, nodeMultipler);
+            if (nodeMultipler == 0 
+                || matchedTypes.Get(nodeKey.Type)
+                || !searchContext.ContainsEntity(nodeKey, out EntitySearchResult? chainedMath))
+                continue;
+            
+            CalculateEntityPartScore(in wordsScores, chainedMath.WordsMatches, nodeMultipler);
+            matchedTypes.Set(nodeKey.Type, true);
+
+            //Пробуем провалится на уровень выше по условию и просчитать матчи с данного уровня
+            if (OnLinkedMatchNeedMergeLinks(currentEntityType, nodeKey.Type))
+            {
+                Key[] chainedEntityLinks = chainedMath.Meta.Links;
+
+                foreach (Key chainedEntityLink in chainedEntityLinks)
+                {
+                    double chainedEntityNodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, chainedEntityLink.Type);
+
+                    if (chainedEntityNodeMultipler == 0 
+                        || matchedTypes.Get(chainedEntityLink.Type)
+                        || !searchContext.ContainsEntity(chainedEntityLink, out EntitySearchResult? parentLinkMathes))
+                        continue;
+
+                    CalculateEntityPartScore(in wordsScores, parentLinkMathes.WordsMatches, chainedEntityNodeMultipler);
+                    matchedTypes.Set(chainedEntityLink.Type, true);
+                }
+            }
         }
 
         int resultScore = 0;
@@ -235,23 +269,25 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
             resultScore = (int)(resultScore * item.Multipler);
         }
 
-        return resultScore;
+        //Записываем итоговый скор
+        entityMatchesBundle.MatchedTypes = matchedTypes.GetTrueIndices();
+        entityMatchesBundle.Score = resultScore;
     }
 
     private void CalculateEntityPartScore(
-        in Span<int> wordsScores,
+        in Span<byte> wordsScores,
         List<WordCompareResult> wordsMatches,
         double nodeMultipler)
     {
         //TODO: тут надо хорошо подумать как получше дистинктить слова
         foreach (WordCompareResult compareResult in wordsMatches)
         {
-            int score = compareResult.MatchLength;
+            byte score = compareResult.MatchLength;
 
             int queryWordPosition = compareResult.QueryWordPosition;
             double nameTypeMultipler = GetNameMultiplerInternal(compareResult.NameType);
 
-            score = (int)(score * nameTypeMultipler * nodeMultipler);
+            score = (byte)(score * nameTypeMultipler * nodeMultipler);
 
             if (wordsScores[queryWordPosition] < score)
                 wordsScores[queryWordPosition] = score;
