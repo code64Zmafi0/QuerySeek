@@ -1,6 +1,5 @@
 using QuerySeek.Models;
 using QuerySeek.Services.Helpers;
-using QuerySeek.Services.Searching.Models;
 
 namespace QuerySeek.Services.Searching.Requests;
 
@@ -8,11 +7,7 @@ namespace QuerySeek.Services.Searching.Requests;
 /// Выполняет поиск сущностей целевого типа
 /// </summary>
 /// <param name="targetType">Целевой тип сущности</param>
-/// <param name="filter">Фильтр добавления в словарь найденных</param>
-public class Search(
-    byte targetType,
-    Func<Key, bool>? filter = null)
-    : RequestBase(targetType)
+public class Search(byte targetType) : RequestBase(targetType)
 {
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
@@ -34,26 +29,22 @@ public class Search(
 
                 int wordId = indexWordInfo.Key;
 
-                WordMatchMeta[]? list = entitiesSearchMap.GetMatchesByWord(wordId, TargetType);
+                WordMatchMeta[]? matches = entitiesSearchMap.GetMatchesByWord(wordId, TargetType);
 
-                if (list is null)
+                if (matches is null)
                     continue;
 
                 wsm.IncrementMatch();
 
-                foreach (WordMatchMeta wordMatchMeta in list)
+                foreach (WordMatchMeta wordMatchMeta in matches)
                 {
                     if (ct.IsCancellationRequested)
                         return;
 
                     Key entityKey = new(TargetType, wordMatchMeta.EntityId);
-
-                    if (!((filter?.Invoke(entityKey)) ?? true))
-                        continue;
-
                     WordCompareResult wcr = new(
                         wordMatchMeta.NameWordPosition,
-                        wordMatchMeta.PhraseType,
+                        wordMatchMeta.NameType,
                         queryWordPosition,
                         indexWordInfo.Value);
 

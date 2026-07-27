@@ -5,7 +5,7 @@ namespace QuerySeek.Services.Helpers;
 public static class EntitiesSearchMapHelper
 {
     public static WordMatchMeta[]? GetMatchesByWord(
-        this KeyValuePair<byte, Dictionary< Key, WordMatchMeta[]>>[][] searchMap,
+        this KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] searchMap,
         int wordId,
         byte entityType)
     {
@@ -23,11 +23,11 @@ public static class EntitiesSearchMapHelper
         return null;
     }
 
-    public static IEnumerable<WordMatchMeta> GetMatchesByWordAndParents(
+    public static IEnumerable<WordMatchMeta> GetMatchesByWordAndContainers(
         this KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] searchMap,
         int wordId,
         byte entityType,
-        Key[] parentKeys)
+        Key[] containerKeys)
     {
         KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[] wordMatches = searchMap[wordId];
 
@@ -35,11 +35,11 @@ public static class EntitiesSearchMapHelper
         int index = BinarySearch(wordMatches, entityType);
         if (index == -1) yield break;
 
-        Dictionary<Key, WordMatchMeta[]> matchesBundle = wordMatches[index].Value;
+        Dictionary<Key, WordMatchMeta[]> matchesBundleByContainers = wordMatches[index].Value;
 
-        foreach (Key byKey in parentKeys)
+        foreach (Key containerKey in containerKeys)
         {
-            if (!matchesBundle.TryGetValue(byKey, out WordMatchMeta[]? entityMatches))
+            if (!matchesBundleByContainers.TryGetValue(containerKey, out WordMatchMeta[]? entityMatches))
                 continue;
 
             foreach (WordMatchMeta wordMatchMeta in entityMatches)
@@ -48,7 +48,7 @@ public static class EntitiesSearchMapHelper
     }
 
     /// <summary>
-    /// Бинарный поиск для бандла типов
+    /// Бинарный поиск индекса нужного типа для бандла типов
     /// </summary>
     /// <param name="sortedKeys"></param>
     /// <param name="targetType"></param>

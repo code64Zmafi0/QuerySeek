@@ -1,5 +1,5 @@
 ﻿using QuerySeek.Models;
-using QuerySeek.Services.Extensions;
+using QuerySeek.Services.Building;
 
 namespace QuerySeek.Interfaces;
 
@@ -13,7 +13,7 @@ public interface IIndexedEntity
     /// <summary>
     /// Entity names
     /// </summary>
-    IEnumerable<Phrase> GetNames();
+    IEnumerable<Name> GetNames();
 
     /// <summary>
     /// Components of entity

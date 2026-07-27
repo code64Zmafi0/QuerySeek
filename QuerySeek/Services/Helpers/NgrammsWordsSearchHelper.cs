@@ -1,14 +1,30 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using QuerySeek.Services.Searching;
-using QuerySeek.Services.Searching.Models;
 
 namespace QuerySeek.Services.Helpers;
 
-public static class NgrammsHelper
+public static class NgrammsWordsSearchHelper
 {
     public const byte NGRAM_LENGTH = 3;
     public const byte MAX_WORD_LENGTH = 250;
+
+    /// <summary>
+    /// Производит расчет минимальной схожести для слов с заданным минимальным совпадением 
+    /// </summary>
+    /// <param name="word"></param>
+    /// <param name="minSimilarity"></param>
+    /// <returns>Минимальное количество нграмм для совпадения</returns>
+    public static int CalculateWordSimilarityTreshold(Word word, double minSimilarity)
+        => (int)(word.NGrammsHashes.Length * minSimilarity);
+
+    /// <summary>
+    /// Производит расчет минимальной схожести для цифр (без последних нграммов)
+    /// </summary>
+    /// <param name="word"></param>
+    /// <returns>Минимальное количество нграмм для совпадения</returns>
+    public static int CalculateDigitSimilarityTreshold(Word word)
+        => word.NGrammsHashes.Length - NGRAM_LENGTH + 1;
 
     /// <summary>
     /// Преобразовние строки в массив нграммов (их хеш кодов)
@@ -62,7 +78,7 @@ public static class NgrammsHelper
     }
 
     /// <summary>
-    /// Поиск схожих слов в индексе по словам из запроса
+    /// Поиск схожих слов в индексе слов для слов из запроса
     /// </summary>
     /// <param name="splittedQuery"></param>
     /// <param name="wordsSearchSettings"></param>
@@ -73,7 +89,7 @@ public static class NgrammsHelper
         WordsSearchSettings wordsSearchSettings,
         Dictionary<int, int[]> wordsIdsByNgramms)
     {
-        var result = new List<KeyValuePair<int, byte>>[splittedQuery.Length];
+        List<KeyValuePair<int, byte>>[] result = new List<KeyValuePair<int, byte>>[splittedQuery.Length];
 
         //Используем один словарь для расчета совпавщих слов для каждого слова из запроса дабы лишний раз не аллоцировать
         Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict = new(wordsSearchSettings.WordsSearchDictionaryPreallocate);
@@ -105,6 +121,14 @@ public static class NgrammsHelper
         return result;
     }
 
+    /// <summary>
+    /// Поиск схожих слов и альтернатив для слова из запроса
+    /// </summary>
+    /// <param name="wordsSearchProcessDict"></param>
+    /// <param name="wordsIdsByNgramms"></param>
+    /// <param name="wordContainer"></param>
+    /// <param name="wordsSearchSettings"></param>
+    /// <returns></returns>
     private static List<KeyValuePair<int, byte>> SearchSimilarsByQueryWordAndAlternatives(
         Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict,
         Dictionary<int, int[]> wordsIdsByNgramms,
@@ -113,21 +137,20 @@ public static class NgrammsHelper
     {
         List<KeyValuePair<int, byte>> result = [];
 
-        //Ищем по одной четкой алтернативе
+        //Ищем по одной полностью совпавшей альтернативе
         foreach (Word altWord in wordContainer.Alternatives)
             SearchSimilars(altWord, (byte)altWord.NGrammsHashes.Length);
 
-        int treshold = wordContainer.QueryWord.IsDigit
-            ? wordContainer.QueryWord.NGrammsHashes.Length - NGRAM_LENGTH + 1
-            : (int)(wordContainer.QueryWord.NGrammsHashes.Length * wordsSearchSettings.Similarity);
+        Word queryWord = wordContainer.QueryWord;
+        int treshold = wordsSearchSettings.SimilarityCalculator(wordContainer.QueryWord);
 
-        SearchSimilars(wordContainer.QueryWord, treshold);
+        SearchSimilars(queryWord, treshold);
 
         return result;
 
-        void SearchSimilars(Word queryWord, int treshold)
+        void SearchSimilars(Word word, int treshold)
         {
-            NgrammSearch(wordsSearchProcessDict, wordsIdsByNgramms, queryWord, treshold);
+            NgrammSearch(wordsSearchProcessDict, wordsIdsByNgramms, word, treshold);
 
             //Ищем бандл схожих слов и сортируем по количеству совпадений (вычисляется в свойстве Score. Попадания - наказание за промахи)
             foreach (KeyValuePair<int, WordNgrammSearchState> item in wordsSearchProcessDict
@@ -188,7 +211,6 @@ public static class NgrammsHelper
             }
         }
     }
-
     
     private readonly record struct WordNgrammSearchState(
         byte Matches,

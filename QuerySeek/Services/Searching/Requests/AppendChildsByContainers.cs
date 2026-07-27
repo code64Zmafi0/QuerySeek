@@ -1,5 +1,4 @@
-﻿using QuerySeek.Models;
-using QuerySeek.Services.Searching.Models;
+using QuerySeek.Models;
 
 namespace QuerySeek.Services.Searching.Requests;
 
@@ -22,8 +21,6 @@ public class AppendChildsByContainers(
 {
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
-        Dictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
-
         if (!(searchContext.GetResultsByType(parentType) is { } parents)
             || !(searchContext.GetResultsByType(containerType) is { } containers))
             return;

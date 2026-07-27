@@ -1,5 +1,4 @@
 using QuerySeek.Models;
-using QuerySeek.Services.Searching.Models;
 
 namespace QuerySeek.Services.Searching.Requests;
 
@@ -18,8 +17,6 @@ public class AppendChilds(
 {
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
-        Dictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
-
         if (!(searchContext.GetResultsByType(parentType) is { } parents))
             return;
 

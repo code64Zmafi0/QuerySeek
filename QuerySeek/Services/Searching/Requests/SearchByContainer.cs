@@ -1,7 +1,5 @@
-using System.Runtime.CompilerServices;
 using QuerySeek.Models;
 using QuerySeek.Services.Helpers;
-using QuerySeek.Services.Searching.Models;
 
 namespace QuerySeek.Services.Searching.Requests;
 
@@ -9,17 +7,14 @@ namespace QuerySeek.Services.Searching.Requests;
 /// Выполняет поиск сущностей целевого типа по найденным контейнерам
 /// </summary>
 /// <param name="targetType">Целевой тип сущности</param>
-/// <param name="containerType">Тип сущности родителя (Parent)</param>
-/// <param name="filter">Фильтр добавления в словарь найденных</param>
-/// <param name="containersFilter">Фильтр родителей по которым осуществляем поиск</param>
+/// <param name="containerType">Тип сущности контейнера</param>
+/// <param name="containersFilter">Фильтр контейнеров по которым осуществляем поиск</param>
 public class SearchByContainer(
     byte targetType,
     byte containerType,
-    Func<Key, bool>? filter = null,
     Func<IEnumerable<EntitySearchResult>, IEnumerable<EntitySearchResult>>? containersFilter = null) : RequestBase(targetType)
 {
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public virtual Key[] SelectContainers(Dictionary<Key, EntitySearchResult> containers)
+    public Key[] SelectContainers(Dictionary<Key, EntitySearchResult> containers)
     {
         Key[] result = [];
 
@@ -62,7 +57,7 @@ public class SearchByContainer(
                 int wordId = indexWordInfo.Key;
 
                 bool isMatchedWord = false;
-                foreach (var wordMatchMeta in entitiesSearchMap.GetMatchesByWordAndParents(
+                foreach (WordMatchMeta wordMatchMeta in entitiesSearchMap.GetMatchesByWordAndContainers(
                     wordId,
                     TargetType,
                     containers))
@@ -73,13 +68,9 @@ public class SearchByContainer(
                     isMatchedWord = true;
 
                     Key entityKey = new(TargetType, wordMatchMeta.EntityId);
-
-                    if (!((filter?.Invoke(entityKey)) ?? true))
-                        continue;
-
                     WordCompareResult wcr = new(
                         wordMatchMeta.NameWordPosition,
-                        wordMatchMeta.PhraseType,
+                        wordMatchMeta.NameType,
                         queryWordPosition,
                         indexWordInfo.Value);
 

@@ -18,9 +18,9 @@ Linked data text search engine.
 - Your search entity must implement the interface **IIndexedEntity**
     - GetKey() - Defines an entity keys
         - Use QS.Key() for create key, _entityType must be greater than 0_
-    - GetNames() - Define the phrases by which the search will be carried out
-        - Use the _QS.Phrase()_ method and its overloads to specify names to search for and to define the name type for flexible sorting and scoring.
-        - If you are using the extended phrase configuration QS.Phrase(string phrase, byte phraseType), use phraseType > 0
+    - GetNames() - Define the names by which the search will be carried out
+        - Use the _QS.Name()_ method and its overloads to specify names to search for and to define the name type for flexible sorting and scoring.
+        - If you are using the extended name configuration QS.Name(string name, byte nameType), use nameType > 0
     - GetLinks() - Identify the keys that are associated with your entity (when creating an index, the entity will be a child of each element in the Links list)
     - GetContainer() - Define container. For using SearchByContainer
 
@@ -29,7 +29,7 @@ Linked data text search engine.
 **Building**
 
 - Use QS.Build() to build Index intsnace index isntance, passing the normalizer and splitter instances to the method, as well as an enumeration entities for searching
-- Also, you can get an instance of the builder using QS.GetBuilder(INormalizer normalizer, IPhraseSplitter phraseSplitter)
+- Also, you can get an instance of the builder using QS.GetBuilder(INormalizer normalizer, INameTokenizer nameTokenizer)
     - Call builder _AddEntity_ method to add entity (multithreading is not working)
     - Call _Build_ to get IndexInstance
 
@@ -42,9 +42,9 @@ Linked data text search engine.
 The library provides built-in tools for normalizing and splitting a name into words for searching. Use this static objects.
 
 QuerySeek.Services.Normalizing.DefaultNormalizer.Instance
-QuerySeek.Services.Normalizing.DefaultPhraseSplitter.Instance
+QuerySeek.Services.Normalizing.DefaultNameTokenizer.Instance
 
-Also, you can redefine normalization and phrases splitting on words for use in your cases. Implement: IPhraseSplitter and INormalizer
+Also, you can redefine normalization and tokenizer splitting on words for use in your cases. Implement: INameTokenizer and INormalizer
 
 ### Search
 
@@ -59,7 +59,7 @@ Also, you can redefine normalization and phrases splitting on words for use in y
     - AppendChilds - use to force adding entities by parent
     - AppendChildsByContainers - use to force adding entities by parent in containers
 - Override GetLinkedEntityMatchMiltipler(byte entityType, byte linkedType) for flexible scoring mathes of linked entities
-- Override GetPhraseTypeMultipler(byte phraseType) for flexible scoring by phrase types
+- Override GetNameTypeMultipler(byte nameType) for flexible scoring by name types
 - Override TypeBundlePreprocessing(TContext context, byte type, IEnumerable<EntitySearchResult> result) to add rules or filter the results that will be output as a result
 - Override PostProcessing(TContext context, IOrderedEnumerable<EntitySearchResult> result) for additional final sorting
 

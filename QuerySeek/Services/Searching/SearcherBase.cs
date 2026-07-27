@@ -1,7 +1,7 @@
+using System.Xml.Linq;
 using QuerySeek.Models;
 using QuerySeek.Services.Helpers;
 using QuerySeek.Services.Normalizing;
-using QuerySeek.Services.Searching.Models;
 using QuerySeek.Services.Searching.Requests;
 
 namespace QuerySeek.Services.Searching;
@@ -10,209 +10,17 @@ namespace QuerySeek.Services.Searching;
 /// Позволяет определить стратегию поиска
 /// </summary>
 /// <typeparam name="TContext"></typeparam>
-/// <param name="splitter"></param>
+/// <param name="nameTokenizer"></param>
 /// <param name="normalizer"></param>
-public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormalizer normalizer) where TContext : SearchContextBase
+public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INormalizer normalizer) where TContext : SearchContextBase
 {
-    #region Search logic
-    /// <summary>
-    /// Поиск топа всех типов
-    /// </summary>
-    /// <param name="context"></param>
-    /// <param name="query"></param>
-    /// <param name="take"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    public EntitySearchResult[] Search(
-        TContext context,
-        string query,
-        int take,
-        CancellationToken? cancellationToken = null)
-    {
-        CancellationToken ct = cancellationToken ?? CancellationToken.None;
-
-        FillContext(context, query);
-
-        foreach (RequestBase i in context.Request) i.ProcessRequest(context, ct);
-
-        return PostProcessing(context, GetAllResults()
-            .OrderByDescending(i =>
-            {
-                i.Score = CalculateScore(context, i);
-                return i.Score;
-            }))
-            .Take(take)
-            .ToArray();
-
-        IEnumerable<EntitySearchResult> GetAllResults()
-        {
-            foreach (KeyValuePair<byte, Dictionary<Key, EntitySearchResult>> typeResults in context.SearchResult)
-            {
-                foreach (EntitySearchResult item in TypeBundlePreprocessing(context, typeResults.Key, typeResults.Value.Values))
-                    yield return item;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Поиск топов по типам
-    /// </summary>
-    /// <param name="context"></param>
-    /// <param name="query"></param>
-    /// <param name="selectTypes"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    public TypeSearchResult[] SearchTypes(
-        TContext context,
-        string query,
-        (byte Type, int Take)[] selectTypes,
-        CancellationToken? cancellationToken = null)
-    {
-        CancellationToken ct = cancellationToken ?? CancellationToken.None;
-
-        FillContext(context, query);
-
-        foreach (RequestBase i in context.Request) i.ProcessRequest(context, ct);
-
-        var result = new TypeSearchResult[selectTypes.Length];
-
-        for (int i = 0; i < selectTypes.Length; i++)
-        {
-            (byte Type, int Take) = selectTypes[i];
-            Dictionary<Key, EntitySearchResult>? typeSearchResult = context.GetResultsByType(Type);
-
-            if (typeSearchResult is null)
-            {
-                result[i] = new(Type, []);
-                continue;
-            }
-
-            EntitySearchResult[] typeResult =
-                PostProcessing(context, TypeBundlePreprocessing(context, Type, typeSearchResult.Values)
-                    .OrderByDescending(matchBundle =>
-                    {
-                        matchBundle.Score = CalculateScore(context, matchBundle);
-                        return matchBundle.Score;
-                    })
-                )
-                .Take(Take)
-                .ToArray();
-
-            result[i] = new(Type, typeResult);
-        }
-
-        return result;
-    }
-
-    public void FillContext(TContext context, string query)
-    {
-        context.Query = query;
-
-        string[] splittedQuery = TextPreprocessor.PreprocessPhrase(splitter, normalizer, query);
-
-        Dictionary<string, string[]> alternativeWords = GetWordsAlternativesPairs(context);
-        Dictionary<string, double> queryWordMultiplers = GetQueryWordsMultiplers(context);
-
-        QueryWordContainer[] ngrammedWords = Array.ConvertAll(splittedQuery, word =>
-        {
-            double multipler = queryWordMultiplers.TryGetValue(word, out var m) ? m : 1;
-
-            Word[] alterantivesMetas = [];
-
-            if (alternativeWords.TryGetValue(word, out string[]? alternatives))
-                alterantivesMetas = Array.ConvertAll(alternatives, alt => new Word(normalizer.Normalize(alt)));
-
-            return new QueryWordContainer(
-                new Word(word),
-                alterantivesMetas,
-                multipler);
-        });
-
-        context.SplittedAndNormalizedQuery = splittedQuery;
-        context.NgrammedQuery = ngrammedWords;
-        context.WordsSearchSettings = GetWordsSearchSettings(context);
-        context.SearchWordsBundle = NgrammsHelper.SearchSimlarIndexWordsByQuery(
-            context.NgrammedQuery,
-            context.WordsSearchSettings,
-            context.Index.WordsIdsByNgramms);
-        context.Request = GetRequest(context);
-    }
-
-    public int CalculateScore(TContext searchContext, EntitySearchResult entityMatchesBundle)
-    {
-        byte currentEntityType = entityMatchesBundle.Key.Type;
-        Key[] entityLinks = entityMatchesBundle.Meta.Links;
-
-        Span<int> wordsScores = stackalloc int[searchContext.NgrammedQuery.Length];
-
-        //Считаем количество всех совпадений в найденной сущности и заполняем wordsScores
-        CalculateEntityPartScore(in wordsScores, entityMatchesBundle.WordsMatches, 1);
-
-        //Добавление матчей из связанных сущностей если они найдены в контексте
-        foreach (Key nodeKey in entityLinks)
-        {
-            if (searchContext.GetResultsByType(nodeKey.Type) is { } req
-                && req.TryGetValue(nodeKey, out EntitySearchResult? chainedMathes))
-            {
-                double nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, nodeKey.Type);
-                CalculateEntityPartScore(in wordsScores, chainedMathes.WordsMatches, nodeMultipler);
-            }
-        }
-
-        int resultScore = 0;
-
-        //Складывам совпадения по словам из запроса
-        foreach (int ws in wordsScores)
-            resultScore += ws;
-
-        //Обрабатываем дополнительные правила
-        for (int i = 0; i < entityMatchesBundle.Rules.Count; i++)
-        {
-            AdditionalRule item = entityMatchesBundle.Rules[i];
-
-            resultScore += item.Score;
-            resultScore = (int)(resultScore * item.Multipler);
-        }
-
-        return resultScore;
-    }
-
-    private void CalculateEntityPartScore(
-        in Span<int> wordsScores,
-        List<WordCompareResult> wordsMatches,
-        double nodeMultipler)
-    {
-        //TODO: тут надо хорошо подумать как получше дистинктить слова
-        foreach (WordCompareResult compareResult in wordsMatches)
-        {
-            int score = compareResult.MatchLength;
-
-            int queryWordPosition = compareResult.QueryWordPosition;
-            double phraseMultipler = GetPhraseMultiplerInternal(compareResult.PhraseType);
-
-            score = (int)(score * phraseMultipler * nodeMultipler);
-
-            if (wordsScores[queryWordPosition] < score)
-                wordsScores[queryWordPosition] = score;
-        }
-    }
-
-    internal double GetPhraseMultiplerInternal(byte phraseType)
-    {
-        if (phraseType == 0)
-            return 1;
-
-        return GetPhraseTypeMultipler(phraseType);
-    }
-    #endregion
-
     #region Overrides
     /// <summary>
     /// Определяет запрос на поиск в индексе - что ищем в индексе
     /// </summary>
     /// <param name="context"></param>
     /// <returns></returns>
-    public abstract RequestBase[] GetRequest(TContext context);
+    public abstract IEnumerable<RequestBase> GetRequest(TContext context);
 
     /// <summary>
     /// Позволяет переопределить конечную сортировку
@@ -234,6 +42,15 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         => result;
 
     /// <summary>
+    /// Позволяет при совпадении линка, добавить просчет его линков
+    /// </summary>
+    /// <param name="entityType"></param>
+    /// <param name="linkedType"></param>
+    /// <returns></returns>
+    public virtual bool OnLinkedMatchNeedMergeLinks(byte entityType, byte linkedType)
+        => false;
+
+    /// <summary>
     /// Множитель совпадений из связанных сущностей
     /// </summary>
     /// <param name="entityType"></param>
@@ -243,11 +60,11 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         => 1;
 
     /// <summary>
-    /// Множитель типа фразы
+    /// Множитель типа имени
     /// </summary>
-    /// <param name="phraseType"></param>
+    /// <param name="nameType"></param>
     /// <returns></returns>
-    public virtual double GetPhraseTypeMultipler(byte phraseType)
+    public virtual double GetNameTypeMultipler(byte nameType)
         => 1;
 
     /// <summary>
@@ -275,4 +92,213 @@ public abstract class SearcherBase<TContext>(IPhraseSplitter splitter, INormaliz
         => [];
 
     #endregion
+
+    #region Search logic
+    /// <summary>
+    /// Поиск топа всех типов
+    /// </summary>
+    /// <param name="context">Контекст поиска</param>
+    /// <param name="query">Текстовый запрос</param>
+    /// <param name="take">Количество элементов</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public EntitySearchResult[] Search(
+        TContext context,
+        string query,
+        int take,
+        CancellationToken? cancellationToken = null)
+    {
+        CancellationToken ct = cancellationToken ?? CancellationToken.None;
+
+        FillContext(context, query);
+
+        foreach (RequestBase i in context.Request) i.ProcessRequest(context, ct);
+
+        return
+        [..
+            PostProcessing(context, GetAllResults().OrderByDescending(i =>
+                {
+                    CalculateScore(context, i);
+                    return i.Score;
+                })
+            )
+            .Take(take)
+        ];
+
+        IEnumerable<EntitySearchResult> GetAllResults()
+        {
+            foreach (KeyValuePair<byte, Dictionary<Key, EntitySearchResult>> typeResults in context.SearchResult)
+            {
+                foreach (EntitySearchResult item in TypeBundlePreprocessing(context, typeResults.Key, typeResults.Value.Values))
+                    yield return item;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Поиск топов по типам
+    /// </summary>
+    /// <param name="context">Контекст поиска</param>
+    /// <param name="query">Текстовый запрос</param>
+    /// <param name="take">Количество элементов каждого типа</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public TypeSearchResult[] SearchTypes(
+        TContext context,
+        string query,
+        int take,
+        CancellationToken? cancellationToken = null)
+    {
+        CancellationToken ct = cancellationToken ?? CancellationToken.None;
+
+        FillContext(context, query);
+
+        foreach (RequestBase i in context.Request) i.ProcessRequest(context, ct);
+
+        TypeSearchResult[] result = [.. context.SearchResult.Select(typeSearchResult =>
+        {
+            byte currentType = typeSearchResult.Key;
+
+            EntitySearchResult[] typeResult =
+            [..
+                PostProcessing(context, TypeBundlePreprocessing(context, currentType, typeSearchResult.Value.Values)
+                    .OrderByDescending(matchBundle =>
+                    {
+                        CalculateScore(context, matchBundle);
+                        return matchBundle.Score;
+                    })
+                )
+                .Take(take)
+            ];
+
+            return new TypeSearchResult(currentType, typeResult);
+        })];
+
+        return result;
+    }
+
+    public void FillContext(TContext context, string query)
+    {
+        string[] splittedQuery = TextPreprocessor.PreprocessName(nameTokenizer, normalizer, query);
+
+        Dictionary<string, string[]> alternativeWords = GetWordsAlternativesPairs(context);
+        Dictionary<string, double> queryWordMultiplers = GetQueryWordsMultiplers(context);
+
+        QueryWordContainer[] ngrammedWords = Array.ConvertAll(splittedQuery, word =>
+        {
+            double multipler = queryWordMultiplers.TryGetValue(word, out var m) ? m : 1;
+
+            Word[] alterantivesMetas = [];
+
+            if (alternativeWords.TryGetValue(word, out string[]? alternatives))
+                alterantivesMetas = Array.ConvertAll(alternatives, alt => new Word(normalizer.Normalize(alt)));
+
+            return new QueryWordContainer(
+                new Word(word),
+                alterantivesMetas,
+                multipler);
+        });
+
+        context.Query = query;
+        context.SplittedAndNormalizedQuery = splittedQuery;
+        context.NgrammedQuery = ngrammedWords;
+        context.WordsSearchSettings = GetWordsSearchSettings(context);
+        context.SearchWordsBundle = NgrammsWordsSearchHelper.SearchSimlarIndexWordsByQuery(
+            context.NgrammedQuery,
+            context.WordsSearchSettings,
+            context.Index.WordsIdsByNgramms);
+        context.Request = GetRequest(context);
+    }
+
+    public void CalculateScore(TContext searchContext, EntitySearchResult entityMatchesBundle)
+    {
+        byte currentEntityType = entityMatchesBundle.Key.Type;
+        Key[] entityLinks = entityMatchesBundle.Meta.Links;
+
+        StackBitArray matchedTypes = new(stackalloc int[8]);
+        Span<byte> wordsScores = stackalloc byte[searchContext.NgrammedQuery.Length];
+
+        //Считаем количество всех совпадений в найденной сущности и заполняем wordsScores
+        CalculateEntityPartScore(in wordsScores, entityMatchesBundle.WordsMatches, 1);
+
+        //Добавление матчей из связанных сущностей если они найдены в контексте
+        foreach (Key nodeKey in entityLinks)
+        {
+            double nodeMultipler;
+
+            if (matchedTypes.Get(nodeKey.Type)
+                || (nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, nodeKey.Type)) == 0
+                || !searchContext.ContainsEntity(nodeKey, out EntitySearchResult? chainedMath))
+                continue;
+            
+            CalculateEntityPartScore(in wordsScores, chainedMath.WordsMatches, nodeMultipler);
+            matchedTypes.Set(nodeKey.Type, true);
+
+            //Пробуем провалится на уровень выше по условию и просчитать матчи с данного уровня
+            if (OnLinkedMatchNeedMergeLinks(currentEntityType, nodeKey.Type))
+            {
+                Key[] chainedEntityLinks = chainedMath.Meta.Links;
+
+                foreach (Key chainedEntityLink in chainedEntityLinks)
+                {
+                    if (matchedTypes.Get(chainedEntityLink.Type)
+                        || (nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, chainedEntityLink.Type)) == 0
+                        || !searchContext.ContainsEntity(chainedEntityLink, out EntitySearchResult? parentLinkMathes))
+                        continue;
+
+                    CalculateEntityPartScore(in wordsScores, parentLinkMathes.WordsMatches, nodeMultipler);
+                    matchedTypes.Set(chainedEntityLink.Type, true);
+                }
+            }
+        }
+
+        int resultScore = 0;
+
+        //Складывам совпадения по словам из запроса
+        foreach (int ws in wordsScores)
+            resultScore += ws;
+
+        //Обрабатываем дополнительные правила
+        for (int i = 0; i < entityMatchesBundle.Rules.Count; i++)
+        {
+            AdditionalRule item = entityMatchesBundle.Rules[i];
+
+            resultScore += item.Score;
+            resultScore = (int)(resultScore * item.Multipler);
+        }
+
+        //Записываем итоговый скор
+        entityMatchesBundle.Score = resultScore;
+    }
+
+    private void CalculateEntityPartScore(
+        in Span<byte> wordsScores,
+        List<WordCompareResult> wordsMatches,
+        double nodeMultipler)
+    {
+        //TODO: тут надо хорошо подумать как получше дистинктить слова
+        for (int i = 0; i < wordsMatches.Count; i++)
+        {
+            WordCompareResult compareResult = wordsMatches[i];
+            byte score = compareResult.MatchLength;
+
+            int queryWordPosition = compareResult.QueryWordPosition;
+            double nameTypeMultipler = GetNameMultiplerInternal(compareResult.NameType);
+
+            score = (byte)(score * nameTypeMultipler * nodeMultipler);
+
+            if (wordsScores[queryWordPosition] < score)
+                wordsScores[queryWordPosition] = score;
+        }
+    }
+
+    internal double GetNameMultiplerInternal(byte nameType)
+    {
+        if (nameType == 0)
+            return 1;
+
+        return GetNameTypeMultipler(nameType);
+    }
+    #endregion
+
 }

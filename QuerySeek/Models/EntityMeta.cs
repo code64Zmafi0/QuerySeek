@@ -3,7 +3,7 @@
 namespace QuerySeek.Models;
 
 /// <summary>
-/// Храним линки и потомков
+/// Отвечает за хранение линков и потомков
 /// </summary>
 [MessagePackObject]
 public class EntityMeta

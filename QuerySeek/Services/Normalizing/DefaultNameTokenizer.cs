@@ -8,9 +8,9 @@ namespace QuerySeek.Services.Normalizing;
 /// Стандартный разделитель слов, разбивает по сиволам не являющимся буквами и цифрами
 /// </summary>
 /// <param name="notSplittingChars">Позволяет указать символы которые не будут являться сепараторами</param>
-public class DefaultPhraseSplitter(ReadOnlySpan<char> notSplittingChars) : IPhraseSplitter
+public class DefaultNameTokenizer(ReadOnlySpan<char> notSplittingChars) : INameTokenizer
 {
-    public static readonly DefaultPhraseSplitter Instance = new(string.Empty);
+    public static readonly DefaultNameTokenizer Instance = new(string.Empty);
 
     public IEnumerable<string> Tokenize(string? value)
     {
@@ -37,8 +37,8 @@ public class DefaultPhraseSplitter(ReadOnlySpan<char> notSplittingChars) : IPhra
             int start = pos;
             CharClass startClass = ClassifyAt(value, pos, out int charLen);
 
-            // CJK: каждый иероглиф — отдельный токен
-            if (startClass == CharClass.Ideograph)
+            // CJK: каждый иероглиф или кастомный символ — отдельный токен
+            if (startClass is CharClass.Ideograph or CharClass.Custom)
             {
                 pos += charLen;
                 yield return value[start..pos];

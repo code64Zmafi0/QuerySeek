@@ -2,5 +2,5 @@
 
 public interface INormalizer
 {
-    string Normalize(string phrase);
+    string Normalize(string name);
 }
