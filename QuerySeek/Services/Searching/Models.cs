@@ -26,8 +26,6 @@ public class TypeSearchResult(byte type, EntitySearchResult[] result)
 /// <param name="meta"></param>
 public class EntitySearchResult(Key key, EntityMeta meta)
 {
-    private static readonly List<int> EmptyMatchedTypes = [];
-
     public readonly Key Key = key;
 
     public readonly EntityMeta Meta = meta;
@@ -35,7 +33,6 @@ public class EntitySearchResult(Key key, EntityMeta meta)
     public readonly List<WordCompareResult> WordsMatches = new(1);
 
     public readonly List<AdditionalRule> Rules = [];
-    public List<int> MatchedTypes { get; internal set; } = EmptyMatchedTypes;
 
     public int Prescore;
 

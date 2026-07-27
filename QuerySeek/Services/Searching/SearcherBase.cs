@@ -268,7 +268,6 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         }
 
         //Записываем итоговый скор
-        entityMatchesBundle.MatchedTypes = matchedTypes.GetTrueIndices();
         entityMatchesBundle.Score = resultScore;
     }
 
