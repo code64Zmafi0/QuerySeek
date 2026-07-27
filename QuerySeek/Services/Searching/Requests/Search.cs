@@ -7,8 +7,7 @@ namespace QuerySeek.Services.Searching.Requests;
 /// Выполняет поиск сущностей целевого типа
 /// </summary>
 /// <param name="targetType">Целевой тип сущности</param>
-public class Search(byte targetType)
-    : RequestBase(targetType)
+public class Search(byte targetType) : RequestBase(targetType)
 {
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
