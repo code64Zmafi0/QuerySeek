@@ -277,8 +277,9 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         double nodeMultipler)
     {
         //TODO: тут надо хорошо подумать как получше дистинктить слова
-        foreach (WordCompareResult compareResult in wordsMatches)
+        for (int i = 0; i < wordsMatches.Count; i++)
         {
+            WordCompareResult compareResult = wordsMatches[i];
             byte score = compareResult.MatchLength;
 
             int queryWordPosition = compareResult.QueryWordPosition;
