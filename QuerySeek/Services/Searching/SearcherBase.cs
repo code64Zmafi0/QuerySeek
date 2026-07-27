@@ -224,10 +224,10 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         //Добавление матчей из связанных сущностей если они найдены в контексте
         foreach (Key nodeKey in entityLinks)
         {
-            double nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, nodeKey.Type);
+            double nodeMultipler;
 
-            if (nodeMultipler == 0 
-                || matchedTypes.Get(nodeKey.Type)
+            if (matchedTypes.Get(nodeKey.Type)
+                || (nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, nodeKey.Type)) == 0
                 || !searchContext.ContainsEntity(nodeKey, out EntitySearchResult? chainedMath))
                 continue;
             
@@ -241,14 +241,12 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
 
                 foreach (Key chainedEntityLink in chainedEntityLinks)
                 {
-                    double chainedEntityNodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, chainedEntityLink.Type);
-
-                    if (chainedEntityNodeMultipler == 0 
-                        || matchedTypes.Get(chainedEntityLink.Type)
+                    if (matchedTypes.Get(chainedEntityLink.Type)
+                        || (nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, chainedEntityLink.Type)) == 0
                         || !searchContext.ContainsEntity(chainedEntityLink, out EntitySearchResult? parentLinkMathes))
                         continue;
 
-                    CalculateEntityPartScore(in wordsScores, parentLinkMathes.WordsMatches, chainedEntityNodeMultipler);
+                    CalculateEntityPartScore(in wordsScores, parentLinkMathes.WordsMatches, nodeMultipler);
                     matchedTypes.Set(chainedEntityLink.Type, true);
                 }
             }
