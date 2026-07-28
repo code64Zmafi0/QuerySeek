@@ -207,7 +207,7 @@ public static class NgrammsWordsSearchHelper
                 }
                 //Попытка отбить добавление в словарь уже точно не совпавщих по treshold
                 else if (queryWordNgrammIndex == 0 || (!queryWord.IsDigit && queryWordNgrammIndex <= treshold))
-                    words[wordId] = new(1, 0, queryWordNgrammIndex);
+                    words[wordId] = new(1, queryWordNgrammIndex, queryWordNgrammIndex);
             }
         }
     }
