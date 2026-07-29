@@ -1,4 +1,3 @@
-using System.Xml.Linq;
 using QuerySeek.Models;
 using QuerySeek.Services.Helpers;
 using QuerySeek.Services.Normalizing;
@@ -70,10 +69,10 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
     /// <summary>
     /// Определение настроек поиска по словам
     /// </summary>
-    /// <param name="searchContext"></param>
+    /// <param name="context"></param>
     /// <returns></returns>
-    public virtual WordsSearchSettings GetWordsSearchSettings(TContext searchContext)
-        => searchContext.NgrammedQuery.Length > 5
+    public virtual WordsSearchSettings GetWordsSearchSettings(TContext context)
+        => context.NgrammedQuery.Length > 5
             ? WordsSearchSettings.Fast
             : WordsSearchSettings.Default;
 
@@ -81,14 +80,14 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
     /// Определяем возможные альтернативные слова для слов из запроса
     /// </summary>
     /// <returns></returns>
-    public virtual Dictionary<string, string[]> GetWordsAlternativesPairs(TContext searchContext)
+    public virtual Dictionary<string, string[]> GetWordsAlternativesPairs(TContext context)
         => [];
 
     /// <summary>
     /// Определяем моножители для слов из запроса (можем уменьшать значимость предлогов и тд)
     /// </summary>
     /// <returns></returns>
-    public virtual Dictionary<string, double> GetQueryWordsMultiplers(TContext searchContext)
+    public virtual Dictionary<string, double> GetQueryWordsMultiplers(TContext context)
         => [];
 
     #endregion
