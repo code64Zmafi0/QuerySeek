@@ -142,7 +142,7 @@ public static class NgrammsWordsSearchHelper
             SearchSimilars(altWord, (byte)altWord.NGrammsHashes.Length);
 
         Word queryWord = wordContainer.QueryWord;
-        int treshold = wordsSearchSettings.SimilarityCalculator(wordContainer.QueryWord);
+        int treshold = wordsSearchSettings.SimilarityTresholdCalculator(wordContainer.QueryWord);
 
         SearchSimilars(queryWord, treshold);
 
