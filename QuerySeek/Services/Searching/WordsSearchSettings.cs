@@ -20,7 +20,7 @@ public record WordsSearchSettings(
         SearchedWordsToStopProcess: 6,
         SimilarityCalculator: (word) => word.IsDigit
             ? NgrammsWordsSearchHelper.CalculateDigitSimilarityTreshold(word)
-            : NgrammsWordsSearchHelper.CalculateWordSimilarityTreshold(word, 0.5));
+            : NgrammsWordsSearchHelper.CalculateWordSimilarityTreshold(word, 0.4));
 
     public static readonly WordsSearchSettings Fast = new(
         MaxCheckingWordsCount: 200,
