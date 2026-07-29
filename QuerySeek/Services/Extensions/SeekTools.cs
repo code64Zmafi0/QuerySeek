@@ -3,6 +3,7 @@ using QuerySeek.Interfaces;
 using QuerySeek.Models;
 using QuerySeek.Services.Building;
 using QuerySeek.Services.Normalizing;
+using QuerySeek.Services.Searching;
 
 namespace QuerySeek.Services.Extensions;
 
@@ -35,6 +36,9 @@ public static class QS
 
     public static Key[] Keys(byte type, params int[] ids)
         => Array.ConvertAll(ids, id => Key(type, id));
+
+    public static bool WordIsFullMatched(Word queryWord, WordCompareResult wordCompareResult)
+        => queryWord.NGrammsHashes.Length == wordCompareResult.MatchLength;
     #endregion
 
     #region Build
