@@ -39,6 +39,9 @@ public static class QS
 
     public static bool WordIsFullMatched(Word queryWord, WordCompareResult wordCompareResult)
         => queryWord.NGrammsHashes.Length == wordCompareResult.MatchLength;
+
+    public static bool WordIsFullMatched(SearchContextBase context, WordCompareResult wordCompareResult)
+        => WordIsFullMatched(context.NgrammedQuery[wordCompareResult.QueryWordPosition].QueryWord, wordCompareResult);
     #endregion
 
     #region Build
