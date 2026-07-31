@@ -218,7 +218,8 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         Span<byte> wordsScores = stackalloc byte[searchContext.NgrammedQuery.Length];
 
         //Считаем количество всех совпадений в найденной сущности и заполняем wordsScores
-        CalculateEntityPartScore(in wordsScores, entityMatchesBundle.WordsMatches, 1);
+        double multipler = GetLinkedEntityMatchMultipler(currentEntityType, currentEntityType);
+        CalculateEntityPartScore(in wordsScores, entityMatchesBundle.WordsMatches, multipler);
 
         //Добавление матчей из связанных сущностей если они найдены в контексте
         foreach (Key nodeKey in entityLinks)

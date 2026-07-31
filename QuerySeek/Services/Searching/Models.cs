@@ -38,6 +38,17 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 
     public int Score;
 
+    public bool ContainsQueryWord(int queryWordIndex)
+    {
+        for (int i = 0; i < WordsMatches.Count; i++)
+        {
+            if (WordsMatches[i].QueryWordPosition == queryWordIndex)
+                return true;
+        }
+
+        return false;
+    }
+
     public Key? TryGetLink(byte type)
     {
         foreach (Key link in Meta.Links)
@@ -59,6 +70,18 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 
     internal void AddMatch(WordCompareResult wordCompareResult)
     {
+        //Не дублируем матчи при одинаковых словах
+        for (int i = 0; i < WordsMatches.Count; i++)
+        {
+            WordCompareResult match = WordsMatches[i];
+
+            if (match.NameType == wordCompareResult.NameType
+                && (match.QueryWordPosition == wordCompareResult.QueryWordPosition || match.NameWordPosition == wordCompareResult.NameWordPosition))
+            {
+                return;
+            }
+        }
+
         WordsMatches.Add(wordCompareResult);
         Prescore += wordCompareResult.MatchLength;
     }

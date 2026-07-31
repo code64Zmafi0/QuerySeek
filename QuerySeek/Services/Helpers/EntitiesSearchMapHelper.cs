@@ -1,4 +1,5 @@
 ﻿using QuerySeek.Models;
+using QuerySeek.Services.Searching;
 
 namespace QuerySeek.Services.Helpers;
 
@@ -23,11 +24,11 @@ public static class EntitiesSearchMapHelper
         return null;
     }
 
-    public static IEnumerable<WordMatchMeta> GetMatchesByWordAndContainers(
+    public static IEnumerable<(EntitySearchResult Container, WordMatchMeta[] Matches)> GetMatchesByWordAndContainers(
         this KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] searchMap,
         int wordId,
         byte entityType,
-        Key[] containerKeys)
+        EntitySearchResult[] containerKeys)
     {
         KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[] wordMatches = searchMap[wordId];
 
@@ -37,13 +38,12 @@ public static class EntitiesSearchMapHelper
 
         Dictionary<Key, WordMatchMeta[]> matchesBundleByContainers = wordMatches[index].Value;
 
-        foreach (Key containerKey in containerKeys)
+        foreach (EntitySearchResult containerKey in containerKeys)
         {
-            if (!matchesBundleByContainers.TryGetValue(containerKey, out WordMatchMeta[]? entityMatches))
+            if (!matchesBundleByContainers.TryGetValue(containerKey.Key, out WordMatchMeta[]? entityMatches))
                 continue;
 
-            foreach (WordMatchMeta wordMatchMeta in entityMatches)
-                yield return wordMatchMeta;
+            yield return (containerKey, entityMatches);
         }
     }
 

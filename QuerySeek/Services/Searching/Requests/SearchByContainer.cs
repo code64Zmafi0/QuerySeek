@@ -14,18 +14,18 @@ public class SearchByContainer(
     byte containerType,
     Func<IEnumerable<EntitySearchResult>, IEnumerable<EntitySearchResult>>? containersFilter = null) : RequestBase(targetType)
 {
-    public Key[] SelectContainers(Dictionary<Key, EntitySearchResult> containers)
+    public EntitySearchResult[] SelectContainers(Dictionary<Key, EntitySearchResult> containers)
     {
-        Key[] result = [];
+        EntitySearchResult[] result;
 
         if (containersFilter is null)
         {
-            result = new Key[containers.Count];
-            containers.Keys.CopyTo(result, 0);
+            result = new EntitySearchResult[containers.Count];
+            containers.Values.CopyTo(result, 0);
         }
         else
         {
-            result = [.. containersFilter.Invoke(containers.Values).Select(i => i.Key)];
+            result = [.. containersFilter.Invoke(containers.Values)];
         }
 
         return result;
@@ -39,7 +39,7 @@ public class SearchByContainer(
         if (!(searchContext.GetResultsByType(containerType) is { } containersResult))
             return;
 
-        Key[] containers = SelectContainers(containersResult);
+        EntitySearchResult[] containers = SelectContainers(containersResult);
 
         for (byte queryWordPosition = 0; queryWordPosition < wordsBundle.Length; queryWordPosition++)
         {
@@ -57,7 +57,7 @@ public class SearchByContainer(
                 int wordId = indexWordInfo.Key;
 
                 bool isMatchedWord = false;
-                foreach (WordMatchMeta wordMatchMeta in entitiesSearchMap.GetMatchesByWordAndContainers(
+                foreach ((EntitySearchResult container, WordMatchMeta[] matches) in entitiesSearchMap.GetMatchesByWordAndContainers(
                     wordId,
                     TargetType,
                     containers))
@@ -65,16 +65,24 @@ public class SearchByContainer(
                     if (ct.IsCancellationRequested)
                         return;
 
+                    if (container.ContainsQueryWord(queryWordPosition))
+                        continue;
+
                     isMatchedWord = true;
 
-                    Key entityKey = new(TargetType, wordMatchMeta.EntityId);
-                    WordCompareResult wcr = new(
-                        wordMatchMeta.NameWordPosition,
-                        wordMatchMeta.NameType,
-                        queryWordPosition,
-                        indexWordInfo.Value);
+                    for (int j = 0; j < matches.Length; j++)
+                    {
+                        WordMatchMeta wordMatchMeta = matches[i];
 
-                    searchContext.AddResult(entityKey, wcr);
+                        Key entityKey = new(TargetType, wordMatchMeta.EntityId);
+                        WordCompareResult wcr = new(
+                            wordMatchMeta.NameWordPosition,
+                            wordMatchMeta.NameType,
+                            queryWordPosition,
+                            indexWordInfo.Value);
+
+                        searchContext.AddResult(entityKey, wcr);
+                    }
                 }
 
                 if (isMatchedWord) wsm.IncrementMatch();
