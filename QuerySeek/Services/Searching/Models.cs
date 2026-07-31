@@ -76,6 +76,7 @@ public class EntitySearchResult(Key key, EntityMeta meta)
             WordCompareResult match = WordsMatches[i];
 
             if (match.NameType == wordCompareResult.NameType
+                && match.MatchLength == wordCompareResult.MatchLength
                 && (match.QueryWordPosition == wordCompareResult.QueryWordPosition || match.NameWordPosition == wordCompareResult.NameWordPosition))
             {
                 return;
