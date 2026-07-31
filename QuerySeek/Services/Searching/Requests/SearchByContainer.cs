@@ -70,10 +70,8 @@ public class SearchByContainer(
 
                     isMatchedWord = true;
 
-                    for (int j = 0; j < matches.Length; j++)
+                    foreach (WordMatchMeta wordMatchMeta in matches)
                     {
-                        WordMatchMeta wordMatchMeta = matches[i];
-
                         Key entityKey = new(TargetType, wordMatchMeta.EntityId);
                         WordCompareResult wcr = new(
                             wordMatchMeta.NameWordPosition,
