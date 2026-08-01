@@ -67,25 +67,6 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 
     public void AddRule(AdditionalRule rule)
         => Rules.Add(rule);
-
-    internal void AddMatch(WordCompareResult wordCompareResult)
-    {
-        //Не дублируем матчи при одинаковых словах
-        for (int i = 0; i < WordsMatches.Count; i++)
-        {
-            WordCompareResult match = WordsMatches[i];
-
-            if (match.NameType == wordCompareResult.NameType
-                && match.MatchLength == wordCompareResult.MatchLength
-                && (match.QueryWordPosition == wordCompareResult.QueryWordPosition || match.NameWordPosition == wordCompareResult.NameWordPosition))
-            {
-                return;
-            }
-        }
-
-        WordsMatches.Add(wordCompareResult);
-        Prescore += wordCompareResult.MatchLength;
-    }
 }
 
 /// <summary>

@@ -14,26 +14,9 @@ public class SearchByContainer(
     byte containerType,
     Func<IEnumerable<EntitySearchResult>, IEnumerable<EntitySearchResult>>? containersFilter = null) : RequestBase(targetType)
 {
-    public EntitySearchResult[] SelectContainers(Dictionary<Key, EntitySearchResult> containers)
-    {
-        EntitySearchResult[] result;
-
-        if (containersFilter is null)
-        {
-            result = new EntitySearchResult[containers.Count];
-            containers.Values.CopyTo(result, 0);
-        }
-        else
-        {
-            result = [.. containersFilter.Invoke(containers.Values)];
-        }
-
-        return result;
-    }
-
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
-        List<KeyValuePair<int, byte>>[] wordsBundle = searchContext.SearchWordsBundle;
+        List<KeyValuePair<int, byte>>[] queryWordsBundle = searchContext.SearchWordsBundle;
         KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] entitiesSearchMap = searchContext.Index.EntitiesSearchMap;
 
         if (!(searchContext.GetResultsByType(containerType) is { } containersResult))
@@ -41,9 +24,9 @@ public class SearchByContainer(
 
         EntitySearchResult[] containers = SelectContainers(containersResult);
 
-        for (byte queryWordPosition = 0; queryWordPosition < wordsBundle.Length; queryWordPosition++)
+        for (byte queryWordPosition = 0; queryWordPosition < queryWordsBundle.Length; queryWordPosition++)
         {
-            List<KeyValuePair<int, byte>> currentBundle = wordsBundle[queryWordPosition];
+            List<KeyValuePair<int, byte>> currentBundle = queryWordsBundle[queryWordPosition];
 
             WordsSearchManager wsm = searchContext.WordsSearchSettings.GetWordsSearchManager();
 
@@ -86,5 +69,22 @@ public class SearchByContainer(
                 if (isMatchedWord) wsm.IncrementMatch();
             }
         }
+    }
+
+    private EntitySearchResult[] SelectContainers(Dictionary<Key, EntitySearchResult> containers)
+    {
+        EntitySearchResult[] result;
+
+        if (containersFilter is null)
+        {
+            result = new EntitySearchResult[containers.Count];
+            containers.Values.CopyTo(result, 0);
+        }
+        else
+        {
+            result = [.. containersFilter.Invoke(containers.Values)];
+        }
+
+        return result;
     }
 }

@@ -68,6 +68,10 @@ public class SearchContextBase(IndexInstance index)
         return null;
     }
 
+    /// <summary>
+    /// Добавляет в контекст поиска сущность
+    /// </summary>
+    /// <param name="key"></param>
     public void AddResult(Key key)
     {
         ref var types = ref CollectionsMarshal.GetValueRefOrAddDefault(SearchResult, key.Type, out var exists);
@@ -81,6 +85,10 @@ public class SearchContextBase(IndexInstance index)
             matchesBundle = new(key, Index.Entities[key]);
     }
 
+    /// <summary>
+    /// Добавляет в контекст поиска сущность и добавляет свопадение со словом из запроса
+    /// </summary>
+    /// <param name="key"></param>
     public void AddResult(Key key, WordCompareResult wordCompareResult)
     {
         ref var types = ref CollectionsMarshal.GetValueRefOrAddDefault(SearchResult, key.Type, out var exists);
@@ -93,7 +101,22 @@ public class SearchContextBase(IndexInstance index)
         if (!exists)
             matchesBundle = new(key, Index.Entities[key]);
 
-        matchesBundle!.AddMatch(wordCompareResult);
+        List<WordCompareResult> wordsMatches = matchesBundle!.WordsMatches;
+
+        //Не дублируем матчи при одинаковых словах
+        for (int i = 0; i < wordsMatches.Count; i++)
+        {
+            WordCompareResult match = wordsMatches[i];
+
+            if (match.NameType == wordCompareResult.NameType
+                && (SearchWordsBundle[match.QueryWordPosition] == SearchWordsBundle[wordCompareResult.QueryWordPosition] || match.NameWordPosition == wordCompareResult.NameWordPosition))
+            {
+                return;
+            }
+        }
+
+        wordsMatches.Add(wordCompareResult);
+        matchesBundle.Prescore += wordCompareResult.MatchLength;
     }
     #endregion
 }
