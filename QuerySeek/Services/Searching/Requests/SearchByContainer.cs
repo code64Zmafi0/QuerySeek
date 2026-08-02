@@ -19,7 +19,7 @@ public class SearchByContainer(
         List<KeyValuePair<int, byte>>[] queryWordsBundle = searchContext.SearchWordsBundle;
         KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] entitiesSearchMap = searchContext.Index.EntitiesSearchMap;
 
-        if (!(searchContext.GetResultsByType(containerType) is { } containersResult))
+        if (searchContext.GetResultsByType(containerType) is not { } containersResult)
             return;
 
         EntitySearchResult[] containers = SelectContainers(containersResult);
@@ -45,13 +45,13 @@ public class SearchByContainer(
                     TargetType,
                     containers))
                 {
-                    if (ct.IsCancellationRequested)
-                        return;
-
                     isMatchedWord = true;
 
                     foreach (WordMatchMeta wordMatchMeta in matches)
                     {
+                        if (ct.IsCancellationRequested)
+                            return;
+
                         Key entityKey = new(TargetType, wordMatchMeta.EntityId);
                         WordCompareResult wcr = new(
                             wordMatchMeta.NameWordPosition,

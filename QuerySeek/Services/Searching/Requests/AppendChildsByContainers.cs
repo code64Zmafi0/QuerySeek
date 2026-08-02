@@ -21,8 +21,8 @@ public class AppendChildsByContainers(
 {
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
-        if (!(searchContext.GetResultsByType(parentType) is { } parents)
-            || !(searchContext.GetResultsByType(containerType) is { } containers))
+        if (searchContext.GetResultsByType(parentType) is not { } parents
+            || searchContext.GetResultsByType(containerType) is not { } containers)
             return;
 
         IEnumerable<Key> GetChilds(

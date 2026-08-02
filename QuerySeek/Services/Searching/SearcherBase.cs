@@ -110,19 +110,9 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         CancellationToken ct = cancellationToken ?? CancellationToken.None;
 
         FillContext(context, query);
+        ProcessRequests(context, ct);
 
-        foreach (RequestBase i in context.Request) i.ProcessRequest(context, ct);
-
-        return
-        [..
-            PostProcessing(context, GetAllResults().OrderByDescending(i =>
-                {
-                    CalculateScore(context, i);
-                    return i.Score;
-                })
-            )
-            .Take(take)
-        ];
+        return [.. PostProcessing(context, GetAllResults().OrderByDescending(CalculateRules)).Take(take) ];
 
         IEnumerable<EntitySearchResult> GetAllResults()
         {
@@ -151,27 +141,19 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         CancellationToken ct = cancellationToken ?? CancellationToken.None;
 
         FillContext(context, query);
-
-        foreach (RequestBase i in context.Request) i.ProcessRequest(context, ct);
+        ProcessRequests(context, ct);
 
         TypeSearchResult[] result = [.. context.SearchResult.Select(typeSearchResult =>
         {
             byte currentType = typeSearchResult.Key;
 
-            EntitySearchResult[] typeResult =
-            [..
-                PostProcessing(context, TypeBundlePreprocessing(context, currentType, typeSearchResult.Value.Values)
-                    .OrderByDescending(matchBundle =>
-                    {
-                        CalculateScore(context, matchBundle);
-                        return matchBundle.Score;
-                    })
-                )
-                .Take(take)
-            ];
+            IOrderedEnumerable<EntitySearchResult> preprocessed = TypeBundlePreprocessing(context, currentType, typeSearchResult.Value.Values)
+                .OrderByDescending(CalculateRules);
+
+            EntitySearchResult[] typeResult = [.. PostProcessing(context, preprocessed).Take(take)];
 
             return new TypeSearchResult(currentType, typeResult);
-        })];
+        }).Where(i => i.Result.Length != 0)];
 
         return result;
     }
@@ -209,7 +191,21 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         context.Request = GetRequest(context);
     }
 
-    public void CalculateScore(TContext searchContext, EntitySearchResult entityMatchesBundle)
+    public void ProcessRequests(TContext context, CancellationToken ct)
+    {
+        foreach (RequestBase request in context.Request)
+        {
+            request.ProcessRequest(context, ct);
+
+            if (context.GetResultsByType(request.TargetType) is not { } typeResult)
+                continue;
+
+            foreach (EntitySearchResult item in typeResult.Values)
+                CalculateTextScore(context, item);
+        }
+    }
+
+    public void CalculateTextScore(TContext searchContext, EntitySearchResult entityMatchesBundle)
     {
         byte currentEntityType = entityMatchesBundle.Key.Type;
         Key[] entityLinks = entityMatchesBundle.Meta.Links;
@@ -255,8 +251,18 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         int resultScore = 0;
 
         //Складывам совпадения по словам из запроса
-        foreach (int ws in wordsScores)
+        foreach (byte ws in wordsScores)
             resultScore += ws;
+
+        entityMatchesBundle.Score = resultScore;
+    }
+
+    public int CalculateRules(EntitySearchResult entityMatchesBundle)
+    {
+        if (entityMatchesBundle.Rules.Count == 0)
+            return entityMatchesBundle.Score;
+
+        int resultScore = entityMatchesBundle.Score;
 
         //Обрабатываем дополнительные правила
         for (int i = 0; i < entityMatchesBundle.Rules.Count; i++)
@@ -269,6 +275,8 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
 
         //Записываем итоговый скор
         entityMatchesBundle.Score = resultScore;
+
+        return resultScore;
     }
 
     private void CalculateEntityPartScore(

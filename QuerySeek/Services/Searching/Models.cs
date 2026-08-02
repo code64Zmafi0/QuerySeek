@@ -34,8 +34,6 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 
     public readonly List<AdditionalRule> Rules = [];
 
-    public int Prescore;
-
     public int Score;
 
     public bool ContainsQueryWord(int queryWordIndex)

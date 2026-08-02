@@ -108,15 +108,17 @@ public class SearchContextBase(IndexInstance index)
         {
             WordCompareResult match = wordsMatches[i];
 
-            if (match.NameType == wordCompareResult.NameType
-                && (SearchWordsBundle[match.QueryWordPosition] == SearchWordsBundle[wordCompareResult.QueryWordPosition] || match.NameWordPosition == wordCompareResult.NameWordPosition))
-            {
-                return;
-            }
+            if (match.NameType != wordCompareResult.NameType || match.MatchLength == wordCompareResult.MatchLength) continue;
+
+            bool isEqualNameWordPosition = match.NameWordPosition == wordCompareResult.NameWordPosition;
+
+            if (IsEqualQueryWordPosition() && !isEqualNameWordPosition || isEqualNameWordPosition && IsEqualQueryWord()) return;
+
+            bool IsEqualQueryWordPosition() => match.QueryWordPosition == wordCompareResult.QueryWordPosition;
+            bool IsEqualQueryWord() => ReferenceEquals(SearchWordsBundle[match.QueryWordPosition], SearchWordsBundle[wordCompareResult.QueryWordPosition]);
         }
 
         wordsMatches.Add(wordCompareResult);
-        matchesBundle.Prescore += wordCompareResult.MatchLength;
     }
     #endregion
 }
