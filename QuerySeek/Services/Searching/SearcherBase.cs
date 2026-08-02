@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using QuerySeek.Models;
 using QuerySeek.Services.Helpers;
 using QuerySeek.Services.Normalizing;
@@ -205,17 +206,17 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         }
     }
 
-    public void CalculateTextScore(TContext searchContext, EntitySearchResult entityMatchesBundle)
+    public void CalculateTextScore(TContext context, EntitySearchResult entityMatchesBundle)
     {
         byte currentEntityType = entityMatchesBundle.Key.Type;
         Key[] entityLinks = entityMatchesBundle.Meta.Links;
 
         StackBitArray matchedTypes = new(stackalloc int[8]);
-        Span<byte> wordsScores = stackalloc byte[searchContext.NgrammedQuery.Length];
+        Span<byte> wordsScores = stackalloc byte[context.NgrammedQuery.Length];
 
         //Считаем количество всех совпадений в найденной сущности и заполняем wordsScores
         double multipler = GetLinkedEntityMatchMultipler(currentEntityType, currentEntityType);
-        CalculateEntityPartScore(in wordsScores, entityMatchesBundle.WordsMatches, multipler);
+        CalculateEntityPartScore(in wordsScores, entityMatchesBundle.WordsMatches, multipler, context);
 
         //Добавление матчей из связанных сущностей если они найдены в контексте
         foreach (Key nodeKey in entityLinks)
@@ -224,10 +225,10 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
 
             if (matchedTypes.Get(nodeKey.Type)
                 || (nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, nodeKey.Type)) == 0
-                || !searchContext.ContainsEntity(nodeKey, out EntitySearchResult? chainedMath))
+                || !context.ContainsEntity(nodeKey, out EntitySearchResult? chainedMath))
                 continue;
             
-            CalculateEntityPartScore(in wordsScores, chainedMath.WordsMatches, nodeMultipler);
+            CalculateEntityPartScore(in wordsScores, chainedMath.WordsMatches, nodeMultipler, context);
             matchedTypes.Set(nodeKey.Type, true);
 
             //Пробуем провалится на уровень выше по условию и просчитать матчи с данного уровня
@@ -239,10 +240,10 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
                 {
                     if (matchedTypes.Get(chainedEntityLink.Type)
                         || (nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, chainedEntityLink.Type)) == 0
-                        || !searchContext.ContainsEntity(chainedEntityLink, out EntitySearchResult? parentLinkMathes))
+                        || !context.ContainsEntity(chainedEntityLink, out EntitySearchResult? parentLinkMathes))
                         continue;
 
-                    CalculateEntityPartScore(in wordsScores, parentLinkMathes.WordsMatches, nodeMultipler);
+                    CalculateEntityPartScore(in wordsScores, parentLinkMathes.WordsMatches, nodeMultipler, context);
                     matchedTypes.Set(chainedEntityLink.Type, true);
                 }
             }
@@ -282,12 +283,33 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
     private void CalculateEntityPartScore(
         in Span<byte> wordsScores,
         List<WordCompareResult> wordsMatches,
-        double nodeMultipler)
+        double nodeMultipler,
+        TContext context)
     {
-        //TODO: тут надо хорошо подумать как получше дистинктить слова
         for (int i = 0; i < wordsMatches.Count; i++)
         {
             WordCompareResult compareResult = wordsMatches[i];
+
+            //Дистинкт
+            bool isCalulated = false;
+            for (int j = 0; j < i; j++)
+            {
+                WordCompareResult toCheck = wordsMatches[j];
+
+                if (toCheck.NameType != compareResult.NameType || toCheck.MatchLength != compareResult.MatchLength) continue;
+
+                bool isEqualNamePosition = toCheck.NameWordPosition == compareResult.NameWordPosition;
+                bool IsEqualQueryWordPosition() => toCheck.QueryWordPosition == compareResult.QueryWordPosition;
+                bool IsEqualQueryWord() => ReferenceEquals(context.SearchWordsBundle[toCheck.QueryWordPosition], context.SearchWordsBundle[compareResult.QueryWordPosition]);
+
+                if ((isEqualNamePosition && IsEqualQueryWord()) || (!isEqualNamePosition && IsEqualQueryWordPosition()))
+                {
+                    isCalulated = true;
+                    break;
+                }
+            }
+            if (isCalulated) continue;
+
             byte score = compareResult.MatchLength;
 
             int queryWordPosition = compareResult.QueryWordPosition;

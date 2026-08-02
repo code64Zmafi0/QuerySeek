@@ -101,24 +101,7 @@ public class SearchContextBase(IndexInstance index)
         if (!exists)
             matchesBundle = new(key, Index.Entities[key]);
 
-        List<WordCompareResult> wordsMatches = matchesBundle!.WordsMatches;
-
-        //Не дублируем матчи при одинаковых словах
-        for (int i = 0; i < wordsMatches.Count; i++)
-        {
-            WordCompareResult match = wordsMatches[i];
-
-            if (match.NameType != wordCompareResult.NameType || match.MatchLength == wordCompareResult.MatchLength) continue;
-
-            bool isEqualNameWordPosition = match.NameWordPosition == wordCompareResult.NameWordPosition;
-
-            if (IsEqualQueryWordPosition() && !isEqualNameWordPosition || isEqualNameWordPosition && IsEqualQueryWord()) return;
-
-            bool IsEqualQueryWordPosition() => match.QueryWordPosition == wordCompareResult.QueryWordPosition;
-            bool IsEqualQueryWord() => ReferenceEquals(SearchWordsBundle[match.QueryWordPosition], SearchWordsBundle[wordCompareResult.QueryWordPosition]);
-        }
-
-        wordsMatches.Add(wordCompareResult);
+        matchesBundle!.WordsMatches.Add(wordCompareResult);
     }
     #endregion
 }
