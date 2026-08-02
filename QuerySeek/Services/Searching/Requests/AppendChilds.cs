@@ -13,7 +13,7 @@ public class AppendChilds(
     byte targetType,
     byte parentType,
     Func<IEnumerable<Key>, IEnumerable<Key>> appendFilter,
-    Func<IEnumerable<EntitySearchResult>, IEnumerable<EntitySearchResult>>? parentsFilter = null) : RequestBase(targetType)
+    Func<ICollection<EntitySearchResult>, IEnumerable<EntitySearchResult>>? parentsFilter = null) : RequestBase(targetType)
 {
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {

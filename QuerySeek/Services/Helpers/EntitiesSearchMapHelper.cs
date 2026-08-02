@@ -24,7 +24,7 @@ public static class EntitiesSearchMapHelper
         return null;
     }
 
-    public static IEnumerable<(EntitySearchResult Container, WordMatchMeta[] Matches)> GetMatchesByWordAndContainers(
+    public static IEnumerable<WordMatchMeta[]> GetMatchesByWordAndContainers(
         this KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] searchMap,
         int wordId,
         byte entityType,
@@ -43,7 +43,7 @@ public static class EntitiesSearchMapHelper
             if (!matchesBundleByContainers.TryGetValue(containerKey.Key, out WordMatchMeta[]? entityMatches))
                 continue;
 
-            yield return (containerKey, entityMatches);
+            yield return entityMatches;
         }
     }
 

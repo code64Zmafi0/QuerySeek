@@ -16,8 +16,8 @@ public class AppendChildsByContainers(
     byte parentType,
     byte containerType,
     Func<IEnumerable<Key>, IEnumerable<Key>> appendFilter,
-    Func<IEnumerable<EntitySearchResult>, IEnumerable<EntitySearchResult>>? parentsFilter = null,
-    Func<IEnumerable<EntitySearchResult>, IEnumerable<EntitySearchResult>>? containersFilter = null) : RequestBase(targetType)
+    Func<ICollection<EntitySearchResult>, IEnumerable<EntitySearchResult>>? parentsFilter = null,
+    Func<ICollection<EntitySearchResult>, IEnumerable<EntitySearchResult>>? containersFilter = null) : RequestBase(targetType)
 {
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
@@ -26,8 +26,8 @@ public class AppendChildsByContainers(
             return;
 
         IEnumerable<Key> GetChilds(
-            IEnumerable<EntitySearchResult> from,
-            Func<IEnumerable<EntitySearchResult>, IEnumerable<EntitySearchResult>>? selector)
+            ICollection<EntitySearchResult> from,
+            Func<ICollection<EntitySearchResult>, IEnumerable<EntitySearchResult>>? selector)
         {
             IEnumerable<EntitySearchResult> fromData = selector is null
                 ? from

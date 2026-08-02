@@ -12,7 +12,7 @@ namespace QuerySeek.Services.Searching.Requests;
 public class SearchByContainer(
     byte targetType,
     byte containerType,
-    Func<IEnumerable<EntitySearchResult>, IEnumerable<EntitySearchResult>>? containersFilter = null) : RequestBase(targetType)
+    Func<ICollection<EntitySearchResult>, IEnumerable<EntitySearchResult>>? containersFilter = null) : RequestBase(targetType)
 {
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
@@ -40,16 +40,13 @@ public class SearchByContainer(
                 int wordId = indexWordInfo.Key;
 
                 bool isMatchedWord = false;
-                foreach ((EntitySearchResult container, WordMatchMeta[] matches) in entitiesSearchMap.GetMatchesByWordAndContainers(
+                foreach (WordMatchMeta[] matches in entitiesSearchMap.GetMatchesByWordAndContainers(
                     wordId,
                     TargetType,
                     containers))
                 {
                     if (ct.IsCancellationRequested)
                         return;
-
-                    if (container.ContainsQueryWord(queryWordPosition))
-                        continue;
 
                     isMatchedWord = true;
 
