@@ -68,6 +68,13 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         => 1;
 
     /// <summary>
+    /// Вызывается после вычисления совпадений со словами из запроса
+    /// </summary>
+    /// <param name="entity"></param>
+    /// <param name="summaryMatches"></param>
+    public virtual void OnQueryMatched(EntitySearchResult entity, in Span<WordCompareResult> summaryMatches) { }
+
+    /// <summary>
     /// Определение настроек поиска по словам
     /// </summary>
     /// <param name="context"></param>
@@ -213,6 +220,8 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         //Складываем скор для совпадений по словам из запроса
         foreach (WordCompareResult ws in summaryMatches)
             resultScore += ws.Score;
+
+        OnQueryMatched(entityMatchesBundle, summaryMatches);
 
         entityMatchesBundle.Score = resultScore;
     }
