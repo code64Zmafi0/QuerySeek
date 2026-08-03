@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using QuerySeek.Models;
 using QuerySeek.Services.Helpers;
 using QuerySeek.Services.Normalizing;
@@ -73,7 +72,7 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
     /// <param name="context"></param>
     /// <returns></returns>
     public virtual WordsSearchSettings GetWordsSearchSettings(TContext context)
-        => context.NgrammedQuery.Length > 5
+        => context.SearchWordsBundle.Length > 5
             ? WordsSearchSettings.Fast
             : WordsSearchSettings.Default;
 
@@ -113,7 +112,7 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         FillContext(context, query);
         ProcessRequests(context, ct);
 
-        return [.. PostProcessing(context, GetAllResults().OrderByDescending(CalculateRules)).Take(take) ];
+        return [.. PostProcessing(context, GetAllResults().OrderByDescending(UseRules)).Take(take) ];
 
         IEnumerable<EntitySearchResult> GetAllResults()
         {
@@ -149,7 +148,7 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
             byte currentType = typeSearchResult.Key;
 
             IOrderedEnumerable<EntitySearchResult> preprocessed = TypeBundlePreprocessing(context, currentType, typeSearchResult.Value.Values)
-                .OrderByDescending(CalculateRules);
+                .OrderByDescending(UseRules);
 
             EntitySearchResult[] typeResult = [.. PostProcessing(context, preprocessed).Take(take)];
 
@@ -161,34 +160,14 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
 
     public void FillContext(TContext context, string query)
     {
-        string[] splittedQuery = TextPreprocessor.PreprocessName(nameTokenizer, normalizer, query);
+        context.Query = query;
+        context.SplittedAndNormalizedQuery = TextPreprocessor.PreprocessName(nameTokenizer, normalizer, query);
+        context.WordsSearchSettings = GetWordsSearchSettings(context);
 
         Dictionary<string, string[]> alternativeWords = GetWordsAlternativesPairs(context);
         Dictionary<string, double> queryWordMultiplers = GetQueryWordsMultiplers(context);
 
-        QueryWordContainer[] ngrammedWords = Array.ConvertAll(splittedQuery, word =>
-        {
-            double multipler = queryWordMultiplers.TryGetValue(word, out var m) ? m : 1;
-
-            Word[] alterantivesMetas = [];
-
-            if (alternativeWords.TryGetValue(word, out string[]? alternatives))
-                alterantivesMetas = Array.ConvertAll(alternatives, alt => new Word(normalizer.Normalize(alt)));
-
-            return new QueryWordContainer(
-                new Word(word),
-                alterantivesMetas,
-                multipler);
-        });
-
-        context.Query = query;
-        context.SplittedAndNormalizedQuery = splittedQuery;
-        context.NgrammedQuery = ngrammedWords;
-        context.WordsSearchSettings = GetWordsSearchSettings(context);
-        context.SearchWordsBundle = NgrammsWordsSearchHelper.SearchSimlarIndexWordsByQuery(
-            context.NgrammedQuery,
-            context.WordsSearchSettings,
-            context.Index.WordsIdsByNgramms);
+        context.SearchWordsBundle = NgrammsWordsSearchHelper.CreateSearchWordsBundle(context, alternativeWords, queryWordMultiplers);
         context.Request = GetRequest(context);
     }
 
@@ -198,38 +177,56 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         {
             request.ProcessRequest(context, ct);
 
-            if (context.GetResultsByType(request.TargetType) is not { } typeResult)
+            if (!context.GetResultsByType(request.TargetType, out Dictionary<Key, EntitySearchResult>? result))
                 continue;
 
-            foreach (EntitySearchResult item in typeResult.Values)
+            foreach (EntitySearchResult item in result.Values)
                 CalculateTextScore(context, item);
         }
     }
 
     public void CalculateTextScore(TContext context, EntitySearchResult entityMatchesBundle)
     {
+        if (entityMatchesBundle.Score != 0) return;
+
         byte currentEntityType = entityMatchesBundle.Key.Type;
         Key[] entityLinks = entityMatchesBundle.Meta.Links;
 
-        StackBitArray matchedTypes = new(stackalloc int[8]);
-        Span<byte> wordsScores = stackalloc byte[context.NgrammedQuery.Length];
+        Span<WordCompareResult> wordsScores = stackalloc WordCompareResult[context.SplittedAndNormalizedQuery.Length];
 
         //Считаем количество всех совпадений в найденной сущности и заполняем wordsScores
-        double multipler = GetLinkedEntityMatchMultipler(currentEntityType, currentEntityType);
-        CalculateEntityPartScore(in wordsScores, entityMatchesBundle.WordsMatches, multipler, context);
-
-        //Добавление матчей из связанных сущностей если они найдены в контексте
-        foreach (Key nodeKey in entityLinks)
+        foreach ((byte Type, List<WordCompareResult> Matches) in GetMatches(context, entityMatchesBundle))
         {
-            double nodeMultipler;
+            double nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, Type);
+            ProcessNodeScoring(in wordsScores, Matches, context, nodeMultipler);
+        }
 
-            if (matchedTypes.Get(nodeKey.Type)
-                || (nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, nodeKey.Type)) == 0
+        int resultScore = 0;
+
+        //Складывам совпадения по словам из запроса
+        foreach (WordCompareResult ws in wordsScores)
+            resultScore += ws.Score;
+
+        entityMatchesBundle.Score = resultScore;
+    }
+
+    private IEnumerable<(byte Type, List<WordCompareResult> Matches)> GetMatches(TContext context, EntitySearchResult entityMatchesBundle)
+    {
+        byte currentEntityType = entityMatchesBundle.Key.Type;
+
+        BitArray256 matchedTypes = new();
+
+        yield return (currentEntityType, entityMatchesBundle.WordsMatches);
+        matchedTypes[currentEntityType] = true;
+
+        foreach (Key nodeKey in entityMatchesBundle.Meta.Links)
+        {
+            if (matchedTypes[nodeKey.Type]
                 || !context.ContainsEntity(nodeKey, out EntitySearchResult? chainedMath))
                 continue;
-            
-            CalculateEntityPartScore(in wordsScores, chainedMath.WordsMatches, nodeMultipler, context);
-            matchedTypes.Set(nodeKey.Type, true);
+
+            yield return (nodeKey.Type, chainedMath.WordsMatches);
+            matchedTypes[nodeKey.Type] = true;
 
             //Пробуем провалится на уровень выше по условию и просчитать матчи с данного уровня
             if (OnLinkedMatchNeedMergeLinks(currentEntityType, nodeKey.Type))
@@ -238,88 +235,97 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
 
                 foreach (Key chainedEntityLink in chainedEntityLinks)
                 {
-                    if (matchedTypes.Get(chainedEntityLink.Type)
-                        || (nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, chainedEntityLink.Type)) == 0
+                    if (matchedTypes[chainedEntityLink.Type]
                         || !context.ContainsEntity(chainedEntityLink, out EntitySearchResult? parentLinkMathes))
                         continue;
 
-                    CalculateEntityPartScore(in wordsScores, parentLinkMathes.WordsMatches, nodeMultipler, context);
-                    matchedTypes.Set(chainedEntityLink.Type, true);
+                    yield return (chainedEntityLink.Type, parentLinkMathes.WordsMatches);
+                    matchedTypes[chainedEntityLink.Type] = true;
                 }
             }
         }
-
-        int resultScore = 0;
-
-        //Складывам совпадения по словам из запроса
-        foreach (byte ws in wordsScores)
-            resultScore += ws;
-
-        entityMatchesBundle.Score = resultScore;
     }
 
-    public int CalculateRules(EntitySearchResult entityMatchesBundle)
+    private void ProcessNodeScoring(in Span<WordCompareResult> wordsScores, List<WordCompareResult> Matches, TContext context, double nodeMultipler)
     {
-        if (entityMatchesBundle.Rules.Count == 0)
-            return entityMatchesBundle.Score;
+        Span<WordCompareResult> nodeScores = stackalloc WordCompareResult[wordsScores.Length];
 
-        int resultScore = entityMatchesBundle.Score;
-
-        //Обрабатываем дополнительные правила
-        for (int i = 0; i < entityMatchesBundle.Rules.Count; i++)
+        for (int i = 0; i < Matches.Count; i++)
         {
-            AdditionalRule item = entityMatchesBundle.Rules[i];
+            WordCompareResult compareResult = Matches[i];
+            WordCompareResult previousMatch = nodeScores[compareResult.WordBundlePosition];
+
+            int queryWordPosition = -1;
+
+            if (!previousMatch.IsEmpty)
+            {
+                if (previousMatch.NameType == compareResult.NameType && previousMatch.NameWordPosition != compareResult.NameWordPosition)
+                {
+                    queryWordPosition = GetEmptyQueryWordPosition(nodeScores, compareResult.WordBundlePosition);
+                }
+                else if (previousMatch.NameType != compareResult.NameType && previousMatch.NameWordPosition == compareResult.NameWordPosition)
+                {
+                    queryWordPosition = previousMatch.WordBundlePosition;
+                }
+            }
+            else
+            {
+                queryWordPosition = GetEmptyQueryWordPosition(nodeScores, compareResult.WordBundlePosition);
+            }
+
+            if (queryWordPosition == -1) continue;
+
+            double nameTypeMultipler = GetNameMultiplerInternal(compareResult.NameType);
+
+            byte score = (byte)(compareResult.Score * nameTypeMultipler * nodeMultipler);
+
+            if (previousMatch.Score < score)
+                nodeScores[queryWordPosition] = new(compareResult.NameWordPosition, compareResult.NameType, compareResult.WordBundlePosition, score);
+        }
+
+        for (int i = 0; i < wordsScores.Length; i++)
+        {
+            WordCompareResult queryMatch = wordsScores[i];
+            WordCompareResult nodeMatch = nodeScores[i];
+
+            if (nodeMatch.IsEmpty) continue;
+            if (!queryMatch.IsEmpty)
+            {
+                int nextQueryWordPosition = GetEmptyQueryWordPosition(wordsScores, i);
+                if (nextQueryWordPosition != -1) wordsScores[nextQueryWordPosition] = nodeMatch;
+            }
+            else
+            {
+                wordsScores[i] = nodeMatch;
+            }
+        }
+
+        int GetEmptyQueryWordPosition(in Span<WordCompareResult> scores, int wordBundlePosition)
+        {
+            foreach (int position in context.SearchWordsBundle[wordBundlePosition].PositionsInRequest)
+            {
+                if (scores[position].IsEmpty) return position;
+            }
+
+            return -1;
+        }
+    }
+
+    private static int UseRules(EntitySearchResult entitySearchResult)
+    {
+        int resultScore = entitySearchResult.Score;
+
+        List<AdditionalRule> rules = entitySearchResult.Rules;
+        for (int i = 0; i < rules.Count; i++)
+        {
+            AdditionalRule item = rules[i];
 
             resultScore += item.Score;
             resultScore = (int)(resultScore * item.Multipler);
         }
 
-        //Записываем итоговый скор
-        entityMatchesBundle.Score = resultScore;
-
+        entitySearchResult.Score = resultScore;
         return resultScore;
-    }
-
-    private void CalculateEntityPartScore(
-        in Span<byte> wordsScores,
-        List<WordCompareResult> wordsMatches,
-        double nodeMultipler,
-        TContext context)
-    {
-        for (int i = 0; i < wordsMatches.Count; i++)
-        {
-            WordCompareResult compareResult = wordsMatches[i];
-
-            //Дистинкт
-            bool isCalulated = false;
-            for (int j = 0; j < i; j++)
-            {
-                WordCompareResult toCheck = wordsMatches[j];
-
-                if (toCheck.NameType != compareResult.NameType || toCheck.MatchLength != compareResult.MatchLength) continue;
-
-                bool isEqualNamePosition = toCheck.NameWordPosition == compareResult.NameWordPosition;
-                bool IsEqualQueryWordPosition() => toCheck.QueryWordPosition == compareResult.QueryWordPosition;
-                bool IsEqualQueryWord() => ReferenceEquals(context.SearchWordsBundle[toCheck.QueryWordPosition], context.SearchWordsBundle[compareResult.QueryWordPosition]);
-
-                if ((isEqualNamePosition && IsEqualQueryWord()) || (!isEqualNamePosition && IsEqualQueryWordPosition()))
-                {
-                    isCalulated = true;
-                    break;
-                }
-            }
-            if (isCalulated) continue;
-
-            byte score = compareResult.MatchLength;
-
-            int queryWordPosition = compareResult.QueryWordPosition;
-            double nameTypeMultipler = GetNameMultiplerInternal(compareResult.NameType);
-
-            score = (byte)(score * nameTypeMultipler * nodeMultipler);
-
-            if (wordsScores[queryWordPosition] < score)
-                wordsScores[queryWordPosition] = score;
-        }
     }
 
     internal double GetNameMultiplerInternal(byte nameType)

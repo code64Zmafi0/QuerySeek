@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using QuerySeek.Services.Normalizing;
 using QuerySeek.Services.Searching;
 
 namespace QuerySeek.Services.Helpers;
@@ -78,45 +79,43 @@ public static class NgrammsWordsSearchHelper
     }
 
     /// <summary>
-    /// Поиск схожих слов в индексе слов для слов из запроса
+    /// Создание бандла слов для поиска
     /// </summary>
-    /// <param name="splittedQuery"></param>
-    /// <param name="wordsSearchSettings"></param>
-    /// <param name="wordsIdsByNgramms"></param>
+    /// <param name="context"></param>
+    /// <param name="alternativeWords"></param>
+    /// <param name="queryWordMultiplers"></param>
     /// <returns></returns>
-    public static List<KeyValuePair<int, byte>>[] SearchSimlarIndexWordsByQuery(
-        QueryWordContainer[] splittedQuery,
-        WordsSearchSettings wordsSearchSettings,
-        Dictionary<int, int[]> wordsIdsByNgramms)
+    public static QueryWordContainer[] CreateSearchWordsBundle(
+        SearchContextBase context,
+        Dictionary<string, string[]> alternativeWords,
+        Dictionary<string, double> queryWordMultiplers)
     {
-        List<KeyValuePair<int, byte>>[] result = new List<KeyValuePair<int, byte>>[splittedQuery.Length];
+        Dictionary<int, int[]> wordsIdsByNgramms = context.Index.WordsIdsByNgramms;
 
         //Используем один словарь для расчета совпавщих слов для каждого слова из запроса дабы лишний раз не аллоцировать
-        Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict = new(wordsSearchSettings.WordsSearchDictionaryPreallocate);
+        Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict = new(context.WordsSearchSettings.WordsSearchDictionaryPreallocate);
 
-        for (int i = 0; i < result.Length; i++)
+        QueryWordContainer[] result = [.. context.SplittedAndNormalizedQuery.Index().GroupBy(i => i.Item).Select(wordAndRepeats =>
         {
-            QueryWordContainer currentWord = splittedQuery[i];
+            string wordFrowmQuery = wordAndRepeats.Key;
+            int[] positions = [.. wordAndRepeats.Select(i => i.Index)];
+            double multipler = queryWordMultiplers.TryGetValue(wordFrowmQuery, out var m) ? m : 1;
 
-            //Проверка на введеное слово ранее, чтоб не повторять вычисления
-            for (int j = i - 1; j >= 0; j--)
-            {
-                if (splittedQuery[j].QueryWord.Equals(currentWord.QueryWord))
-                {
-                    result[i] = result[j];
-                    break;
-                }
-            }
+            Word word = new(wordFrowmQuery, GetNgramms(wordFrowmQuery), multipler);
 
-            if (result[i] is null)
-            {
-                result[i] = SearchSimilarsByQueryWordAndAlternatives(
-                    wordsSearchProcessDict,
-                    wordsIdsByNgramms,
-                    currentWord,
-                    wordsSearchSettings);
-            }
-        }
+            Word[] alterantives = [];
+            if (alternativeWords.TryGetValue(wordFrowmQuery, out string[]? alts))
+                alterantives = Array.ConvertAll(alts, alt => new Word(alt, GetNgramms(alt), multipler));
+
+            List<KeyValuePair<int, byte>> similarWords = SearchSimilarsByQueryWordAndAlternatives(
+                wordsSearchProcessDict,
+                wordsIdsByNgramms,
+                word,
+                alterantives,
+                context.WordsSearchSettings);
+
+            return new QueryWordContainer(word, alterantives, positions, similarWords);
+        })];
 
         return result;
     }
@@ -126,25 +125,23 @@ public static class NgrammsWordsSearchHelper
     /// </summary>
     /// <param name="wordsSearchProcessDict"></param>
     /// <param name="wordsIdsByNgramms"></param>
-    /// <param name="wordContainer"></param>
+    /// <param name="queryWord"></param>
+    /// <param name="alternatives"></param>
     /// <param name="wordsSearchSettings"></param>
     /// <returns></returns>
     private static List<KeyValuePair<int, byte>> SearchSimilarsByQueryWordAndAlternatives(
         Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict,
         Dictionary<int, int[]> wordsIdsByNgramms,
-        QueryWordContainer wordContainer,
+        Word queryWord,
+        Word[] alternatives,
         WordsSearchSettings wordsSearchSettings)
     {
         List<KeyValuePair<int, byte>> result = [];
 
-        //Ищем по одной полностью совпавшей альтернативе
-        foreach (Word altWord in wordContainer.Alternatives)
+        foreach (Word altWord in alternatives)
             SearchSimilars(altWord, (byte)altWord.NGrammsHashes.Length);
 
-        Word queryWord = wordContainer.QueryWord;
-        int treshold = wordsSearchSettings.SimilarityTresholdCalculator(wordContainer.QueryWord);
-
-        SearchSimilars(queryWord, treshold);
+        SearchSimilars(queryWord, wordsSearchSettings.SimilarityTresholdCalculator(queryWord));
 
         return result;
 
@@ -158,7 +155,7 @@ public static class NgrammsWordsSearchHelper
                 .OrderByDescending(i => i.Value.Score)
                 .Take(wordsSearchSettings.MaxCheckingWordsCount))
             {
-                result.Add(new(item.Key, (byte)(item.Value.Score * wordContainer.Multipler)));
+                result.Add(new(item.Key, (byte)(item.Value.Score * word.Multiplier)));
             }
 
             //Чистка переиспользуемого словаря

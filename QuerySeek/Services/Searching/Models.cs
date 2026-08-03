@@ -40,7 +40,7 @@ public class EntitySearchResult(Key key, EntityMeta meta)
     {
         for (int i = 0; i < WordsMatches.Count; i++)
         {
-            if (WordsMatches[i].QueryWordPosition == queryWordIndex)
+            if (WordsMatches[i].WordBundlePosition == queryWordIndex)
                 return true;
         }
 
@@ -75,13 +75,16 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 /// </remarks>
 /// <param name="NameWordPosition">Позиция совпавшего слова в имени</param>
 /// <param name="NameType">Тип имени</param>
-/// <param name="QueryWordPosition">Позиция совпавшего слова из запроса</param>
-/// <param name="MatchLength">Длина совпадения (по количеству свопавщих нграмм)</param>
+/// <param name="WordBundlePosition">Позиция совпавшего слова из запроса</param>
+/// <param name="Score">Длина совпадения (по количеству свопавщих нграмм)</param>
 public readonly record struct WordCompareResult(
     byte NameWordPosition,
     byte NameType,
-    byte QueryWordPosition,
-    byte MatchLength);
+    byte WordBundlePosition,
+    byte Score)
+{
+    public bool IsEmpty => Score == 0;
+}
 
 /// <summary>
 /// Описывает дополнительное правило для сортировки
@@ -94,22 +97,27 @@ public record AdditionalRule(string Name, int Score = 0, double Multipler = 1);
 /// <summary>
 /// Контейнер слова из запроса с альтернативами и множителем
 /// </summary>
-/// <param name="QueryWord"></param>
-/// <param name="Alternatives"></param>
-/// <param name="Multipler"></param>
-public record QueryWordContainer(Word QueryWord, Word[] Alternatives, double Multipler);
+/// <param name="QueryWord">Текстовое представление слова</param>
+/// <param name="Alternatives">Возможные альтернативы</param>
+/// <param name="PositionsInRequest">Позиции в исходном запросе</param>
+/// <param name="SimilarWords">Слова для поиска в индексе</param>
+public record QueryWordContainer(Word QueryWord, Word[] Alternatives, int[] PositionsInRequest, List<KeyValuePair<int, byte>> SimilarWords);
 
 /// <summary>
 /// Слово из запроса интерпретированное в нграммы
 /// </summary>
 /// <param name="word"></param>
-public class Word(string word) : IEquatable<Word>
+/// <param name="ngramms"></param>
+/// <param name="multipler"></param>
+public class Word(string word, int[] ngramms, double multipler) : IEquatable<Word>
 {
     public readonly string QueryWord = word;
 
-    public readonly int[] NGrammsHashes = NgrammsWordsSearchHelper.GetNgramms(word);
+    public readonly int[] NGrammsHashes = ngramms;
 
     public readonly bool IsDigit = int.TryParse(word, out _);
+
+    public readonly double Multiplier = multipler;
 
     public bool Equals(Word? other)
     {

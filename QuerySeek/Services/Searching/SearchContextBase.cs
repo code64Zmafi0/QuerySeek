@@ -32,14 +32,9 @@ public class SearchContextBase(IndexInstance index)
     public string[] SplittedAndNormalizedQuery { get; internal set; } = [];
 
     /// <summary>
-    /// Бандлы слов с альтернативами
+    /// Бандл слов для поиска
     /// </summary>
-    public QueryWordContainer[] NgrammedQuery { get; internal set; } = [];
-
-    /// <summary>
-    /// Набор схожих слов для каждого слова из запроса
-    /// </summary>
-    public List<KeyValuePair<int, byte>>[] SearchWordsBundle { get; internal set; } = [];
+    public QueryWordContainer[] SearchWordsBundle { get; internal set; } = [];
 
     /// <summary>
     /// Настройки поиска слов
@@ -52,7 +47,7 @@ public class SearchContextBase(IndexInstance index)
     public Dictionary<byte, Dictionary<Key, EntitySearchResult>> SearchResult { get; set; } = [];
 
     #region Search Tools
-    public int FullQueryScore => NgrammedQuery.Sum(i => i.QueryWord.NGrammsHashes.Length);
+    public int FullQueryScore => SearchWordsBundle.Sum(i => i.QueryWord.NGrammsHashes.Length);
 
     public bool ContainsEntity(Key key, [NotNullWhen(true)] out EntitySearchResult? searchResult)
     {
@@ -60,13 +55,8 @@ public class SearchContextBase(IndexInstance index)
         return SearchResult.TryGetValue(key.Type, out var entities) && entities.TryGetValue(key, out searchResult);
     }
 
-    public Dictionary<Key, EntitySearchResult>? GetResultsByType(byte type)
-    {
-        if (SearchResult.TryGetValue(type, out Dictionary<Key, EntitySearchResult>? result))
-            return result;
-
-        return null;
-    }
+    public bool GetResultsByType(byte type, [NotNullWhen(true)] out Dictionary<Key, EntitySearchResult>? result)
+        => SearchResult.TryGetValue(type, out result);
 
     /// <summary>
     /// Добавляет в контекст поиска сущность
@@ -89,6 +79,7 @@ public class SearchContextBase(IndexInstance index)
     /// Добавляет в контекст поиска сущность и добавляет свопадение со словом из запроса
     /// </summary>
     /// <param name="key"></param>
+    /// <param name="wordCompareResult"></param>
     public void AddResult(Key key, WordCompareResult wordCompareResult)
     {
         ref var types = ref CollectionsMarshal.GetValueRefOrAddDefault(SearchResult, key.Type, out var exists);

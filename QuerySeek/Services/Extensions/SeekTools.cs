@@ -38,10 +38,10 @@ public static class QS
         => Array.ConvertAll(ids, id => Key(type, id));
 
     public static bool WordIsFullMatched(Word queryWord, WordCompareResult wordCompareResult)
-        => queryWord.NGrammsHashes.Length == wordCompareResult.MatchLength;
+        => queryWord.NGrammsHashes.Length == wordCompareResult.Score;
 
     public static bool WordIsFullMatched(SearchContextBase context, WordCompareResult wordCompareResult)
-        => WordIsFullMatched(context.NgrammedQuery[wordCompareResult.QueryWordPosition].QueryWord, wordCompareResult);
+        => WordIsFullMatched(context.SearchWordsBundle[wordCompareResult.WordBundlePosition].QueryWord, wordCompareResult);
     #endregion
 
     #region Build

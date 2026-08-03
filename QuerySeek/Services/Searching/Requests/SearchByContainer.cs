@@ -16,17 +16,17 @@ public class SearchByContainer(
 {
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
-        List<KeyValuePair<int, byte>>[] queryWordsBundle = searchContext.SearchWordsBundle;
+        QueryWordContainer[] queryWordsBundle = searchContext.SearchWordsBundle;
         KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] entitiesSearchMap = searchContext.Index.EntitiesSearchMap;
 
-        if (searchContext.GetResultsByType(containerType) is not { } containersResult)
+        if (!searchContext.GetResultsByType(containerType, out var containersResult))
             return;
 
         EntitySearchResult[] containers = SelectContainers(containersResult);
 
         for (byte queryWordPosition = 0; queryWordPosition < queryWordsBundle.Length; queryWordPosition++)
         {
-            List<KeyValuePair<int, byte>> currentBundle = queryWordsBundle[queryWordPosition];
+            List<KeyValuePair<int, byte>> currentBundle = queryWordsBundle[queryWordPosition].SimilarWords;
 
             WordsSearchManager wsm = searchContext.WordsSearchSettings.GetWordsSearchManager();
 
