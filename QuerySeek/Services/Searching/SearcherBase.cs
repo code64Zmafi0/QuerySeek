@@ -278,6 +278,7 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
             WordCompareResult previouslyCalculatedResult = nodeScores[queryWordPosition];
 
             if (!previouslyCalculatedResult.IsEmpty
+                && previouslyCalculatedResult.NameType == compareResult.NameType
                 && previouslyCalculatedResult.NameWordPosition != compareResult.NameWordPosition
                 && previouslyCalculatedResult.WordsBundlePosition == compareResult.WordsBundlePosition)
             {
