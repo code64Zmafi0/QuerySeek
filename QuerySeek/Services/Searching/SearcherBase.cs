@@ -274,24 +274,14 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         for (int i = 0; i < Matches.Count; i++)
         {
             WordCompareResult compareResult = Matches[i];
-            WordCompareResult previouslyCalculatedResult = nodeScores[compareResult.WordsBundlePosition];
+            int queryWordPosition = GetLastWordPosition(nodeScores, compareResult.WordsBundlePosition);
+            WordCompareResult previouslyCalculatedResult = nodeScores[queryWordPosition];
 
-            int queryWordPosition = -1;
-
-            if (!previouslyCalculatedResult.IsEmpty)
+            if (!previouslyCalculatedResult.IsEmpty
+                && previouslyCalculatedResult.NameWordPosition != compareResult.NameWordPosition
+                && previouslyCalculatedResult.WordsBundlePosition == compareResult.WordsBundlePosition)
             {
-                if (previouslyCalculatedResult.NameType == compareResult.NameType && previouslyCalculatedResult.NameWordPosition != compareResult.NameWordPosition)
-                {
-                    queryWordPosition = GetQueryWordPosition(nodeScores, compareResult.WordsBundlePosition);
-                }
-                else if (previouslyCalculatedResult.NameType != compareResult.NameType && previouslyCalculatedResult.NameWordPosition == compareResult.NameWordPosition)
-                {
-                    queryWordPosition = previouslyCalculatedResult.WordsBundlePosition;
-                }
-            }
-            else
-            {
-                queryWordPosition = GetQueryWordPosition(nodeScores, compareResult.WordsBundlePosition);
+                queryWordPosition = GetNewQueryWordPosition(nodeScores, compareResult.WordsBundlePosition);
             }
 
             if (queryWordPosition == -1) continue;
@@ -313,17 +303,16 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
             if (nodeMatch.IsEmpty) continue;
             if (!previouslyCalculatedResult.IsEmpty)
             {
-                int nextQueryWordPosition = GetQueryWordPosition(wordsScores, nodeMatch.WordsBundlePosition);
-                if (nextQueryWordPosition != -1 && previouslyCalculatedResult.Score < nodeMatch.Score)
-                    wordsScores[nextQueryWordPosition] = nodeMatch;
+                int nextQueryWordPosition = GetNewQueryWordPosition(wordsScores, nodeMatch.WordsBundlePosition);
+                if (nextQueryWordPosition != -1) wordsScores[nextQueryWordPosition] = nodeMatch;
             }
-            else
+            else if (previouslyCalculatedResult.Score < nodeMatch.Score)
             {
                 wordsScores[i] = nodeMatch;
             }
         }
 
-        int GetQueryWordPosition(in Span<WordCompareResult> scores, int wordsBundlePosition)
+        int GetNewQueryWordPosition(in Span<WordCompareResult> scores, int wordsBundlePosition)
         {
             foreach (int position in context.SearchWordsBundle[wordsBundlePosition].PositionsInRequest)
             {
@@ -331,6 +320,27 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
             }
 
             return -1;
+        }
+
+        int GetLastWordPosition(in Span<WordCompareResult> scores, int wordsBundlePosition)
+        {
+            int previousNotEmpty = -1;
+
+            int[] positions = context.SearchWordsBundle[wordsBundlePosition].PositionsInRequest;
+
+            foreach (int position in context.SearchWordsBundle[wordsBundlePosition].PositionsInRequest)
+            {
+                if (scores[position].IsEmpty)
+                {
+                    if (previousNotEmpty != -1) return previousNotEmpty;
+                }
+                else
+                {
+                    previousNotEmpty = position;
+                }
+            }
+
+            return positions[0];
         }
     }
 

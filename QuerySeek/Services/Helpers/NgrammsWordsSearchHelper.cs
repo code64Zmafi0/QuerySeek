@@ -151,7 +151,7 @@ public static class NgrammsWordsSearchHelper
 
             //Ищем бандл схожих слов и сортируем по количеству совпадений (вычисляется в свойстве Score. Попадания - наказание за промахи)
             foreach (KeyValuePair<int, WordNgrammSearchState> item in wordsSearchProcessDict
-                .Where(i => (word.IsDigit ? i.Value.Score : i.Value.Matches) >= treshold)
+                .Where(i => (i.Value.Matches >= treshold) && (!word.IsDigit || i.Value.Misses == 0))
                 .OrderByDescending(i => i.Value.Score)
                 .Take(wordsSearchSettings.MaxCheckingWordsCount))
             {
