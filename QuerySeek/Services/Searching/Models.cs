@@ -40,7 +40,7 @@ public class EntitySearchResult(Key key, EntityMeta meta)
     {
         for (int i = 0; i < WordsMatches.Count; i++)
         {
-            if (WordsMatches[i].WordBundlePosition == queryWordIndex)
+            if (WordsMatches[i].WordsBundlePosition == queryWordIndex)
                 return true;
         }
 
@@ -75,12 +75,12 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 /// </remarks>
 /// <param name="NameWordPosition">Позиция совпавшего слова в имени</param>
 /// <param name="NameType">Тип имени</param>
-/// <param name="WordBundlePosition">Позиция совпавшего слова из запроса</param>
+/// <param name="WordsBundlePosition">Позиция совпавшего слова из запроса</param>
 /// <param name="Score">Длина совпадения (по количеству свопавщих нграмм)</param>
 public readonly record struct WordCompareResult(
     byte NameWordPosition,
     byte NameType,
-    byte WordBundlePosition,
+    byte WordsBundlePosition,
     byte Score)
 {
     public bool IsEmpty => Score == 0;

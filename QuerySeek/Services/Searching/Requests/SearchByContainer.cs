@@ -19,7 +19,7 @@ public class SearchByContainer(
         QueryWordContainer[] queryWordsBundle = searchContext.SearchWordsBundle;
         KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] entitiesSearchMap = searchContext.Index.EntitiesSearchMap;
 
-        if (!searchContext.GetResultsByType(containerType, out var containersResult))
+        if (!searchContext.TryGetResultsByType(containerType, out var containersResult))
             return;
 
         EntitySearchResult[] containers = SelectContainers(containersResult);

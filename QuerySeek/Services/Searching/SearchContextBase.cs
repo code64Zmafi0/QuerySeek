@@ -49,13 +49,16 @@ public class SearchContextBase(IndexInstance index)
     #region Search Tools
     public int FullQueryScore => SearchWordsBundle.Sum(i => i.QueryWord.NGrammsHashes.Length);
 
-    public bool ContainsEntity(Key key, [NotNullWhen(true)] out EntitySearchResult? searchResult)
+    /// <summary>
+    /// 
+    /// </summary>
+    public bool TryGetSearchedEntity(Key key, [NotNullWhen(true)] out EntitySearchResult? searchResult)
     {
         searchResult = null;
         return SearchResult.TryGetValue(key.Type, out var entities) && entities.TryGetValue(key, out searchResult);
     }
 
-    public bool GetResultsByType(byte type, [NotNullWhen(true)] out Dictionary<Key, EntitySearchResult>? result)
+    public bool TryGetResultsByType(byte type, [NotNullWhen(true)] out Dictionary<Key, EntitySearchResult>? result)
         => SearchResult.TryGetValue(type, out result);
 
     /// <summary>

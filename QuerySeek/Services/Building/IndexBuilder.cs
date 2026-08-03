@@ -12,7 +12,7 @@ public class IndexBuilder(INormalizer normalizer, INameTokenizer nameTokenizer)
     private readonly Dictionary<Key, EntityMeta> Entities = [];
     private readonly Dictionary<Key, HashSet<Key>> Childs = [];
     private readonly EntitiesByWordsSearchMapBuilder EntitiesByWordsSearchMapBuilder = new();
-    private readonly WordsIndexBuilder WordsBundle = new();
+    private readonly WordsIndexBuilder WordsIndexBuilder = new();
     private readonly StringArraySequenceComparer NamesComparer = new();
 
     public void AddEntity(in IIndexedEntity indexedEntity)
@@ -42,7 +42,7 @@ public class IndexBuilder(INormalizer normalizer, INameTokenizer nameTokenizer)
             for (byte wordNamePosition = 0; wordNamePosition < tokenizedName.Length && wordNamePosition < byte.MaxValue; wordNamePosition++)
             {
                 string word = tokenizedName[wordNamePosition];
-                int wordId = WordsBundle.GetWordId(word);
+                int wordId = WordsIndexBuilder.GetWordId(word);
 
                 WordMatchMeta wordMatchMeta = new(key.Id, wordNamePosition, nameType);
                 EntitiesByWordsSearchMapBuilder.AddMatch(wordId, key.Type, containerKey, wordMatchMeta);
@@ -92,7 +92,7 @@ public class IndexBuilder(INormalizer normalizer, INameTokenizer nameTokenizer)
         {
             Entities = Entities,
             EntitiesSearchMap = EntitiesByWordsSearchMapBuilder.CreateMap(),
-            WordsIdsByNgramms = WordsBundle.GetWordsByNgramms(),
+            WordsIdsByNgramms = WordsIndexBuilder.GetWordsByNgramms(),
         };
     }
 }

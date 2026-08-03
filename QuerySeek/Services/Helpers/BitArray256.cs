@@ -1,8 +1,10 @@
 ﻿namespace QuerySeek.Services.Helpers;
 
+/// <summary>
+/// Аналог BitArray на стеке для уменьшения аллокаций
+/// </summary>
 public struct BitArray256
 {
-    // Четыре поля по 64 бита дают ровно 256 бит
     private ulong _part0;
     private ulong _part1;
     private ulong _part2;
@@ -15,11 +17,9 @@ public struct BitArray256
     {
         get
         {
-            // Проверка выхода за границы индекса
             if ((uint)index >= 256)
                 throw new ArgumentOutOfRangeException(nameof(index));
 
-            // Определение номера поля (0-3) и позиции бита внутри поля (0-63)
             int fieldIndex = index >> 6; // Деление на 64
             int bitPosition = index & 63; // Остаток от деления на 64
 

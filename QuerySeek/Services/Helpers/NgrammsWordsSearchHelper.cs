@@ -97,15 +97,15 @@ public static class NgrammsWordsSearchHelper
 
         QueryWordContainer[] result = [.. context.SplittedAndNormalizedQuery.Index().GroupBy(i => i.Item).Select(wordAndRepeats =>
         {
-            string wordFrowmQuery = wordAndRepeats.Key;
+            string wordFrowQuery = wordAndRepeats.Key;
             int[] positions = [.. wordAndRepeats.Select(i => i.Index)];
-            double multipler = queryWordMultiplers.TryGetValue(wordFrowmQuery, out var m) ? m : 1;
+            double multipler = queryWordMultiplers.TryGetValue(wordFrowQuery, out var m) ? m : 1;
 
-            Word word = new(wordFrowmQuery, GetNgramms(wordFrowmQuery), multipler);
+            Word word = new(wordFrowQuery, GetNgramms(wordFrowQuery), multipler);
 
-            Word[] alterantives = [];
-            if (alternativeWords.TryGetValue(wordFrowmQuery, out string[]? alts))
-                alterantives = Array.ConvertAll(alts, alt => new Word(alt, GetNgramms(alt), multipler));
+            Word[] alterantives = alternativeWords.TryGetValue(wordFrowQuery, out string[]? alts)
+                ? Array.ConvertAll(alts, alt => new Word(alt, GetNgramms(alt), multipler))
+                : [];
 
             List<KeyValuePair<int, byte>> similarWords = SearchSimilarsByQueryWordAndAlternatives(
                 wordsSearchProcessDict,

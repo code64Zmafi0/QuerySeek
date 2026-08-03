@@ -41,7 +41,7 @@ public static class QS
         => queryWord.NGrammsHashes.Length == wordCompareResult.Score;
 
     public static bool WordIsFullMatched(SearchContextBase context, WordCompareResult wordCompareResult)
-        => WordIsFullMatched(context.SearchWordsBundle[wordCompareResult.WordBundlePosition].QueryWord, wordCompareResult);
+        => WordIsFullMatched(context.SearchWordsBundle[wordCompareResult.WordsBundlePosition].QueryWord, wordCompareResult);
     #endregion
 
     #region Build
