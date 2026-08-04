@@ -208,10 +208,10 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         //Просчитываем совпадения для слов из запроса по совпадениям из сущности и слинкованных сущностей
         foreach ((byte Type, List<WordCompareResult> Matches) in GetMatches(context, entityMatchesBundle))
         {
-            double nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, Type);
-            if (nodeMultipler != 0)
+            double linkMultipler = GetLinkedEntityMatchMultipler(currentEntityType, Type);
+            if (linkMultipler != 0)
             {
-                ProcessNodeScoring(summaryMatches, Matches, context, nodeMultipler);
+                ProcessNodeScoring(in summaryMatches, Matches, context, linkMultipler);
             }
         }
 
@@ -266,15 +266,14 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ProcessNodeScoring(Span<WordCompareResult> wordsScores, List<WordCompareResult> Matches, TContext context, double nodeMultipler)
+    private void ProcessNodeScoring(in Span<WordCompareResult> wordsScores, List<WordCompareResult> matches, TContext context, double nodeMultipler)
     {
         //Сначала выбираем матчи по сущности пытаемся собрать совпадения для слов из запроса
         Span<WordCompareResult> nodeScores = stackalloc WordCompareResult[wordsScores.Length];
-        for (int i = 0; i < Matches.Count; i++)
+        for (int i = 0; i < matches.Count; i++)
         {
-            WordCompareResult compareResult = Matches[i];
-            int queryWordPosition = GetLastWordPosition(nodeScores, compareResult.WordsBundlePosition);
+            WordCompareResult compareResult = matches[i];
+            int queryWordPosition = GeеCurrentQueryWordPosition(nodeScores, compareResult.WordsBundlePosition);
             WordCompareResult previouslyCalculatedResult = nodeScores[queryWordPosition];
 
             if (!previouslyCalculatedResult.IsEmpty
@@ -323,7 +322,7 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
             return -1;
         }
 
-        int GetLastWordPosition(in Span<WordCompareResult> scores, int wordsBundlePosition)
+        int GeеCurrentQueryWordPosition(in Span<WordCompareResult> scores, int wordsBundlePosition)
         {
             int previousNotEmpty = -1;
 
