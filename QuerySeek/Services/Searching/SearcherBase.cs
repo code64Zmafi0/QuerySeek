@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using QuerySeek.Models;
 using QuerySeek.Services.Helpers;
 using QuerySeek.Services.Normalizing;
@@ -273,7 +272,7 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         for (int i = 0; i < matches.Count; i++)
         {
             WordCompareResult compareResult = matches[i];
-            int queryWordPosition = GeеCurrentQueryWordPosition(nodeScores, compareResult.WordsBundlePosition);
+            int queryWordPosition = GetCurrentQueryWordPosition(nodeScores, compareResult.WordsBundlePosition);
             WordCompareResult previouslyCalculatedResult = nodeScores[queryWordPosition];
 
             if (!previouslyCalculatedResult.IsEmpty
@@ -322,7 +321,7 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
             return -1;
         }
 
-        int GeеCurrentQueryWordPosition(in Span<WordCompareResult> scores, int wordsBundlePosition)
+        int GetCurrentQueryWordPosition(in Span<WordCompareResult> scores, int wordsBundlePosition)
         {
             int previousNotEmpty = -1;
 
