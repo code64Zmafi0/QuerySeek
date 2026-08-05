@@ -16,9 +16,10 @@ public class Search(byte targetType) : RequestBase(targetType)
 
         for (byte queryWordPosition = 0; queryWordPosition < queryWordsBundle.Length; queryWordPosition++)
         {
-            List<KeyValuePair<int, byte>> currentSimilarWordsBundle = queryWordsBundle[queryWordPosition].SimilarWords;
+            QueryWordContainer wordFromQuery = queryWordsBundle[queryWordPosition];
+            List<KeyValuePair<int, byte>> currentSimilarWordsBundle = wordFromQuery.SimilarWords;
 
-            WordsSearchManager wsm = searchContext.WordsSearchSettings.GetWordsSearchManager();
+            WordsSearchStopManager wsm = searchContext.WordsSearchSettings.GetWordsSearchStopManager(wordFromQuery.QueryWord);
 
             for (int wbIndex = 0; wbIndex < currentSimilarWordsBundle.Count; wbIndex++)
             {

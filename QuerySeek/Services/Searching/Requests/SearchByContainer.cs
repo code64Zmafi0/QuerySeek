@@ -26,16 +26,17 @@ public class SearchByContainer(
 
         for (byte queryWordPosition = 0; queryWordPosition < queryWordsBundle.Length; queryWordPosition++)
         {
-            List<KeyValuePair<int, byte>> currentBundle = queryWordsBundle[queryWordPosition].SimilarWords;
+            QueryWordContainer wordFromQuery = queryWordsBundle[queryWordPosition];
+            List<KeyValuePair<int, byte>> currentSimilarWordsBundle = wordFromQuery.SimilarWords;
 
-            WordsSearchManager wsm = searchContext.WordsSearchSettings.GetWordsSearchManager();
+            WordsSearchStopManager wsm = searchContext.WordsSearchSettings.GetWordsSearchStopManager(wordFromQuery.QueryWord);
 
-            for (int i = 0; i < currentBundle.Count; i++)
+            for (int i = 0; i < currentSimilarWordsBundle.Count; i++)
             {
                 if (!wsm.NeedContinue)
                     break;
 
-                KeyValuePair<int, byte> indexWordInfo = currentBundle[i];
+                KeyValuePair<int, byte> indexWordInfo = currentSimilarWordsBundle[i];
 
                 int wordId = indexWordInfo.Key;
 
