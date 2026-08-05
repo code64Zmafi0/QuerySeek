@@ -28,7 +28,7 @@ public static class EntitiesSearchMapHelper
         this KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] searchMap,
         int wordId,
         byte entityType,
-        EntitySearchResult[] containerKeys)
+        Key[] containerKeys)
     {
         KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[] wordMatches = searchMap[wordId];
 
@@ -38,9 +38,9 @@ public static class EntitiesSearchMapHelper
 
         Dictionary<Key, WordMatchMeta[]> matchesBundleByContainers = wordMatches[index].Value;
 
-        foreach (EntitySearchResult containerKey in containerKeys)
+        foreach (Key containerKey in containerKeys)
         {
-            if (!matchesBundleByContainers.TryGetValue(containerKey.Key, out WordMatchMeta[]? entityMatches))
+            if (!matchesBundleByContainers.TryGetValue(containerKey, out WordMatchMeta[]? entityMatches))
                 continue;
 
             yield return entityMatches;

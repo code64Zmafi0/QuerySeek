@@ -22,7 +22,7 @@ public class SearchByContainer(
         if (!searchContext.TryGetResultsByType(containerType, out var containersResult))
             return;
 
-        EntitySearchResult[] containers = SelectContainers(containersResult);
+        Key[] containers = SelectContainers(containersResult);
 
         for (byte queryWordPosition = 0; queryWordPosition < queryWordsBundle.Length; queryWordPosition++)
         {
@@ -68,18 +68,18 @@ public class SearchByContainer(
         }
     }
 
-    private EntitySearchResult[] SelectContainers(Dictionary<Key, EntitySearchResult> containers)
+    private Key[] SelectContainers(Dictionary<Key, EntitySearchResult> containers)
     {
-        EntitySearchResult[] result;
+        Key[] result;
 
         if (containersFilter is null)
         {
-            result = new EntitySearchResult[containers.Count];
-            containers.Values.CopyTo(result, 0);
+            result = new Key[containers.Count];
+            containers.Keys.CopyTo(result, 0);
         }
         else
         {
-            result = [.. containersFilter.Invoke(containers.Values)];
+            result = [.. containersFilter.Invoke(containers.Values).Select(i => i.Key)];
         }
 
         return result;
