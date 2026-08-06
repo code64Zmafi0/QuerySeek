@@ -11,7 +11,7 @@ namespace QuerySeek.Services.Searching;
 /// <typeparam name="TContext"></typeparam>
 /// <param name="nameTokenizer"></param>
 /// <param name="normalizer"></param>
-public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INormalizer normalizer) where TContext : SearchContextBase
+public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokenizer nameTokenizer) where TContext : SearchContextBase
 {
     #region Overrides
     /// <summary>
@@ -41,7 +41,7 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
         => result;
 
     /// <summary>
-    /// Позволяет при совпадении линка, добавить просчет его линков
+    /// Позволяет при совпадении линка, добавить просчет его звасимостей
     /// </summary>
     /// <param name="entityType"></param>
     /// <param name="linkedType"></param>
@@ -233,7 +233,7 @@ public abstract class SearcherBase<TContext>(INameTokenizer nameTokenizer, INorm
     {
         byte currentEntityType = entityMatchesBundle.Key.Type;
 
-        //При OnLinkedMatchNeedMergeLinks могут повторяться типы отсекаем если 
+        //При OnLinkedMatchNeedMergeLinks могут повторяться типы, отсекаем
         BitArray256 matchedTypes = new();
 
         yield return (currentEntityType, entityMatchesBundle.WordsMatches);
