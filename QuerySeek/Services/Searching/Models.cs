@@ -36,17 +36,6 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 
     public int Score;
 
-    public bool ContainsQueryWord(int queryWordIndex)
-    {
-        for (int i = 0; i < WordsMatches.Count; i++)
-        {
-            if (WordsMatches[i].WordsBundlePosition == queryWordIndex)
-                return true;
-        }
-
-        return false;
-    }
-
     public Key? TryGetLink(byte type)
     {
         foreach (Key link in Meta.Links)
