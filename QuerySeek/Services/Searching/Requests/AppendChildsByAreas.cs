@@ -8,12 +8,12 @@ namespace QuerySeek.Services.Searching.Requests;
 /// <param name="targetType">Целевой тип</param>
 /// <param name="appendFilter">Фильтр добавляемых сущностей</param>
 /// <param name="parentsSelector">Выборка родителей</param>
-/// <param name="containersSelector">Выборка поисковых областей/param>
+/// <param name="areasSelector">Выборка поисковых областей/param>
 public class AppendChildsByAreas(
     byte targetType,
     Func<IEnumerable<Key>, IEnumerable<Key>> appendFilter,
     Func<IEnumerable<EntitySearchResult>> parentsSelector,
-    Func<IEnumerable<EntitySearchResult>> containersSelector) : RequestBase(targetType)
+    Func<IEnumerable<EntitySearchResult>> areasSelector) : RequestBase(targetType)
 {
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
@@ -27,9 +27,9 @@ public class AppendChildsByAreas(
         }
 
         //Количество данных в контейнере меньше чем суммарно связей - реализация интерсект скрывает создание хешсет из второго аргумента
-        IEnumerable<Key> childs = GetChilds(parentsSelector()).Intersect(GetChilds(containersSelector()));
+        IEnumerable<Key> childs = GetChilds(parentsSelector()).Intersect(appendFilter(GetChilds(areasSelector())));
 
-        foreach (Key child in appendFilter(childs))
+        foreach (Key child in childs)
             searchContext.AddResult(child);
     }
 }
