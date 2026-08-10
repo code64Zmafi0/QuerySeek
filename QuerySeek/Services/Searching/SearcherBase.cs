@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using QuerySeek.Models;
 using QuerySeek.Services.Helpers;
 using QuerySeek.Services.Normalizing;
@@ -37,7 +38,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// <param name="type"></param>
     /// <param name="result"></param>
     /// <returns></returns>
-    public virtual IEnumerable<EntitySearchResult> TypeBundlePreprocessing(TContext context, byte type, IEnumerable<EntitySearchResult> result)
+    public virtual IEnumerable<EntitySearchResult> TypeResultPreprocessing(TContext context, byte type, IEnumerable<EntitySearchResult> result)
         => result;
 
     /// <summary>
@@ -88,7 +89,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// Определяем возможные альтернативные слова для слов из запроса
     /// </summary>
     /// <returns></returns>
-    public virtual Dictionary<string, string[]> GetWordsAlternativesPairs(TContext context)
+    public virtual Dictionary<string, string[]> GetQueryWordsAlternatives(TContext context)
         => [];
 
     /// <summary>
@@ -111,13 +112,12 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// <returns></returns>
     public EntitySearchResult[] Search(
         TContext context,
-        string query,
         int take,
         CancellationToken? cancellationToken = null)
     {
         CancellationToken ct = cancellationToken ?? CancellationToken.None;
 
-        FillContext(context, query);
+        FillContext(context);
         ProcessRequests(context, ct);
 
         return [.. PostProcessing(context, GetAllResults().OrderByDescending(UseRules)).Take(take) ];
@@ -126,7 +126,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         {
             foreach (KeyValuePair<byte, Dictionary<Key, EntitySearchResult>> typeResults in context.SearchResult)
             {
-                foreach (EntitySearchResult item in TypeBundlePreprocessing(context, typeResults.Key, typeResults.Value.Values))
+                foreach (EntitySearchResult item in TypeResultPreprocessing(context, typeResults.Key, typeResults.Value.Values))
                     yield return item;
             }
         }
@@ -142,20 +142,19 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// <returns></returns>
     public TypeSearchResult[] SearchTypes(
         TContext context,
-        string query,
         int take,
         CancellationToken? cancellationToken = null)
     {
         CancellationToken ct = cancellationToken ?? CancellationToken.None;
 
-        FillContext(context, query);
+        FillContext(context);
         ProcessRequests(context, ct);
 
         TypeSearchResult[] result = [.. context.SearchResult.Select(typeSearchResult =>
         {
             byte currentType = typeSearchResult.Key;
 
-            IOrderedEnumerable<EntitySearchResult> preprocessed = TypeBundlePreprocessing(context, currentType, typeSearchResult.Value.Values)
+            IOrderedEnumerable<EntitySearchResult> preprocessed = TypeResultPreprocessing(context, currentType, typeSearchResult.Value.Values)
                 .OrderByDescending(UseRules);
 
             EntitySearchResult[] typeResult = [.. PostProcessing(context, preprocessed).Take(take)];
@@ -166,17 +165,16 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         return result;
     }
 
-    public void FillContext(TContext context, string query)
+    public void FillContext(TContext context)
     {
-        context.Query = query;
-        context.SplittedAndNormalizedQuery = TextPreprocessor.PreprocessName(nameTokenizer, normalizer, query);
+        context.SplittedAndNormalizedQuery = TextPreprocessor.PreprocessName(nameTokenizer, normalizer, context.Query);
         context.WordsSearchSettings = GetWordsSearchSettings(context);
 
-        Dictionary<string, string[]> alternativeWords = GetWordsAlternativesPairs(context);
+        Dictionary<string, string[]> alternativeWords = GetQueryWordsAlternatives(context);
         Dictionary<string, double> queryWordMultiplers = GetQueryWordsMultiplers(context);
 
         context.SearchWordsBundle = NgrammsWordsSearchHelper.CreateSearchWordsBundle(context, alternativeWords, queryWordMultiplers);
-        context.Request = GetRequest(context);
+        context.Request = [..GetRequest(context)];
     }
 
     public void ProcessRequests(TContext context, CancellationToken ct)
@@ -361,6 +359,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         return resultScore;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal double GetNameMultiplerInternal(byte nameType)
     {
         if (nameType == 0)

@@ -12,6 +12,7 @@ public class DefaultNormalizerTests
     [TestCase("rôle", ExpectedResult = "ROLE")]
     [TestCase("café", ExpectedResult = "CAFE")]
     [TestCase("München", ExpectedResult = "MUNCHEN")]
+    [TestCase("MUNCHEN de partis.\\/$#() №#12,1 01", ExpectedResult = "MUNCHEN DE PARTIS.\\/# #12,1 01")]
     [TestCase("الـْكِتَابُ", ExpectedResult = "الكتاب")]
     [TestCase("੪", ExpectedResult = "4")]
     [TestCase("۷۶", ExpectedResult = "76")]

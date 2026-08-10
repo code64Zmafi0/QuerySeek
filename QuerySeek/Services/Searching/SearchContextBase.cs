@@ -9,12 +9,12 @@ namespace QuerySeek.Services.Searching;
 /// Контекст поиска, можем хранить дополнительные свойства при переопределении
 /// </summary>
 /// <param name="index"></param>
-public class SearchContextBase(IndexInstance index)
+public class SearchContextBase(IndexInstance index, string query)
 {
     /// <summary>
     /// Входящий текстовый запрос
     /// </summary>
-    public string Query { get; internal set; } = string.Empty;
+    public string Query { get; internal set; } = query;
 
     /// <summary>
     /// Инстанс индекса
@@ -24,7 +24,7 @@ public class SearchContextBase(IndexInstance index)
     /// <summary>
     /// Запрос на поиск в индексе
     /// </summary>
-    public IEnumerable<RequestBase> Request { get; internal set; } = [];
+    public RequestBase[] Request { get; internal set; } = [];
 
     /// <summary>
     /// Нормализованный и разбитый по словам запрос
@@ -47,10 +47,10 @@ public class SearchContextBase(IndexInstance index)
     public Dictionary<byte, Dictionary<Key, EntitySearchResult>> SearchResult { get; set; } = [];
 
     #region Search Tools
-    public int FullQueryScore => SearchWordsBundle.Sum(i => i.QueryWord.NGrammsHashes.Length);
+    public int UniqWordsFullQueryScore => SearchWordsBundle.Sum(i => i.QueryWord.NGrammsHashes.Length);
 
     /// <summary>
-    /// Пробует получить найденную сущность в конексте
+    /// Пробует получить найденную сущность в контексте
     /// </summary>
     public bool TryGetSearchedEntity(Key key, [NotNullWhen(true)] out EntitySearchResult? searchResult)
     {

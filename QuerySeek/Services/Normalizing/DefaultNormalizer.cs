@@ -46,7 +46,8 @@ public class DefaultNormalizer : INormalizer
                     category == UnicodeCategory.LowercaseLetter ||
                     category == UnicodeCategory.DecimalDigitNumber ||
                     category == UnicodeCategory.OtherLetter ||
-                    category == UnicodeCategory.OtherPunctuation)
+                    category == UnicodeCategory.OtherPunctuation ||
+                    category == UnicodeCategory.SpaceSeparator)
                 {
                     destination[pointer++] = char.ToUpperInvariant(c);
                 }
