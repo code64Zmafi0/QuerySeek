@@ -18,7 +18,7 @@ public class IndexBuilder(INormalizer normalizer, INameTokenizer nameTokenizer)
     public void AddEntity(in IIndexedEntity indexedEntity)
     {
         Key key = indexedEntity.GetKey();
-        Key containerKey = indexedEntity.GetContainer() ?? Key.Default;
+        Key containerKey = indexedEntity.GetSearchArea() ?? Key.Default;
 
         if (Entities.ContainsKey(key))
             return;

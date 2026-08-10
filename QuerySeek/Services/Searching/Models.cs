@@ -44,13 +44,8 @@ public class EntitySearchResult(Key key, EntityMeta meta)
         return null;
     }
 
-    public Key? TryGetChild(byte type)
-    {
-        foreach (Key link in Meta.Childs)
-            if (link.Type == type) return link;
-
-        return null;
-    }
+    public IEnumerable<Key> GetChilds(byte type)
+        => Meta.Childs.Where(i => i.Type == type);
 
     public void AddRule(AdditionalRule rule)
         => Rules.Add(rule);

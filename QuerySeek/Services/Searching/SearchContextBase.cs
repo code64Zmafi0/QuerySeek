@@ -50,7 +50,7 @@ public class SearchContextBase(IndexInstance index)
     public int FullQueryScore => SearchWordsBundle.Sum(i => i.QueryWord.NGrammsHashes.Length);
 
     /// <summary>
-    /// 
+    /// Пробует получить найденную сущность в конексте
     /// </summary>
     public bool TryGetSearchedEntity(Key key, [NotNullWhen(true)] out EntitySearchResult? searchResult)
     {
@@ -58,8 +58,19 @@ public class SearchContextBase(IndexInstance index)
         return SearchResult.TryGetValue(key.Type, out var entities) && entities.TryGetValue(key, out searchResult);
     }
 
+    /// <summary>
+    /// Пробует получить словарь результатов для определенного типа
+    /// </summary>
     public bool TryGetResultsByType(byte type, [NotNullWhen(true)] out Dictionary<Key, EntitySearchResult>? result)
         => SearchResult.TryGetValue(type, out result);
+
+    /// <summary>
+    /// Пробует получить словарь результатов для определенного типа
+    /// </summary>
+    public IEnumerable<EntitySearchResult> EnumerateResults(byte type)
+        => TryGetResultsByType(type, out Dictionary<Key, EntitySearchResult>? result)
+            ? result.Values
+            : [];
 
     /// <summary>
     /// Добавляет в контекст поиска сущность

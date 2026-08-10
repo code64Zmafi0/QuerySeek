@@ -16,12 +16,12 @@ public interface IIndexedEntity
     IEnumerable<Name> GetNames();
 
     /// <summary>
-    /// Components of entity
+    /// Components of entity (uniq types)
     /// </summary>
     IEnumerable<Key> GetLinks();
 
     /// <summary>
-    /// The container to which the entity is bound. For using SearchByContainer request
+    /// The search area to which the entity is bound. For using SearchByAreas request
     /// </summary>
-    Key? GetContainer();
+    Key? GetSearchArea();
 }
