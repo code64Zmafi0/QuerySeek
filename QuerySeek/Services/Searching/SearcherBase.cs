@@ -38,7 +38,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// <param name="type"></param>
     /// <param name="result"></param>
     /// <returns></returns>
-    public virtual IEnumerable<EntitySearchResult> TypeResultPreprocessing(TContext context, byte type, IEnumerable<EntitySearchResult> result)
+    public virtual IEnumerable<EntitySearchResult> TypeResultPreprocessing(TContext context, byte type, ICollection<EntitySearchResult> result)
         => result;
 
     /// <summary>
