@@ -8,6 +8,7 @@ public class DefaultNormalizer : INormalizer
 {
     public static readonly DefaultNormalizer Instance = new();
 
+    private static readonly SearchValues<char> _stopSumbols = SearchValues.Create("\u0640\u200C\u200B");
     private static readonly ArrayPool<char> _pool = ArrayPool<char>.Shared;
 
     public string Normalize(string value)
@@ -42,15 +43,10 @@ public class DefaultNormalizer : INormalizer
 
                 UnicodeCategory category = CharUnicodeInfo.GetUnicodeCategory(c);
 
-                if (category == UnicodeCategory.UppercaseLetter ||
-                    category == UnicodeCategory.LowercaseLetter ||
-                    category == UnicodeCategory.DecimalDigitNumber ||
-                    category == UnicodeCategory.OtherLetter ||
-                    category == UnicodeCategory.OtherPunctuation ||
-                    category == UnicodeCategory.SpaceSeparator)
-                {
-                    destination[pointer++] = char.ToUpperInvariant(c);
-                }
+                if (category == UnicodeCategory.NonSpacingMark || _stopSumbols.Contains(c))
+                    continue;
+
+                destination[pointer++] = char.ToUpperInvariant(c);
             }
 
             return pointer <= 0
