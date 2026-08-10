@@ -24,7 +24,7 @@ public class SearchContextBase(IndexInstance index, string query)
     /// <summary>
     /// Запрос на поиск в индексе
     /// </summary>
-    public RequestBase[] Request { get; internal set; } = [];
+    public IEnumerable<RequestBase> Request { get; internal set; } = [];
 
     /// <summary>
     /// Нормализованный и разбитый по словам запрос

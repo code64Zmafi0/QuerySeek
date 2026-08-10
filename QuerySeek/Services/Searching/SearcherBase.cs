@@ -106,7 +106,6 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// Поиск топа всех типов
     /// </summary>
     /// <param name="context">Контекст поиска</param>
-    /// <param name="query">Текстовый запрос</param>
     /// <param name="take">Количество элементов</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
@@ -136,7 +135,6 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// Поиск топов по типам
     /// </summary>
     /// <param name="context">Контекст поиска</param>
-    /// <param name="query">Текстовый запрос</param>
     /// <param name="take">Количество элементов каждого типа</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
@@ -174,7 +172,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         Dictionary<string, double> queryWordMultiplers = GetQueryWordsMultiplers(context);
 
         context.SearchWordsBundle = NgrammsWordsSearchHelper.CreateSearchWordsBundle(context, alternativeWords, queryWordMultiplers);
-        context.Request = [..GetRequest(context)];
+        context.Request = GetRequest(context);
     }
 
     public void ProcessRequests(TContext context, CancellationToken ct)
