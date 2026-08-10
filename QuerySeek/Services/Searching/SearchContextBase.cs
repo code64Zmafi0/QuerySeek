@@ -65,12 +65,12 @@ public class SearchContextBase(IndexInstance index)
         => SearchResult.TryGetValue(type, out result);
 
     /// <summary>
-    /// Пробует получить словарь результатов для определенного типа
+    /// Пробует получить коллекцию результатов определенного типа
     /// </summary>
-    public IEnumerable<EntitySearchResult> EnumerateResults(byte type)
+    public ICollection<EntitySearchResult> GetResults(byte type)
         => TryGetResultsByType(type, out Dictionary<Key, EntitySearchResult>? result)
             ? result.Values
-            : [];
+            : Array.Empty<EntitySearchResult>();
 
     /// <summary>
     /// Добавляет в контекст поиска сущность
