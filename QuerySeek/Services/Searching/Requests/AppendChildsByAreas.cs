@@ -12,8 +12,8 @@ namespace QuerySeek.Services.Searching.Requests;
 public class AppendChildsByAreas(
     byte targetType,
     Func<IEnumerable<Key>, IEnumerable<Key>> appendFilter,
-    IEnumerable<EntitySearchResult> parentsSelector,
-    IEnumerable<EntitySearchResult> areasSelector) : RequestBase(targetType)
+    Func<IEnumerable<EntitySearchResult>> parentsSelector,
+    Func<IEnumerable<EntitySearchResult>> areasSelector) : RequestBase(targetType)
 {
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
@@ -27,7 +27,7 @@ public class AppendChildsByAreas(
         }
 
         //Количество данных в контейнере меньше чем суммарно связей - реализация интерсект скрывает создание хешсет из второго аргумента
-        IEnumerable<Key> childs = GetChilds(parentsSelector).Intersect(appendFilter(GetChilds(areasSelector)));
+        IEnumerable<Key> childs = GetChilds(parentsSelector()).Intersect(appendFilter(GetChilds(areasSelector())));
 
         foreach (Key child in childs)
             searchContext.AddResult(child);

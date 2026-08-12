@@ -10,14 +10,14 @@ namespace QuerySeek.Services.Searching.Requests;
 /// <param name="areasSelector">Выборка поисковых областей</param>
 public class SearchByAreas(
     byte targetType,
-    IEnumerable<EntitySearchResult> areasSelector) : RequestBase(targetType)
+    Func<IEnumerable<EntitySearchResult>> areasSelector) : RequestBase(targetType)
 {
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
         QueryWordContainer[] queryWordsBundle = searchContext.SearchWordsBundle;
         KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] entitiesSearchMap = searchContext.Index.EntitiesSearchMap;
 
-        Key[] areas = [..areasSelector.Select(i => i.Key)];
+        Key[] areas = [..areasSelector().Select(i => i.Key)];
 
         for (byte queryWordPosition = 0; queryWordPosition < queryWordsBundle.Length; queryWordPosition++)
         {
