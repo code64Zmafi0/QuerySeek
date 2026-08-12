@@ -272,11 +272,13 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
             int queryWordPosition = GetCurrentQueryWordPosition(nodeScores, compareResult.WordsBundlePosition);
             WordCompareResult previouslyCalculatedResult = nodeScores[queryWordPosition];
 
+            bool isNewQueryPosition = false;
             if (!previouslyCalculatedResult.IsEmpty
                 && previouslyCalculatedResult.NameType == compareResult.NameType
                 && previouslyCalculatedResult.NameWordPosition != compareResult.NameWordPosition
                 && previouslyCalculatedResult.WordsBundlePosition == compareResult.WordsBundlePosition)
             {
+                isNewQueryPosition = true;
                 queryWordPosition = GetNewQueryWordPosition(nodeScores, compareResult.WordsBundlePosition);
             }
 
@@ -286,7 +288,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
 
             byte score = (byte)(compareResult.Score * nameTypeMultipler * nodeMultipler);
 
-            if (previouslyCalculatedResult.Score < score)
+            if (isNewQueryPosition || previouslyCalculatedResult.Score < score)
                 nodeScores[queryWordPosition] = new(compareResult.NameWordPosition, compareResult.NameType, compareResult.WordsBundlePosition, score);
         }
 

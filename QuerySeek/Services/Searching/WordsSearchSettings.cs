@@ -17,7 +17,7 @@ public record WordsSearchSettings(
 {
     public static readonly WordsSearchSettings Default = new(
         MaxCheckingWordsCount: 500,
-        WordsToStopProcessCalculator: (_) => 6,
+        WordsToStopProcessCalculator: (word) => word.QueryWord.Length < 5 ? 12 : 6,
         SimilarityTresholdCalculator: (word) => word.IsDigit
             ? NgrammsWordsSearchHelper.CalculateDigitSimilarityTreshold(word)
             : NgrammsWordsSearchHelper.CalculateWordSimilarityTreshold(word, 0.4));

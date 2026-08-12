@@ -214,6 +214,6 @@ public static class NgrammsWordsSearchHelper
         byte Misses,
         byte PreviousMatch)
     {
-        public int Score => Matches - (Misses / 2);
+        public int Score => Matches - (Misses == 1 ? 1 : (Misses / 2));
     }
 }
