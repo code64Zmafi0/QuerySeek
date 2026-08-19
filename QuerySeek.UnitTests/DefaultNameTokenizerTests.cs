@@ -12,6 +12,7 @@ public class DefaultNameTokenizerTests
     [TestCase("привет[медвед]", ExpectedResult = new string[] { "привет", "медвед" })]
     [TestCase("привет [медвед]", ExpectedResult = new string[] { "привет", "медвед" })]
     [TestCase("привет медвед", ExpectedResult = new string[] { "привет", "медвед" })]
+    [TestCase("привет\u200bмедвед", ExpectedResult = new string[] { "привет", "медвед" })]
     [TestCase("هَذَا الـْكِتَابُ جَدِيدٌ", ExpectedResult = new string[] { "هَذَا", "الـْكِتَابُ", "جَدِيدٌ" })]
     [TestCase("aa,bar.col!d)o0(d{h#gh", ExpectedResult = new string[] { "aa", "bar", "col", "d", "o", "0", "d", "h", "gh"})]
     [TestCase("۷۶", ExpectedResult = new string[] { "۷۶" })]
