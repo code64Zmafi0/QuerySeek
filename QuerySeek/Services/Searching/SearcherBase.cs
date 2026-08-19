@@ -42,32 +42,6 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         => result;
 
     /// <summary>
-    /// Позволяет при совпадении линка, добавить просчет его звасимостей
-    /// </summary>
-    /// <param name="entityType"></param>
-    /// <param name="linkedType"></param>
-    /// <returns></returns>
-    public virtual bool OnLinkedMatchNeedMergeLinks(byte entityType, byte linkedType)
-        => false;
-
-    /// <summary>
-    /// Множитель совпадений из связанных сущностей
-    /// </summary>
-    /// <param name="entityType"></param>
-    /// <param name="linkedType"></param>
-    /// <returns></returns>
-    public virtual double GetLinkedEntityMatchMultipler(byte entityType, byte linkedType)
-        => 1;
-
-    /// <summary>
-    /// Множитель типа имени
-    /// </summary>
-    /// <param name="nameType"></param>
-    /// <returns></returns>
-    public virtual double GetNameTypeMultipler(byte nameType)
-        => 1;
-
-    /// <summary>
     /// Вызывается после вычисления совпадений со словами из запроса
     /// </summary>
     /// <param name="context"></param>
@@ -98,6 +72,32 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// <returns></returns>
     public virtual Dictionary<string, double> GetQueryWordsMultiplers(TContext context)
         => [];
+
+    /// <summary>
+    /// Позволяет при совпадении линка, добавить просчет его звасимостей
+    /// </summary>
+    /// <param name="entityType"></param>
+    /// <param name="linkedType"></param>
+    /// <returns></returns>
+    public virtual bool OnLinkedMatchNeedMergeLinks(byte entityType, byte linkedType)
+        => false;
+
+    /// <summary>
+    /// Множитель совпадений из связанных сущностей
+    /// </summary>
+    /// <param name="entityType"></param>
+    /// <param name="linkedType"></param>
+    /// <returns></returns>
+    public virtual double GetLinkedEntityMatchMultipler(byte entityType, byte linkedType)
+        => 1;
+
+    /// <summary>
+    /// Множитель типа имени
+    /// </summary>
+    /// <param name="nameType"></param>
+    /// <returns></returns>
+    public virtual double GetNameTypeMultipler(byte nameType)
+        => 1;
 
     #endregion
 
