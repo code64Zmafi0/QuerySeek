@@ -73,7 +73,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// <param name="context"></param>
     /// <param name="entity"></param>
     /// <param name="summaryMatches"></param>
-    public virtual void OnEntityMatched(TContext context, EntitySearchResult entity, ReadOnlySpan<WordCompareResult> summaryMatches) { }
+    public virtual void OnEntityMatched(TContext context, EntitySearchResult entity, in Span<WordCompareResult> summaryMatches) { }
 
     /// <summary>
     /// Определение настроек поиска по словам
@@ -219,7 +219,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
 
         entityMatchesBundle.Score = resultScore;
 
-        OnEntityMatched(context, entityMatchesBundle, summaryMatches);
+        OnEntityMatched(context, entityMatchesBundle, in summaryMatches);
     }
 
     /// <summary>
