@@ -238,25 +238,25 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         foreach (Key linkKey in entityMatchesBundle.Meta.Links)
         {
             if (matchedTypes[linkKey.Type]
-                || !context.TryGetSearchedEntity(linkKey, out EntitySearchResult? linkMath))
+                || !context.TryGetSearchedEntity(linkKey, out EntitySearchResult? link))
                 continue;
 
-            yield return (linkKey.Type, linkMath.WordsMatches);
+            yield return (linkKey.Type, link.WordsMatches);
             matchedTypes[linkKey.Type] = true;
 
             //Пробуем провалится на уровень выше по условию и просчитать линков с данного родителя
             if (OnLinkedMatchNeedMergeLinks(currentEntityType, linkKey.Type))
             {
-                Key[] linkedEntityLinks = linkMath.Meta.Links;
+                Key[] linkedEntityLinks = link.Meta.Links;
 
-                foreach (Key chainedEntityLink in linkedEntityLinks)
+                foreach (Key mergedEntityLink in linkedEntityLinks)
                 {
-                    if (matchedTypes[chainedEntityLink.Type]
-                        || !context.TryGetSearchedEntity(chainedEntityLink, out EntitySearchResult? parentLinkMathes))
+                    if (matchedTypes[mergedEntityLink.Type]
+                        || !context.TryGetSearchedEntity(mergedEntityLink, out EntitySearchResult? mergeLink))
                         continue;
 
-                    yield return (chainedEntityLink.Type, parentLinkMathes.WordsMatches);
-                    matchedTypes[chainedEntityLink.Type] = true;
+                    yield return (mergedEntityLink.Type, mergeLink.WordsMatches);
+                    matchedTypes[mergedEntityLink.Type] = true;
                 }
             }
         }
