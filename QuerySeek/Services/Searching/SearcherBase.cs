@@ -73,7 +73,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// <param name="context"></param>
     /// <param name="entity"></param>
     /// <param name="summaryMatches"></param>
-    public virtual void OnEntityMatched(TContext context, EntitySearchResult entity, in Span<WordCompareResult> summaryMatches) { }
+    public virtual void OnEntityMatched(TContext context, EntitySearchResult entity, ReadOnlySpan<WordCompareResult> summaryMatches) { }
 
     /// <summary>
     /// Определение настроек поиска по словам
@@ -165,7 +165,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
 
     public void FillContext(TContext context)
     {
-        context.SplittedAndNormalizedQuery = TextPreprocessor.PreprocessName(nameTokenizer, normalizer, context.Query);
+        context.SplittedAndNormalizedQuery = TextPreprocessor.PreprocessText(nameTokenizer, normalizer, context.Query);
         context.WordsSearchSettings = GetWordsSearchSettings(context);
 
         Dictionary<string, string[]> alternativeWords = GetQueryWordsAlternatives(context);
