@@ -8,7 +8,7 @@ public class DefaultNormalizer : INormalizer
 {
     public static readonly DefaultNormalizer Instance = new();
 
-    private static readonly SearchValues<char> _stopSumbols = SearchValues.Create("\u0640\u200C");
+    private static readonly SearchValues<char> _stopSumbols = SearchValues.Create("\u0640\u200C\u2019\u0027");
     private static readonly ArrayPool<char> _pool = ArrayPool<char>.Shared;
 
     public string Normalize(string value)

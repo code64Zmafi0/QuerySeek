@@ -16,6 +16,7 @@ public class DefaultNormalizerTests
     [TestCase("الـْكِتَابُ", ExpectedResult = "الكتاب")]
     [TestCase("੪", ExpectedResult = "4")]
     [TestCase("۷۶", ExpectedResult = "76")]
+    [TestCase("angel's", ExpectedResult = "ANGELS")]
     public string TestNormalize(string input)
         => DefaultNormalizer.Instance.Normalize(input);
 }

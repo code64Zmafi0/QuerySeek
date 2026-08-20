@@ -269,17 +269,14 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         for (int i = 0; i < matches.Count; i++)
         {
             WordCompareResult compareResult = matches[i];
-            int queryWordPosition = GetCurrentQueryWordPosition(nodeScores, compareResult.WordsBundlePosition);
+            int queryWordPosition = GetCurrentQueryWordPosition(in nodeScores, compareResult.WordsBundlePosition);
             WordCompareResult previouslyCalculatedResult = nodeScores[queryWordPosition];
 
             bool isNewQueryPosition = false;
-            if (!previouslyCalculatedResult.IsEmpty
-                && previouslyCalculatedResult.NameType == compareResult.NameType
-                && previouslyCalculatedResult.NameWordPosition != compareResult.NameWordPosition
-                && previouslyCalculatedResult.WordsBundlePosition == compareResult.WordsBundlePosition)
+            if (PreviouslyMatchedWordToNewPositionIName(compareResult, previouslyCalculatedResult))
             {
                 isNewQueryPosition = true;
-                queryWordPosition = GetNewQueryWordPosition(nodeScores, compareResult.WordsBundlePosition);
+                queryWordPosition = GetNewQueryWordPosition(in nodeScores, compareResult.WordsBundlePosition);
             }
 
             if (queryWordPosition == -1) continue;
@@ -340,6 +337,12 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
 
             return positions[0];
         }
+
+        static bool PreviouslyMatchedWordToNewPositionIName(WordCompareResult compareResult, WordCompareResult previouslyCalculatedResult)
+            => !previouslyCalculatedResult.IsEmpty
+                && previouslyCalculatedResult.NameType == compareResult.NameType
+                && previouslyCalculatedResult.NameWordPosition != compareResult.NameWordPosition
+                && previouslyCalculatedResult.WordsBundlePosition == compareResult.WordsBundlePosition;
     }
 
     private static int UseRules(EntitySearchResult entitySearchResult)
