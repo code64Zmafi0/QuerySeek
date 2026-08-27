@@ -28,7 +28,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// <param name="context"></param>
     /// <param name="result">Отсортированный по количеству совпадений enumerable сущностей</param>
     /// <returns></returns>
-    public virtual IOrderedEnumerable<EntitySearchResult> PostProcessing(TContext context, IOrderedEnumerable<EntitySearchResult> result)
+    public virtual IEnumerable<EntitySearchResult> Ranging(TContext context, IEnumerable<EntitySearchResult> result)
         => result;
 
     /// <summary>
@@ -119,7 +119,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         FillContext(context);
         ProcessRequests(context, ct);
 
-        return [.. PostProcessing(context, GetAllResults().OrderByDescending(UseRules)).Take(take) ];
+        return [.. Ranging(context, GetAllResults()).Take(take)];
 
         IEnumerable<EntitySearchResult> GetAllResults()
         {
@@ -152,10 +152,9 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         {
             byte currentType = typeSearchResult.Key;
 
-            IOrderedEnumerable<EntitySearchResult> preprocessed = TypeResultPreprocessing(context, currentType, typeSearchResult.Value.Values)
-                .OrderByDescending(UseRules);
+            IEnumerable<EntitySearchResult> preprocessed = TypeResultPreprocessing(context, currentType, typeSearchResult.Value.Values);
 
-            EntitySearchResult[] typeResult = [.. PostProcessing(context, preprocessed).Take(take)];
+            EntitySearchResult[] typeResult = [.. Ranging(context, preprocessed).Take(take)];
 
             return new TypeSearchResult(currentType, typeResult);
         }).Where(i => i.Result.Length != 0)];
@@ -343,23 +342,6 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
                 && previouslyCalculatedResult.NameType == compareResult.NameType
                 && previouslyCalculatedResult.NameWordPosition != compareResult.NameWordPosition
                 && previouslyCalculatedResult.WordsBundlePosition == compareResult.WordsBundlePosition;
-    }
-
-    private static int UseRules(EntitySearchResult entitySearchResult)
-    {
-        int resultScore = entitySearchResult.Score;
-
-        List<AdditionalRule> rules = entitySearchResult.Rules;
-        for (int i = 0; i < rules.Count; i++)
-        {
-            AdditionalRule item = rules[i];
-
-            resultScore += item.Score;
-            resultScore = (int)(resultScore * item.Multipler);
-        }
-
-        entitySearchResult.Score = resultScore;
-        return resultScore;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
