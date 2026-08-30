@@ -17,14 +17,14 @@ public record WordsSearchSettings(
 {
     public static readonly WordsSearchSettings Default = new(
         MaxCheckingWordsCount: 500,
-        WordsToStopProcessCalculator: (word) => 12,
+        WordsToStopProcessCalculator: (word) => 30,
         SimilarityTresholdCalculator: (word) => word.IsDigit
             ? NgrammsWordsSearchHelper.CalculateDigitSimilarityTreshold(word)
             : NgrammsWordsSearchHelper.CalculateWordSimilarityTreshold(word, 0.4));
 
     public static readonly WordsSearchSettings Fast = new(
         MaxCheckingWordsCount: 200,
-        WordsToStopProcessCalculator: (_) => 6,
+        WordsToStopProcessCalculator: (_) => 10,
         SimilarityTresholdCalculator: (word) => word.IsDigit
             ? NgrammsWordsSearchHelper.CalculateDigitSimilarityTreshold(word)
             : NgrammsWordsSearchHelper.CalculateWordSimilarityTreshold(word, 0.7));
