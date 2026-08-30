@@ -61,7 +61,7 @@ Also, you can redefine normalization and tokenizer splitting on words for use in
 - Override GetLinkedEntityMatchMiltipler(byte entityType, byte linkedType) for flexible scoring mathes of linked entities
 - Override GetNameTypeMultipler(byte nameType) for flexible scoring by name types
 - Override TypeBundlePreprocessing(TContext context, byte type, IEnumerable<EntitySearchResult> result) to add rules or filter the results that will be output as a result
-- Override Ranging(TContext context, IOrderedEnumerable<EntitySearchResult> result) for sorting, use EntitySearchResult.Score property for ranging entites
+- Override Ranging(TContext context, IOrderedEnumerable<EntitySearchResult> result) for sorting, use EntitySearchResult.Score property for ranging entites by matches factor or Scoring() method for ranging by score and rules
 
 **Search**
 
