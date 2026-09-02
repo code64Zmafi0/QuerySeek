@@ -49,6 +49,24 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 
     public void AddRule(AdditionalRule rule)
         => Rules.Add(rule);
+
+    public int ScoreWithRules
+    {
+        get
+        {
+            int resultScore = Score;
+
+            for (int i = 0; i < Rules.Count; i++)
+            {
+                AdditionalRule item = Rules[i];
+
+                resultScore += item.Score;
+                resultScore = (int)(resultScore * item.Multipler);
+            }
+
+            return resultScore;
+        }
+    }
 }
 
 /// <summary>

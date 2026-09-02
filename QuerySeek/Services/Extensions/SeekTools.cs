@@ -42,23 +42,6 @@ public static class QS
 
     public static bool WordIsFullMatched(SearchContextBase context, WordCompareResult wordCompareResult)
         => WordIsFullMatched(context.SearchWordsBundle[wordCompareResult.WordsBundlePosition].QueryWord, wordCompareResult);
-
-    public static int Scoring(this EntitySearchResult entitySearchResult)
-    {
-        int resultScore = entitySearchResult.Score;
-
-        List<AdditionalRule> rules = entitySearchResult.Rules;
-        for (int i = 0; i < rules.Count; i++)
-        {
-            AdditionalRule item = rules[i];
-
-            resultScore += item.Score;
-            resultScore = (int)(resultScore * item.Multipler);
-        }
-
-        entitySearchResult.Score = resultScore;
-        return resultScore;
-    }
     #endregion
 
     #region Build
