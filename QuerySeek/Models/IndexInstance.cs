@@ -20,7 +20,7 @@ public class IndexInstance
     /// ID слов по хешу нграмма
     /// </summary>
     [Key(2)]
-    public Dictionary<int, int[]> WordsIdsByNgramms { get; internal set; } = [];
+    public Dictionary<int, NgrammAssociation[]> WordsIdsByNgramms { get; internal set; } = [];
 
     /// <summary>
     /// Словарь WordId -> Types -> Containers -> MatchesToEntites

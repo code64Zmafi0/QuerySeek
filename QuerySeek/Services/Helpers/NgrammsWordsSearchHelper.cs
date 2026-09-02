@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using QuerySeek.Models;
 using QuerySeek.Services.Searching;
 
 namespace QuerySeek.Services.Helpers;
@@ -89,7 +90,7 @@ public static class NgrammsWordsSearchHelper
         Dictionary<string, string[]> alternativeWords,
         Dictionary<string, double> queryWordMultiplers)
     {
-        Dictionary<int, int[]> wordsIdsByNgramms = context.Index.WordsIdsByNgramms;
+        Dictionary<int, NgrammAssociation[]> wordsIdsByNgramms = context.Index.WordsIdsByNgramms;
 
         //Используем один словарь для расчета совпавщих слов для каждого слова из запроса дабы лишний раз не аллоцировать
         Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict = new(context.WordsSearchSettings.WordsSearchDictionaryPreallocate);
@@ -130,7 +131,7 @@ public static class NgrammsWordsSearchHelper
     /// <returns></returns>
     private static List<KeyValuePair<int, byte>> SearchSimilarsByQueryWordAndAlternatives(
         Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict,
-        Dictionary<int, int[]> wordsIdsByNgramms,
+        Dictionary<int, NgrammAssociation[]> wordsIdsByNgramms,
         Word queryWord,
         Word[] alternatives,
         WordsSearchSettings wordsSearchSettings)
@@ -168,7 +169,7 @@ public static class NgrammsWordsSearchHelper
     /// <returns>Словарь id слова количество совпадений и пропусков</returns>
     private static void NgrammSearch(
         Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict,
-        Dictionary<int, int[]> wordsIdsByNgramms,
+        Dictionary<int, NgrammAssociation[]> wordsIdsByNgramms,
         Word queryWord,
         int treshold)
     {
@@ -178,32 +179,43 @@ public static class NgrammsWordsSearchHelper
         Dictionary<int, WordNgrammSearchState> words = wordsSearchProcessDict;
 
         //Ищем в индексе слов, считаем совпавшие ngramm-ы и пропуски
-        for (byte queryWordNgrammIndex = 0; queryWordNgrammIndex < wordLength; queryWordNgrammIndex++)
+        for (byte queryWordNgrammPosition = 0; queryWordNgrammPosition < wordLength; queryWordNgrammPosition++)
         {
-            if (!wordsIdsByNgramms.TryGetValue(queryWord.NGrammsHashes[queryWordNgrammIndex], out int[]? wordsIds))
+            if (!wordsIdsByNgramms.TryGetValue(queryWord.NGrammsHashes[queryWordNgrammPosition], out NgrammAssociation[]? ngrammAssociations))
                 continue;
 
-            foreach (int wordId in wordsIds)
+            foreach (NgrammAssociation ngrammAssoc in ngrammAssociations)
             {
+                int wordId = ngrammAssoc.WordId;
+                byte indexWordNgrammPosition = ngrammAssoc.Position;
+
                 ref WordNgrammSearchState matchInfo = ref CollectionsMarshal.GetValueRefOrNullRef(words, wordId);
 
                 if (!Unsafe.IsNullRef(ref matchInfo))
                 {
+                    if (matchInfo.PreviousQueryWordNgrammPosition == queryWordNgrammPosition || matchInfo.PreviousIndexWordNgrammPosition >= indexWordNgrammPosition)
+                        continue;
+
                     byte matches = (byte)(matchInfo.Matches + 1);
-                    byte misses = (byte)(queryWordNgrammIndex == 0
-                        ? 0
-                        : matchInfo.Misses + queryWordNgrammIndex - matchInfo.PreviousMatch - 1);
+
+                    byte queryWordMisses = (byte)(queryWordNgrammPosition - matchInfo.PreviousQueryWordNgrammPosition - 1);
+                    byte indexWordMisses = (byte)(indexWordNgrammPosition - matchInfo.PreviousIndexWordNgrammPosition - 1);
+
+                    byte misses = (byte)(queryWordMisses >= indexWordMisses
+                        ? queryWordMisses
+                        : queryWordMisses + indexWordMisses);
 
                     matchInfo = new()
                     {
                         Matches = matches,
-                        Misses = misses,
-                        PreviousMatch = queryWordNgrammIndex,
+                        Misses = queryWordNgrammPosition == 0 ? (byte)0 : (byte)(matchInfo.Misses + misses),
+                        PreviousQueryWordNgrammPosition = queryWordNgrammPosition,
+                        PreviousIndexWordNgrammPosition = indexWordNgrammPosition
                     };
                 }
                 //Попытка отбить добавление в словарь уже точно не совпавщих по treshold
-                else if (queryWordNgrammIndex == 0 || (!queryWord.IsDigit && queryWordNgrammIndex <= treshold))
-                    words[wordId] = new(1, queryWordNgrammIndex, queryWordNgrammIndex);
+                else if (queryWordNgrammPosition == 0 || (!queryWord.IsDigit && queryWordNgrammPosition <= treshold))
+                    words[wordId] = new(1, queryWordNgrammPosition, queryWordNgrammPosition, indexWordNgrammPosition);
             }
         }
     }
@@ -211,7 +223,8 @@ public static class NgrammsWordsSearchHelper
     private readonly record struct WordNgrammSearchState(
         byte Matches,
         byte Misses,
-        byte PreviousMatch)
+        byte PreviousQueryWordNgrammPosition,
+        byte PreviousIndexWordNgrammPosition)
     {
         public int Score => Matches - (Misses == 1 && Matches > 1 ? 1 : (Misses / 2));
     }

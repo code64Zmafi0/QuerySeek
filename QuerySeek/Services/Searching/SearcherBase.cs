@@ -282,7 +282,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
 
             double nameTypeMultipler = GetNameMultiplerInternal(compareResult.NameType);
 
-            byte score = (byte)(compareResult.Score * nameTypeMultipler * nodeMultipler);
+            byte score = (byte)Math.Ceiling(compareResult.Score * nameTypeMultipler * nodeMultipler);
 
             if (isNewQueryPosition || previouslyCalculatedResult.Score < score)
                 nodeScores[queryWordPosition] = new(compareResult.NameWordPosition, compareResult.NameType, compareResult.WordsBundlePosition, score);

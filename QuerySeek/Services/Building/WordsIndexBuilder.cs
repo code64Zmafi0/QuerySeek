@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using QuerySeek.Models;
 using QuerySeek.Services.Helpers;
 
 namespace QuerySeek.Services.Building;
@@ -19,23 +20,23 @@ public class WordsIndexBuilder()
         return id;
     }
 
-    public Dictionary<int, int[]> GetWordsByNgramms()
+    public Dictionary<int, NgrammAssociation[]> GetWordsByNgramms()
     {
-        Dictionary<int, HashSet<int>> wordsIdsByNgramms = [];
+        Dictionary<int, List<NgrammAssociation>> wordsIdsByNgramms = [];
 
         foreach (KeyValuePair<string, int> item in Pairs.OrderBy(i => i.Key))
         {
             int[] ngramms = NgrammsWordsSearchHelper.GetNgramms(item.Key);
 
-            for (int i = 0; i < ngramms.Length; i++)
+            for (byte i = 0; i < ngramms.Length; i++)
             {
                 int ngramm = ngramms[i];
-                ref HashSet<int>? words = ref CollectionsMarshal.GetValueRefOrAddDefault(wordsIdsByNgramms, ngramm, out var exists);
+                ref List<NgrammAssociation>? ngrammAssociations = ref CollectionsMarshal.GetValueRefOrAddDefault(wordsIdsByNgramms, ngramm, out bool exists);
 
                 if (!exists)
-                    words = [];
+                    ngrammAssociations = [];
 
-                words!.Add(item.Value);
+                ngrammAssociations!.Add(new(item.Value, i));
             }
         }
 
