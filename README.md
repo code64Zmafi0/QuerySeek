@@ -2,7 +2,6 @@
 
 Linked data text search engine.
 
-
 ## Features
 
 - Fast text search using 3-gramm words index
@@ -10,7 +9,6 @@ Linked data text search engine.
 - Support for data hierarchy and relatedness
 - Flexible sorting settings
 - MessagePack binary serialization enabled index file saving utilities
-
 
 ## Documentation
 
@@ -26,6 +24,8 @@ Linked data text search engine.
 
 ### Build index
 
+When performing a minor update of the library, it is recommended to update the index, as it may be incompatible with the old version.
+
 **Building**
 
 - Use QS.Build() to build Index intsnace index isntance, passing the normalizer and splitter instances to the method, as well as an enumeration entities for searching
@@ -39,6 +39,7 @@ Linked data text search engine.
 - Use QS.ReadIndex(string filePath) for read index file
 
 ### Normalizing and splitting
+
 The library provides built-in tools for normalizing and splitting a name into words for searching. Use this static objects.
 
 QuerySeek.Services.Normalizing.DefaultNormalizer.Instance
@@ -50,24 +51,22 @@ Also, you can redefine normalization and tokenizer splitting on words for use in
 
 *Override SearchContextBase if you need to store additional sorting properties* 
 
-
 *Implement SearcherBase* 
 - Implement SearcherBase.Request property (array of requests to search) to configure your search request. The query options are presented below (use in the same order for proper operation)
     - Search - search current type entities
-    - SearchByAres - search current type entities in search area (search areas must be found in the Search block above)
+    - SearchByAreas - search current type entities in search area (search areas must be found in the Search block above)
     - Select - performs forced addition of entities of the target type based on the passed ids
     - AppendChilds - use to force adding entities by parent
     - AppendChildsByAreas - use to force adding entities by parent in areas
 - Override GetLinkedEntityMatchMiltipler(byte entityType, byte linkedType) for flexible scoring mathes of linked entities
 - Override GetNameTypeMultipler(byte nameType) for flexible scoring by name types
-- Override TypeBundlePreprocessing(TContext context, byte type, IEnumerable<EntitySearchResult> result) to add rules or filter the results that will be output as a result
-- Override Ranging(TContext context, IOrderedEnumerable<EntitySearchResult> result) for sorting, use EntitySearchResult.Score property for ranging entites by matches factor or Scoring() method for ranging by score and rules
+- Override TypeBundlePreprocessing(TContext context, byte type, ICollection<EntitySearchResult> result) to add rules or filter the results that will be output as a result
+- Override Ranging(TContext context, IEnumerable<EntitySearchResult> result) for sorting, use EntitySearchResult.Score property for ranging entites by matches factor or ScoreWithRules for ranging by score and rules
 
 **Search**
 
 - Use SearcherBase method Search passing the search context
 - Or use SearcherBase method SearchTypes passing the search context and list of target entities with their count
-
 
 ## Optimizations
 
