@@ -55,9 +55,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// <param name="context"></param>
     /// <returns></returns>
     public virtual WordsSearchSettings GetWordsSearchSettings(TContext context)
-        => context.SearchWordsBundle.Length > 5
-            ? WordsSearchSettings.Fast
-            : WordsSearchSettings.Default;
+        => WordsSearchSettings.Default;
 
     /// <summary>
     /// Определяем возможные альтернативные слова для слов из запроса

@@ -153,7 +153,7 @@ public static class NgrammsWordsSearchHelper
             foreach (KeyValuePair<int, WordNgrammSearchState> item in wordsSearchProcessDict
                 .Where(i => (i.Value.Matches >= treshold) && (!word.IsDigit || i.Value.Misses == 0) && (i.Value.Score > 0))
                 .OrderByDescending(i => i.Value.Score)
-                .Take(wordsSearchSettings.MaxCheckingWordsCount))
+                .Take(wordsSearchSettings.MaxCheckingWordsCount(word)))
             {
                 result.Add(new(item.Key, (byte)(item.Value.Score * word.Multiplier)));
             }
