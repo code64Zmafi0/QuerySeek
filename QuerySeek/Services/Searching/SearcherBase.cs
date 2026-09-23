@@ -23,13 +23,13 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     public abstract IEnumerable<RequestBase> GetRequest(TContext context);
 
     /// <summary>
-    /// Позволяет переопределить конечную сортировку
+    /// Позволяет определить сортировку
     /// </summary>
     /// <param name="context"></param>
     /// <param name="result">Отсортированный по количеству совпадений enumerable сущностей</param>
     /// <returns></returns>
     public virtual IEnumerable<EntitySearchResult> Ranging(TContext context, IEnumerable<EntitySearchResult> result)
-        => result;
+        => result.OrderByDescending(i => i.ScoreWithRules);
 
     /// <summary>
     /// Позволяет осуществить предпроцессинг, указать выборку сущностей на сортировку, добавить правила
@@ -42,12 +42,12 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         => result;
 
     /// <summary>
-    /// Вызывается после вычисления совпадений со словами из запроса
+    /// Вызывается после вычисления всех совпадений со словами из запроса
     /// </summary>
     /// <param name="context"></param>
     /// <param name="entity"></param>
     /// <param name="summaryMatches"></param>
-    public virtual void OnEntityMatched(TContext context, EntitySearchResult entity, in Span<WordCompareResult> summaryMatches) { }
+    public virtual void OnEntityMatched(TContext context, EntitySearchResult entity, in Span<WordMatch> summaryMatches) { }
 
     /// <summary>
     /// Определение настроек поиска по словам
@@ -58,7 +58,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         => WordsSearchSettings.Default;
 
     /// <summary>
-    /// Определяем возможные альтернативные слова для слов из запроса
+    /// Определение возможных альтернатив слов из запроса
     /// </summary>
     /// <returns></returns>
     public virtual Dictionary<string, string[]> GetQueryWordsAlternatives(TContext context)
@@ -106,7 +106,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// <param name="context">Контекст поиска</param>
     /// <param name="take">Количество элементов</param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// <returns>Отранжированный результат из всех типов</returns>
     public EntitySearchResult[] Search(
         TContext context,
         int take,
@@ -135,7 +135,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// <param name="context">Контекст поиска</param>
     /// <param name="take">Количество элементов каждого типа</param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// <returns>Блоки отранжированных результатов по типам</returns>
     public TypeSearchResult[] SearchTypes(
         TContext context,
         int take,
@@ -169,12 +169,11 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         Dictionary<string, double> queryWordMultiplers = GetQueryWordsMultiplers(context);
 
         context.SearchWordsBundle = NgrammsWordsSearchHelper.CreateSearchWordsBundle(context, alternativeWords, queryWordMultiplers);
-        context.Request = GetRequest(context);
     }
 
     public void ProcessRequests(TContext context, CancellationToken ct)
     {
-        foreach (RequestBase request in context.Request)
+        foreach (RequestBase request in GetRequest(context))
         {
             request.ProcessRequest(context, ct);
 
@@ -187,42 +186,40 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     }
 
     /// <summary>
-    /// Просчитываем скор текстовых сопадний для сущности
+    /// Просчитываем скор текстовых совпадний для сущности
     /// </summary>
     public void CalculateTextScore(TContext context, EntitySearchResult entityMatchesBundle)
     {
         if (entityMatchesBundle.Score != 0) return;
 
         byte currentEntityType = entityMatchesBundle.Key.Type;
-        Key[] entityLinks = entityMatchesBundle.Meta.Links;
 
-        Span<WordCompareResult> summaryMatches = stackalloc WordCompareResult[context.SplittedAndNormalizedQuery.Length];
+        Span<WordMatch> queryWordMatches = stackalloc WordMatch[context.SplittedAndNormalizedQuery.Length];
 
-        //Просчитываем совпадения для слов из запроса по совпадениям из сущности и слинкованных сущностей
-        foreach ((byte Type, List<WordCompareResult> Matches) in GetMatches(context, entityMatchesBundle))
+        //Просчитываем совпадения слов из запроса для сущнности и ее линков
+        foreach ((byte Type, List<WordMatch> Matches) in GetMatches(context, entityMatchesBundle))
         {
             double linkMultipler = GetLinkedEntityMatchMultipler(currentEntityType, Type);
             if (linkMultipler != 0)
             {
-                ProcessNodeScoring(in summaryMatches, Matches, context, linkMultipler);
+                ProcessNodeMatches(in queryWordMatches, Matches, context, linkMultipler);
             }
         }
 
+        //Складываем скор совпадений слов
         int resultScore = 0;
-
-        //Складываем скор для совпадений по словам из запроса
-        foreach (WordCompareResult ws in summaryMatches)
+        foreach (WordMatch ws in queryWordMatches)
             resultScore += ws.Score;
 
         entityMatchesBundle.Score = resultScore;
 
-        OnEntityMatched(context, entityMatchesBundle, in summaryMatches);
+        OnEntityMatched(context, entityMatchesBundle, in queryWordMatches);
     }
 
     /// <summary>
-    /// Возвращает матчи сущности и слинкованных сущностей
+    /// Возвращает набор совпавших слов для сущности и прилинкованных к ней
     /// </summary>
-    private IEnumerable<(byte Type, List<WordCompareResult> Matches)> GetMatches(TContext context, EntitySearchResult entityMatchesBundle)
+    private IEnumerable<(byte Type, List<WordMatch> Matches)> GetMatches(TContext context, EntitySearchResult entityMatchesBundle)
     {
         byte currentEntityType = entityMatchesBundle.Key.Type;
 
@@ -259,18 +256,25 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         }
     }
 
-    private void ProcessNodeScoring(in Span<WordCompareResult> wordsScores, List<WordCompareResult> matches, TContext context, double nodeMultipler)
+    /// <summary>
+    /// Заполняет матчи для слов из запроса <paramref name="queryWordsMatches"/> из совпадений для сущности <paramref name="matches"/>
+    /// </summary>
+    /// <param name="queryWordsMatches">Совпадения со словами из запроса</param>
+    /// <param name="matches">Матчи слов с сущностью</param>
+    /// <param name="context">Контекст поиска</param>
+    /// <param name="nodeMultipler">Мультиплер для линка</param>
+    private void ProcessNodeMatches(in Span<WordMatch> queryWordsMatches, List<WordMatch> matches, TContext context, double nodeMultipler)
     {
         //Сначала выбираем матчи по сущности пытаемся собрать совпадения для слов из запроса
-        Span<WordCompareResult> nodeScores = stackalloc WordCompareResult[wordsScores.Length];
+        Span<WordMatch> nodeScores = stackalloc WordMatch[queryWordsMatches.Length];
         for (int i = 0; i < matches.Count; i++)
         {
-            WordCompareResult compareResult = matches[i];
+            WordMatch compareResult = matches[i];
             int queryWordPosition = GetCurrentQueryWordPosition(in nodeScores, compareResult.WordsBundlePosition);
-            WordCompareResult previouslyCalculatedResult = nodeScores[queryWordPosition];
+            WordMatch previouslyCalculatedResult = nodeScores[queryWordPosition];
 
             bool isNewQueryPosition = false;
-            if (PreviouslyMatchedWordToNewPositionIName(compareResult, previouslyCalculatedResult))
+            if (PreviouslyMatchedWordToNewPositionName(compareResult, previouslyCalculatedResult))
             {
                 isNewQueryPosition = true;
                 queryWordPosition = GetNewQueryWordPosition(in nodeScores, compareResult.WordsBundlePosition);
@@ -287,24 +291,24 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         }
 
         //Мерж между линками
-        for (int i = 0; i < wordsScores.Length; i++)
+        for (int i = 0; i < queryWordsMatches.Length; i++)
         {
-            WordCompareResult nodeMatch = nodeScores[i];
-            WordCompareResult previouslyCalculatedResult = wordsScores[i];
+            WordMatch nodeMatch = nodeScores[i];
+            WordMatch previouslyCalculatedResult = queryWordsMatches[i];
 
             if (nodeMatch.IsEmpty) continue;
             if (!previouslyCalculatedResult.IsEmpty)
             {
-                int nextQueryWordPosition = GetNewQueryWordPosition(wordsScores, nodeMatch.WordsBundlePosition);
-                if (nextQueryWordPosition != -1) wordsScores[nextQueryWordPosition] = nodeMatch;
+                int nextQueryWordPosition = GetNewQueryWordPosition(queryWordsMatches, nodeMatch.WordsBundlePosition);
+                if (nextQueryWordPosition != -1) queryWordsMatches[nextQueryWordPosition] = nodeMatch;
             }
             else if (previouslyCalculatedResult.Score < nodeMatch.Score)
             {
-                wordsScores[i] = nodeMatch;
+                queryWordsMatches[i] = nodeMatch;
             }
         }
 
-        int GetNewQueryWordPosition(in Span<WordCompareResult> scores, int wordsBundlePosition)
+        int GetNewQueryWordPosition(in Span<WordMatch> scores, int wordsBundlePosition)
         {
             foreach (int position in context.SearchWordsBundle[wordsBundlePosition].PositionsInRequest)
             {
@@ -314,7 +318,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
             return -1;
         }
 
-        int GetCurrentQueryWordPosition(in Span<WordCompareResult> scores, int wordsBundlePosition)
+        int GetCurrentQueryWordPosition(in Span<WordMatch> scores, int wordsBundlePosition)
         {
             int previousNotEmpty = -1;
 
@@ -335,7 +339,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
             return positions[0];
         }
 
-        static bool PreviouslyMatchedWordToNewPositionIName(WordCompareResult compareResult, WordCompareResult previouslyCalculatedResult)
+        static bool PreviouslyMatchedWordToNewPositionName(WordMatch compareResult, WordMatch previouslyCalculatedResult)
             => !previouslyCalculatedResult.IsEmpty
                 && previouslyCalculatedResult.NameType == compareResult.NameType
                 && previouslyCalculatedResult.NameWordPosition != compareResult.NameWordPosition

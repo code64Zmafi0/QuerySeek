@@ -19,7 +19,7 @@ public class Search(byte targetType) : RequestBase(targetType)
             QueryWordContainer wordFromQuery = queryWordsBundle[queryWordPosition];
             List<KeyValuePair<int, byte>> currentSimilarWordsBundle = wordFromQuery.SimilarWords;
 
-            WordsSearchStopManager wsm = searchContext.WordsSearchSettings.GetWordsSearchStopManager(wordFromQuery.QueryWord);
+            WordsSearchStopManager wsm = searchContext.WordsSearchSettings.GetWordsSearchStopManager(wordFromQuery.QueryWordAndAlternatives[0]);
 
             for (int wbIndex = 0; wbIndex < currentSimilarWordsBundle.Count; wbIndex++)
             {
@@ -43,13 +43,13 @@ public class Search(byte targetType) : RequestBase(targetType)
                         return;
 
                     Key entityKey = new(TargetType, wordMatchMeta.EntityId);
-                    WordCompareResult wcr = new(
+                    WordMatch wordMatch = new(
                         wordMatchMeta.NameWordPosition,
                         wordMatchMeta.NameType,
                         queryWordPosition,
                         indexWordInfo.Value);
 
-                    searchContext.AddResult(entityKey, wcr);
+                    searchContext.AddResult(entityKey, wordMatch);
                 }
             }
         }

@@ -24,7 +24,7 @@ public class SearchByAreas(
             QueryWordContainer wordFromQuery = queryWordsBundle[queryWordPosition];
             List<KeyValuePair<int, byte>> currentSimilarWordsBundle = wordFromQuery.SimilarWords;
 
-            WordsSearchStopManager wsm = searchContext.WordsSearchSettings.GetWordsSearchStopManager(wordFromQuery.QueryWord);
+            WordsSearchStopManager wsm = searchContext.WordsSearchSettings.GetWordsSearchStopManager(wordFromQuery.QueryWordAndAlternatives[0]);
 
             for (int i = 0; i < currentSimilarWordsBundle.Count; i++)
             {
@@ -49,13 +49,13 @@ public class SearchByAreas(
                             return;
 
                         Key entityKey = new(TargetType, wordMatchMeta.EntityId);
-                        WordCompareResult wcr = new(
+                        WordMatch wordMatch = new(
                             wordMatchMeta.NameWordPosition,
                             wordMatchMeta.NameType,
                             queryWordPosition,
                             indexWordInfo.Value);
 
-                        searchContext.AddResult(entityKey, wcr);
+                        searchContext.AddResult(entityKey, wordMatch);
                     }
                 }
 

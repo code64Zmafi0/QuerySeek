@@ -14,17 +14,12 @@ public class SearchContextBase(IndexInstance index, string query)
     /// <summary>
     /// Входящий текстовый запрос
     /// </summary>
-    public string Query { get; internal set; } = query;
+    public string Query { get; } = query;
 
     /// <summary>
     /// Инстанс индекса
     /// </summary>
-    public IndexInstance Index { get; internal set; } = index;
-
-    /// <summary>
-    /// Запрос на поиск в индексе
-    /// </summary>
-    public IEnumerable<RequestBase> Request { get; internal set; } = [];
+    public IndexInstance Index { get; } = index;
 
     /// <summary>
     /// Нормализованный и разбитый по словам запрос
@@ -44,10 +39,10 @@ public class SearchContextBase(IndexInstance index, string query)
     /// <summary>
     /// Бандл результатов поиска сущностей в индексе
     /// </summary>
-    public Dictionary<byte, Dictionary<Key, EntitySearchResult>> SearchResult { get; set; } = [];
+    public Dictionary<byte, Dictionary<Key, EntitySearchResult>> SearchResult { get; } = [];
 
     #region Search Tools
-    public int UniqWordsFullQueryScore => SearchWordsBundle.Sum(i => i.QueryWord.NGrammsHashes.Length);
+    public int UniqWordsFullQueryScore => SearchWordsBundle.Sum(i => i.QueryWordAndAlternatives[0].NGrammsHashes.Length);
 
     /// <summary>
     /// Пробует получить найденную сущность в контексте
@@ -93,8 +88,8 @@ public class SearchContextBase(IndexInstance index, string query)
     /// Добавляет в контекст поиска сущность и добавляет свопадение со словом из запроса
     /// </summary>
     /// <param name="key"></param>
-    /// <param name="wordCompareResult"></param>
-    public void AddResult(Key key, WordCompareResult wordCompareResult)
+    /// <param name="wordMatch"></param>
+    public void AddResult(Key key, WordMatch wordMatch)
     {
         ref var types = ref CollectionsMarshal.GetValueRefOrAddDefault(SearchResult, key.Type, out var exists);
 
@@ -106,7 +101,7 @@ public class SearchContextBase(IndexInstance index, string query)
         if (!exists)
             matchesBundle = new(key, Index.Entities[key]);
 
-        matchesBundle!.WordsMatches.Add(wordCompareResult);
+        matchesBundle!.WordsMatches.Add(wordMatch);
     }
     #endregion
 }

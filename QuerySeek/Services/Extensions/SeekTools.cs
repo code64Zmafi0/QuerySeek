@@ -37,11 +37,11 @@ public static class QS
     public static Key[] Keys(byte type, params int[] ids)
         => Array.ConvertAll(ids, id => Key(type, id));
 
-    public static bool WordIsFullMatched(Word queryWord, WordCompareResult wordCompareResult)
-        => queryWord.NGrammsHashes.Length == wordCompareResult.Score;
+    public static bool WordIsFullMatched(Word queryWord, WordMatch wordMatch)
+        => queryWord.NGrammsHashes.Length == wordMatch.Score;
 
-    public static bool WordIsFullMatched(SearchContextBase context, WordCompareResult wordCompareResult)
-        => WordIsFullMatched(context.SearchWordsBundle[wordCompareResult.WordsBundlePosition].QueryWord, wordCompareResult);
+    public static bool WordIsFullMatched(SearchContextBase context, WordMatch wordMatch)
+        => WordIsFullMatched(context.SearchWordsBundle[wordMatch.WordsBundlePosition].QueryWordAndAlternatives[0], wordMatch);
     #endregion
 
     #region Build

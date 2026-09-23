@@ -101,20 +101,23 @@ public static class NgrammsWordsSearchHelper
             int[] positions = [.. wordAndRepeats.Select(i => i.Index)];
             double multipler = queryWordMultiplers.TryGetValue(wordFrowQuery, out var m) ? m : 1;
 
-            Word word = new(wordFrowQuery, GetNgramms(wordFrowQuery), multipler);
+            List<Word> words = [new(wordFrowQuery, GetNgramms(wordFrowQuery), multipler)];
 
-            Word[] alterantives = alternativeWords.TryGetValue(wordFrowQuery, out string[]? alts)
-                ? Array.ConvertAll(alts, alt => new Word(alt, GetNgramms(alt), multipler))
-                : [];
+            if (alternativeWords.TryGetValue(wordFrowQuery, out string[]? alts))
+            {
+                words.AddRange(Array.ConvertAll(alts, alt => new Word(
+                    alt,
+                    GetNgramms(alt),
+                    queryWordMultiplers.TryGetValue(alt, out var m) ? m : 1)));
+            }
 
             List<KeyValuePair<int, byte>> similarWords = SearchSimilarsByQueryWordAndAlternatives(
                 wordsSearchProcessDict,
                 wordsIdsByNgramms,
-                word,
-                alterantives,
+                words,
                 context.WordsSearchSettings);
 
-            return new QueryWordContainer(word, alterantives, positions, similarWords);
+            return new QueryWordContainer(words, positions, similarWords);
         })];
 
         return result;
@@ -132,15 +135,19 @@ public static class NgrammsWordsSearchHelper
     private static List<KeyValuePair<int, byte>> SearchSimilarsByQueryWordAndAlternatives(
         Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict,
         Dictionary<int, NgrammAssociation[]> wordsIdsByNgramms,
-        Word queryWord,
-        Word[] alternatives,
+        List<Word> queryWordAndAlternatives,
         WordsSearchSettings wordsSearchSettings)
     {
         List<KeyValuePair<int, byte>> result = [];
 
-        foreach (Word altWord in alternatives)
+        for (int i = 1; i < queryWordAndAlternatives.Count; i++)
+        {
+            Word altWord = queryWordAndAlternatives[i];
+            //Для альтернатив все нграммы должны совпасть
             SearchSimilars(altWord, (byte)altWord.NGrammsHashes.Length);
+        }
 
+        Word queryWord = queryWordAndAlternatives[0];
         SearchSimilars(queryWord, wordsSearchSettings.SimilarityTresholdCalculator(queryWord));
 
         return result;
