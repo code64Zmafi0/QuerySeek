@@ -27,20 +27,19 @@ public class EntitiesByWordsSearchMapBuilder()
         matches!.Add(wordMatch);
     }
 
-    public KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] CreateMap()
+    public KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][] CreateMap()
     {
-        var entitiesByWords = new KeyValuePair<byte /*TypeId*/, Dictionary</*ContainerKey*/ Key, WordMatchMeta[]>>[EntitiesByWords.Count][];
+        var entitiesByWords = new KeyValuePair<byte /*TypeId*/, IReadOnlyDictionary</*ContainerKey*/ Key, WordMatchMeta[]>>[EntitiesByWords.Count][];
 
         foreach (var wordMatch in EntitiesByWords)
         {
-            entitiesByWords[wordMatch.Key] = wordMatch.Value
+            entitiesByWords[wordMatch.Key] = [.. wordMatch.Value
                 .OrderBy(x => x.Key)
-                .Select(x => new KeyValuePair<byte, Dictionary</*ContainerKey*/ Key, WordMatchMeta[]>>(
+                .Select(x => new KeyValuePair<byte, IReadOnlyDictionary</*ContainerKey*/ Key, WordMatchMeta[]>>(
                     x.Key, 
                     x.Value.ToDictionary(
                         i => i.Key,
-                        i => i.Value.ToArray())))
-                .ToArray();
+                        i => i.Value.ToArray())))];
         }
 
         return entitiesByWords;

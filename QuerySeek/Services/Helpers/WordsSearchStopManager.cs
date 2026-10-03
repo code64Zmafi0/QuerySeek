@@ -1,7 +1,7 @@
 namespace QuerySeek.Services.Helpers;
 
 /// <summary>
-/// MUTABLE STRUCT! Счетчик совпавших схожих слов для 1 слова из запроса, чтобы остановить поиск по схожим словам если найдено определенное количество слов
+/// Ограничитель 
 /// </summary>
 /// <param name="quantity"></param>
 public struct WordsSearchStopManager(int quantity)

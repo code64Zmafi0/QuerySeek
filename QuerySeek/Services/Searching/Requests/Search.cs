@@ -12,7 +12,7 @@ public class Search(byte targetType) : RequestBase(targetType)
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
         QueryWordContainer[] queryWordsBundle = searchContext.SearchWordsBundle;
-        KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] entitiesSearchMap = searchContext.Index.EntitiesSearchMap;
+        KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][] entitiesSearchMap = searchContext.Index.EntitiesSearchMap;
 
         for (byte queryWordPosition = 0; queryWordPosition < queryWordsBundle.Length; queryWordPosition++)
         {

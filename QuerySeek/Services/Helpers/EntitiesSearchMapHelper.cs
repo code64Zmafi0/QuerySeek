@@ -1,16 +1,15 @@
 ﻿using QuerySeek.Models;
-using QuerySeek.Services.Searching;
 
 namespace QuerySeek.Services.Helpers;
 
 public static class EntitiesSearchMapHelper
 {
     public static WordMatchMeta[]? GetMatchesByWord(
-        this KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] searchMap,
+        this KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][] searchMap,
         int wordId,
         byte entityType)
     {
-        KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[] wordMatches = searchMap[wordId];
+        KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[] wordMatches = searchMap[wordId];
 
         //Типы в бандле упорядочены. Используем бинарный поиск.
         int index = BinarySearch(wordMatches, entityType);
@@ -25,18 +24,18 @@ public static class EntitiesSearchMapHelper
     }
 
     public static IEnumerable<WordMatchMeta[]> GetMatchesByWordAndAreas(
-        this KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] searchMap,
+        this KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][] searchMap,
         int wordId,
         byte entityType,
         Key[] containerKeys)
     {
-        KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[] wordMatches = searchMap[wordId];
+        KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[] wordMatches = searchMap[wordId];
 
         //Типы в бандле упорядочены. Используем бинарный поиск.
         int index = BinarySearch(wordMatches, entityType);
         if (index == -1) yield break;
 
-        Dictionary<Key, WordMatchMeta[]> matchesBundleByContainers = wordMatches[index].Value;
+        IReadOnlyDictionary<Key, WordMatchMeta[]> matchesBundleByContainers = wordMatches[index].Value;
 
         foreach (Key containerKey in containerKeys)
         {
@@ -53,7 +52,7 @@ public static class EntitiesSearchMapHelper
     /// <param name="sortedKeys"></param>
     /// <param name="targetType"></param>
     /// <returns></returns>
-    private static int BinarySearch(KeyValuePair<byte /*TypeId*/, Dictionary</*ByNodeKey*/ Key, WordMatchMeta[]>>[] sortedKeys, byte targetType)
+    private static int BinarySearch(KeyValuePair<byte /*TypeId*/, IReadOnlyDictionary</*ByNodeKey*/ Key, WordMatchMeta[]>>[] sortedKeys, byte targetType)
     {
         int left = 0;
         int right = sortedKeys.Length - 1;

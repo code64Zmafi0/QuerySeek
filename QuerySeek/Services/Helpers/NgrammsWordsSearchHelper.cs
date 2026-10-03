@@ -90,7 +90,7 @@ public static class NgrammsWordsSearchHelper
         Dictionary<string, string[]> alternativeWords,
         Dictionary<string, double> queryWordMultiplers)
     {
-        Dictionary<int, NgrammAssociation[]> wordsIdsByNgramms = context.Index.WordsIdsByNgramms;
+        IReadOnlyDictionary<int, NgrammAssociation[]> wordsIdsByNgramms = context.Index.WordsIdsByNgramms;
 
         //Используем один словарь для расчета совпавщих слов для каждого слова из запроса дабы лишний раз не аллоцировать
         Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict = new(context.WordsSearchSettings.WordsSearchDictionaryPreallocate);
@@ -134,7 +134,7 @@ public static class NgrammsWordsSearchHelper
     /// <returns></returns>
     private static List<KeyValuePair<int, byte>> SearchSimilarsByQueryWordAndAlternatives(
         Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict,
-        Dictionary<int, NgrammAssociation[]> wordsIdsByNgramms,
+        IReadOnlyDictionary<int, NgrammAssociation[]> wordsIdsByNgramms,
         List<Word> queryWordAndAlternatives,
         WordsSearchSettings wordsSearchSettings)
     {
@@ -176,7 +176,7 @@ public static class NgrammsWordsSearchHelper
     /// <returns>Словарь id слова количество совпадений и пропусков</returns>
     private static void NgrammSearch(
         Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict,
-        Dictionary<int, NgrammAssociation[]> wordsIdsByNgramms,
+        IReadOnlyDictionary<int, NgrammAssociation[]> wordsIdsByNgramms,
         Word queryWord,
         int treshold)
     {

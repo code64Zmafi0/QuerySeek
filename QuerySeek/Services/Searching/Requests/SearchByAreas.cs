@@ -15,7 +15,7 @@ public class SearchByAreas(
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
         QueryWordContainer[] queryWordsBundle = searchContext.SearchWordsBundle;
-        KeyValuePair<byte, Dictionary<Key, WordMatchMeta[]>>[][] entitiesSearchMap = searchContext.Index.EntitiesSearchMap;
+        KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][] entitiesSearchMap = searchContext.Index.EntitiesSearchMap;
 
         Key[] areas = [..areasSelector().Select(i => i.Key)];
 

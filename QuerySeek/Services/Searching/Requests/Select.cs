@@ -11,7 +11,7 @@ public class Select(byte targetType, IEnumerable<int> ids) : RequestBase(targetT
 {
     public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
     {
-        Dictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
+        IReadOnlyDictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
 
         foreach (int id in ids)
         {
