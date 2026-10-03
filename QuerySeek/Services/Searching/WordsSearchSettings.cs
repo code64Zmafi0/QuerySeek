@@ -8,11 +8,13 @@ namespace QuerySeek.Services.Searching;
 /// <param name="MaxCheckingWordsCount">Максимальное количетсво проверяемых схожих слов для слова из запроса</param>
 /// <param name="WordsToStopProcessCalculator">Количетсво совпавших схожих слов для остановки поиска определнной сущности по текущему слову из запроса</param>
 /// <param name="SimilarityTresholdCalculator">Калькулятор трешхолда поиска схожих слов в зависисмости от слова из запроса</param>
+/// <param name="AlternativesCount">Трешхолд для альтернативных слов</param>
 /// <param name="WordsSearchDictionaryPreallocate">Преаллокация словаря для поиска схожих слов</param>
 public record WordsSearchSettings(
     Func<Word, int> MaxCheckingWordsCount,
     Func<Word, int> WordsToStopProcessCalculator,
     Func<Word, int> SimilarityTresholdCalculator,
+    int AlternativesCount = 2,
     int WordsSearchDictionaryPreallocate = 300_000)
 {
     public static readonly WordsSearchSettings Default = new(

@@ -143,24 +143,27 @@ public static class NgrammsWordsSearchHelper
         for (int i = 1; i < queryWordAndAlternatives.Count; i++)
         {
             Word altWord = queryWordAndAlternatives[i];
-            //Для альтернатив все нграммы должны совпасть
-            SearchSimilars(altWord, (byte)altWord.NGrammsHashes.Length);
+            SearchSimilars(altWord, wordsSearchSettings.SimilarityTresholdCalculator(altWord), true);
         }
 
         Word queryWord = queryWordAndAlternatives[0];
-        SearchSimilars(queryWord, wordsSearchSettings.SimilarityTresholdCalculator(queryWord));
+        SearchSimilars(queryWord, wordsSearchSettings.SimilarityTresholdCalculator(queryWord), false);
 
         return result;
 
-        void SearchSimilars(Word word, int treshold)
+        void SearchSimilars(Word word, int treshold, bool IsAlt)
         {
             NgrammSearch(wordsSearchProcessDict, wordsIdsByNgramms, word, treshold);
+
+            int take = IsAlt
+                ? wordsSearchSettings.AlternativesCount
+                : wordsSearchSettings.MaxCheckingWordsCount(word);
 
             //Ищем бандл схожих слов и сортируем по количеству совпадений (вычисляется в свойстве Score. Попадания - наказание за промахи)
             foreach (KeyValuePair<int, WordNgrammSearchState> item in wordsSearchProcessDict
                 .Where(i => (i.Value.Matches >= treshold) && (!word.IsDigit || i.Value.Misses == 0) && (i.Value.Score > 0))
                 .OrderByDescending(i => i.Value.Score)
-                .Take(wordsSearchSettings.MaxCheckingWordsCount(word)))
+                .Take(take))
             {
                 result.Add(new(item.Key, (byte)(item.Value.Score * word.Multiplier)));
             }
