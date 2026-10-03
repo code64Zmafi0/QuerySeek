@@ -47,24 +47,9 @@ public class IndexInstance
             if (meta.Childs.Length == 0)
                 meta.Childs = Array.Empty<Key>();
 
-            Key[] thisLinks = meta.Links;
-
-            if (thisLinks.Length == 0)
-            {
+            if (meta.Links.Length == 0)
                 meta.Links = Array.Empty<Key>();
-            }
-            else
-            {
-                foreach (EntityMeta overMeta in Entities.Values)
-                {
-                    if (overMeta.Links == thisLinks) continue;
-
-                    if (overMeta.Links.SequenceEqual(thisLinks))
-                    {
-                        overMeta.Links = thisLinks;
-                    }
-                }
-            }
+            
         }
 
         //Оптимизация поисковой мапы
