@@ -32,7 +32,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         => result.OrderByDescending(i => i.ScoreWithRules);
 
     /// <summary>
-    /// Позволяет осуществить предпроцессинг, указать выборку сущностей на сортировку, добавить правила
+    /// Позволяет осуществить препроцессинг, указать выборку сущностей на сортировку, добавить правила
     /// </summary>
     /// <param name="context"></param>
     /// <param name="type"></param>
@@ -40,14 +40,6 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// <returns></returns>
     public virtual IEnumerable<EntitySearchResult> TypeResultPreprocessing(TContext context, byte type, ICollection<EntitySearchResult> result)
         => result;
-
-    /// <summary>
-    /// Вызывается после вычисления всех совпадений со словами из запроса
-    /// </summary>
-    /// <param name="context"></param>
-    /// <param name="entity"></param>
-    /// <param name="summaryMatches"></param>
-    public virtual void OnEntityMatched(TContext context, EntitySearchResult entity, in Span<WordMatch> summaryMatches) { }
 
     /// <summary>
     /// Определение настроек поиска по словам
@@ -72,6 +64,12 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         => [];
 
     /// <summary>
+    /// Событие заполнения context.SearchResult
+    /// </summary>
+    /// <param name="context"></param>
+    public virtual void OnRequestsProcessed(TContext context) { }
+
+    /// <summary>
     /// Позволяет при совпадении линка, добавить просчет его звасимостей
     /// </summary>
     /// <param name="entityType"></param>
@@ -79,6 +77,14 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// <returns></returns>
     public virtual bool OnLinkedMatchNeedMergeLinks(byte entityType, byte linkedType)
         => false;
+
+    /// <summary>
+    /// Событие просчета всех матчей включая линки для сущности
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="entity"></param>
+    /// <param name="summaryMatches">Матчи слов из запроса</param>
+    public virtual void OnEntityMatched(TContext context, EntitySearchResult entity, in Span<WordMatch> summaryMatches) { }
 
     /// <summary>
     /// Множитель совпадений из связанных сущностей
@@ -163,11 +169,11 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     public void FillContext(TContext context)
     {
         context.SplittedAndNormalizedQuery = TextPreprocessor.PreprocessText(nameTokenizer, normalizer, context.Query);
-        context.WordsSearchSettings = GetWordsSearchSettings(context);
 
         Dictionary<string, string[]> alternativeWords = GetQueryWordsAlternatives(context);
         Dictionary<string, double> queryWordMultiplers = GetQueryWordsMultiplers(context);
 
+        context.WordsSearchSettings = GetWordsSearchSettings(context);
         context.SearchWordsBundle = NgrammsWordsSearchHelper.CreateSearchWordsBundle(context, alternativeWords, queryWordMultiplers);
     }
 
@@ -183,6 +189,8 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
             foreach (EntitySearchResult item in result.Values)
                 CalculateTextScore(context, item);
         }
+
+        OnRequestsProcessed(context);
     }
 
     /// <summary>

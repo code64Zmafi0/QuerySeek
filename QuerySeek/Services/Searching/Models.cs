@@ -33,8 +33,6 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 
     public readonly List<AdditionalRule> Rules = [];
 
-    public int Score;
-
     public Key? GetLink(byte type)
     {
         foreach (Key link in Meta.Links)
@@ -48,6 +46,8 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 
     public void AddRule(AdditionalRule rule)
         => Rules.Add(rule);
+
+    public int Score;
 
     public int ScoreWithRules
     {
