@@ -41,7 +41,7 @@ public class IndexInstance
     /// </summary>
     public void Inititalize(bool gcCompactLOH = true)
     {
-        //Подменяем пустые и одинаковык массивы одной ссылкой
+        //Подменяем пустые массивы одной ссылкой
         foreach (EntityMeta meta in Entities.Values)
         {
             if (meta.Childs.Length == 0)

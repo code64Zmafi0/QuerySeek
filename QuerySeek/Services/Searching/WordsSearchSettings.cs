@@ -14,7 +14,7 @@ public record WordsSearchSettings(
     Func<Word, int> MaxCheckingWordsCount,
     Func<Word, int> WordsToStopProcessCalculator,
     Func<Word, int> SimilarityTresholdCalculator,
-    int AlternativesCount = 2,
+    int AlternativesCount = 1,
     int WordsSearchDictionaryPreallocate = 300_000)
 {
     public static readonly WordsSearchSettings Default = new(
