@@ -126,12 +126,6 @@ public static class NgrammsWordsSearchHelper
     /// <summary>
     /// Поиск схожих слов и альтернатив для слова из запроса
     /// </summary>
-    /// <param name="wordsSearchProcessDict"></param>
-    /// <param name="wordsIdsByNgramms"></param>
-    /// <param name="queryWord"></param>
-    /// <param name="alternatives"></param>
-    /// <param name="wordsSearchSettings"></param>
-    /// <returns></returns>
     private static List<KeyValuePair<int, byte>> SearchSimilarsByQueryWordAndAlternatives(
         Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict,
         IReadOnlyDictionary<int, NgrammAssociation[]> wordsIdsByNgramms,
@@ -176,7 +170,6 @@ public static class NgrammsWordsSearchHelper
     /// <summary>
     /// Поиск похожих слов по n-gramm
     /// </summary>
-    /// <returns>Словарь id слова количество совпадений и пропусков</returns>
     private static void NgrammSearch(
         Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict,
         IReadOnlyDictionary<int, NgrammAssociation[]> wordsIdsByNgramms,
