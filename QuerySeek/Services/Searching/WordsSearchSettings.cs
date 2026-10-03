@@ -8,26 +8,21 @@ namespace QuerySeek.Services.Searching;
 /// <param name="MaxCheckingWordsCount">Максимальное количетсво проверяемых схожих слов для слова из запроса</param>
 /// <param name="WordsToStopProcessCalculator">Количетсво совпавших схожих слов для остановки поиска определнной сущности по текущему слову из запроса</param>
 /// <param name="SimilarityTresholdCalculator">Калькулятор трешхолда поиска схожих слов в зависисмости от слова из запроса</param>
+/// <param name="AlternativesCount">Трешхолд для альтернативных слов</param>
 /// <param name="WordsSearchDictionaryPreallocate">Преаллокация словаря для поиска схожих слов</param>
 public record WordsSearchSettings(
-    int MaxCheckingWordsCount,
+    Func<Word, int> MaxCheckingWordsCount,
     Func<Word, int> WordsToStopProcessCalculator,
     Func<Word, int> SimilarityTresholdCalculator,
+    int AlternativesCount = 1,
     int WordsSearchDictionaryPreallocate = 300_000)
 {
     public static readonly WordsSearchSettings Default = new(
-        MaxCheckingWordsCount: 500,
-        WordsToStopProcessCalculator: (_) => 6,
+        MaxCheckingWordsCount: (word) => word.QueryWord.Length < 4 ? 1000 : 500,
+        WordsToStopProcessCalculator: (word) => 35,
         SimilarityTresholdCalculator: (word) => word.IsDigit
             ? NgrammsWordsSearchHelper.CalculateDigitSimilarityTreshold(word)
             : NgrammsWordsSearchHelper.CalculateWordSimilarityTreshold(word, 0.4));
-
-    public static readonly WordsSearchSettings Fast = new(
-        MaxCheckingWordsCount: 200,
-        WordsToStopProcessCalculator: (_) => 2,
-        SimilarityTresholdCalculator: (word) => word.IsDigit
-            ? NgrammsWordsSearchHelper.CalculateDigitSimilarityTreshold(word)
-            : NgrammsWordsSearchHelper.CalculateWordSimilarityTreshold(word, 0.7));
 
     public WordsSearchStopManager GetWordsSearchStopManager(Word word) => new(WordsToStopProcessCalculator(word));
 }

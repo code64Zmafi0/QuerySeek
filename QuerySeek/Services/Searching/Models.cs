@@ -1,5 +1,4 @@
 using QuerySeek.Models;
-using QuerySeek.Services.Helpers;
 
 namespace QuerySeek.Services.Searching;
 
@@ -30,13 +29,11 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 
     public readonly EntityMeta Meta = meta;
 
-    public readonly List<WordCompareResult> WordsMatches = new(1);
+    public readonly List<WordMatch> WordsMatches = new(1);
 
     public readonly List<AdditionalRule> Rules = [];
 
-    public int Score;
-
-    public Key? TryGetLink(byte type)
+    public Key? GetLink(byte type)
     {
         foreach (Key link in Meta.Links)
             if (link.Type == type) return link;
@@ -49,6 +46,26 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 
     public void AddRule(AdditionalRule rule)
         => Rules.Add(rule);
+
+    public int Score;
+
+    public int ScoreWithRules
+    {
+        get
+        {
+            int resultScore = Score;
+
+            for (int i = 0; i < Rules.Count; i++)
+            {
+                AdditionalRule item = Rules[i];
+
+                resultScore += item.Score;
+                resultScore = (int)(resultScore * item.Multipler);
+            }
+
+            return resultScore;
+        }
+    }
 }
 
 /// <summary>
@@ -61,7 +78,7 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 /// <param name="NameType">Тип имени</param>
 /// <param name="WordsBundlePosition">Позиция совпавшего слова из запроса</param>
 /// <param name="Score">Длина совпадения (по количеству свопавщих нграмм)</param>
-public readonly record struct WordCompareResult(
+public readonly record struct WordMatch(
     byte NameWordPosition,
     byte NameType,
     byte WordsBundlePosition,
@@ -79,13 +96,12 @@ public readonly record struct WordCompareResult(
 public record AdditionalRule(string Name, int Score = 0, double Multipler = 1);
 
 /// <summary>
-/// Контейнер слова из запроса с альтернативами и множителем
+/// Контейнер слова из запроса включает в себя слово из запроса, альтернативы, позиции в запросе и похожие слова из индекса
 /// </summary>
-/// <param name="QueryWord">Текстовое представление слова</param>
-/// <param name="Alternatives">Возможные альтернативы</param>
-/// <param name="PositionsInRequest">Позиции в исходном запросе</param>
-/// <param name="SimilarWords">Слова для поиска в индексе</param>
-public record QueryWordContainer(Word QueryWord, Word[] Alternatives, int[] PositionsInRequest, List<KeyValuePair<int, byte>> SimilarWords);
+/// <param name="QueryWordAndAlternatives">Слово из запроса на 0 позиции и альтернативы</param>
+/// <param name="PositionsInRequest">Позиции данного слова в исходном запросе</param>
+/// <param name="SimilarWords">Набор схожих слов из индекса</param>
+public record QueryWordContainer(List<Word> QueryWordAndAlternatives, int[] PositionsInRequest, List<KeyValuePair<int, byte>> SimilarWords);
 
 /// <summary>
 /// Слово из запроса интерпретированное в нграммы
@@ -99,9 +115,9 @@ public class Word(string word, int[] ngramms, double multipler) : IEquatable<Wor
 
     public readonly int[] NGrammsHashes = ngramms;
 
-    public readonly bool IsDigit = int.TryParse(word, out _);
-
     public readonly double Multiplier = multipler;
+
+    public readonly bool IsDigit = long.TryParse(word, out _);
 
     public bool Equals(Word? other)
     {

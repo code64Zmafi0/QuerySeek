@@ -59,7 +59,7 @@ public class IndexBuilder(INormalizer normalizer, INameTokenizer nameTokenizer)
         => [.. names
             .Select(name =>
             {
-                string[] tokenizedName = TextPreprocessor.PreprocessName(nameTokenizer, normalizer, name.Text);
+                string[] tokenizedName = TextPreprocessor.PreprocessText(nameTokenizer, normalizer, name.Text);
                 return (tokenizedName, name.NameType);
             })
             //Если после нормализации получились одинаковые - убираем дубликаты
