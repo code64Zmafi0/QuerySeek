@@ -70,5 +70,6 @@ Also, you can redefine normalization and tokenizer splitting on words for use in
 
 ## Optimizations
 
+- After deserialize index instance use indexInstance.Initialzie() method
 - If your entity cannot be found if the hierarchy parent is not found, be sure to set the IIndexedEntity.GetSearchArea method to improve performance.
 - If you using AdditionalRule use a static intances for smaller memory 
