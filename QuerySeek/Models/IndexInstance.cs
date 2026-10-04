@@ -37,7 +37,9 @@ public class IndexInstance
     /// <summary>
     /// Оптимизация и сжатие индекса после создания и десериализации
     /// </summary>
-    public void Inititalize(bool gcCompactLOH = true)
+    /// <param name="useFrozenCollections">Использовать ли Frozen коллекции внутри индекса. Не рекомендуется.</param>
+    /// <param name="gcCompactLOH">Сжать ли LOH</param>
+    public void Inititalize(bool useFrozenCollections = false, bool gcCompactLOH = true)
     {
         //Подменяем пустые массивы одной ссылкой
         foreach (EntityMeta meta in Entities.Values)
@@ -47,24 +49,26 @@ public class IndexInstance
 
             if (meta.Links.Length == 0)
                 meta.Links = Array.Empty<Key>();
-            
+
         }
 
-        //Оптимизация поисковой мапы
-        for (int i = 0; i < EntitiesSearchMap.Length; i++)
+        if (useFrozenCollections)
         {
-            KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[] matchesByTypes = EntitiesSearchMap[i];
-
-            for (int j = 0; j < matchesByTypes.Length; j++)
+            //Оптимизация словарей
+            Entities = Entities.ToFrozenDictionary();
+            WordsIdsByNgramms = WordsIdsByNgramms.ToFrozenDictionary();
+            //Оптимизация поисковой мапы
+            for (int i = 0; i < EntitiesSearchMap.Length; i++)
             {
-                KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>> current = matchesByTypes[j];
-                matchesByTypes[j] = new(current.Key, current.Value.ToFrozenDictionary());
+                KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[] matchesByTypes = EntitiesSearchMap[i];
+
+                for (int j = 0; j < matchesByTypes.Length; j++)
+                {
+                    KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>> current = matchesByTypes[j];
+                    matchesByTypes[j] = new(current.Key, current.Value.ToFrozenDictionary());
+                }
             }
         }
-
-        //Оптимизация словарей
-        Entities = Entities.ToFrozenDictionary();
-        WordsIdsByNgramms = WordsIdsByNgramms.ToFrozenDictionary();
 
         if (gcCompactLOH)
         {
