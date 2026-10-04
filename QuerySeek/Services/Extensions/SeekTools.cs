@@ -77,7 +77,7 @@ public static class QS
     public static IndexInstance ReadIndex(string filePath, bool gcCompactLOH = true)
     {
         IndexInstance index = ReadAndDeserializeObject<IndexInstance>(filePath);
-        index.Inititalize(gcCompactLOH);
+        index.Inititalize(false, gcCompactLOH);
 
         return index;
     }

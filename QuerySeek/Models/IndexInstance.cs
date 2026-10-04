@@ -38,7 +38,7 @@ public class IndexInstance
     /// Оптимизация и сжатие индекса после создания и десериализации
     /// </summary>
     /// <param name="useFrozenCollections">Использовать ли Frozen коллекции внутри индекса. Не рекомендуется.</param>
-    /// <param name="gcCompactLOH">Сжать ли LOH</param>
+    /// <param name="gcCompactLOH">Сжать ли LOH и вызвать очистку мусора</param>
     public void Inititalize(bool useFrozenCollections = false, bool gcCompactLOH = true)
     {
         //Подменяем пустые массивы одной ссылкой
