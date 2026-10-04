@@ -10,8 +10,6 @@ public class IndexInstance
 {
     public static readonly IndexInstance Empty = new();
 
-    public IndexInstance() { }
-
     /// <summary>
     /// Информация для сущностей о линках и потомках
     /// </summary>
