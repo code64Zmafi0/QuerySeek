@@ -13,7 +13,7 @@ namespace QuerySeek.Services.Searching;
 public record WordsSearchSettings(
     Func<Word, int> MaxCheckingWordsCount,
     Func<Word, int> WordsToStopProcessCalculator,
-    Func<Word, int> SimilarityTresholdCalculator,
+    Func<Word, SimilarityTreshold> SimilarityTresholdCalculator,
     int AlternativesCount = 1,
     int WordsSearchDictionaryPreallocate = 300_000)
 {
@@ -26,3 +26,5 @@ public record WordsSearchSettings(
 
     public WordsSearchStopManager GetWordsSearchStopManager(Word word) => new(WordsToStopProcessCalculator(word));
 }
+
+public readonly record struct SimilarityTreshold(int MinMatchedNgrammsCount, int MaxMisses);

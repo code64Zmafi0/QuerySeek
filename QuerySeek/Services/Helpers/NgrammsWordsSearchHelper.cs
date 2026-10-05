@@ -11,21 +11,21 @@ public static class NgrammsWordsSearchHelper
     public const byte MAX_WORD_LENGTH = 250;
 
     /// <summary>
-    /// Производит расчет минимальной схожести для слов с заданным минимальным совпадением 
+    /// Производит расчет параметров схожести для слов с заданным минимальным совпадением 
     /// </summary>
     /// <param name="word"></param>
     /// <param name="minSimilarity"></param>
     /// <returns>Минимальное количество нграмм для совпадения</returns>
-    public static int CalculateWordSimilarityTreshold(Word word, double minSimilarity)
-        => (int)(word.NGrammsHashes.Length * minSimilarity);
+    public static SimilarityTreshold CalculateWordSimilarityTreshold(Word word, double minSimilarity)
+        => new((int)(word.NGrammsHashes.Length * minSimilarity), int.MaxValue);
 
     /// <summary>
-    /// Производит расчет минимальной схожести для цифр (без последних нграммов)
+    /// Производит расчет параметров схожести для цифр (без последних нграммов)
     /// </summary>
     /// <param name="word"></param>
     /// <returns>Минимальное количество нграмм для совпадения</returns>
-    public static int CalculateDigitSimilarityTreshold(Word word)
-        => word.NGrammsHashes.Length - NGRAM_LENGTH + 1;
+    public static SimilarityTreshold CalculateDigitSimilarityTreshold(Word word)
+        => new(word.NGrammsHashes.Length - NGRAM_LENGTH + 1, 0);
 
     /// <summary>
     /// Преобразовние строки в массив нграммов (их хеш кодов)
@@ -137,25 +137,30 @@ public static class NgrammsWordsSearchHelper
         for (int i = 1; i < queryWordAndAlternatives.Count; i++)
         {
             Word altWord = queryWordAndAlternatives[i];
-            SearchSimilars(altWord, wordsSearchSettings.SimilarityTresholdCalculator(altWord), true);
+            SearchSimilars(altWord,
+                           wordsSearchSettings.SimilarityTresholdCalculator(altWord),
+                           wordsSearchSettings.AlternativesCount);
         }
 
         Word queryWord = queryWordAndAlternatives[0];
-        SearchSimilars(queryWord, wordsSearchSettings.SimilarityTresholdCalculator(queryWord), false);
+        SearchSimilars(queryWord,
+                       wordsSearchSettings.SimilarityTresholdCalculator(queryWord),
+                       wordsSearchSettings.MaxCheckingWordsCount(queryWord));
 
         return result;
 
-        void SearchSimilars(Word word, int treshold, bool IsAlt)
+        void SearchSimilars(Word word, SimilarityTreshold treshold, int take)
         {
-            NgrammSearch(wordsSearchProcessDict, wordsIdsByNgramms, word, treshold);
+            int minMatchedNgrammsCount = treshold.MinMatchedNgrammsCount;
+            int maxMisses = treshold.MaxMisses;
 
-            int take = IsAlt
-                ? wordsSearchSettings.AlternativesCount
-                : wordsSearchSettings.MaxCheckingWordsCount(word);
+            NgrammSearch(wordsSearchProcessDict, wordsIdsByNgramms, word, minMatchedNgrammsCount);
 
             //Ищем бандл схожих слов и сортируем по количеству совпадений (вычисляется в свойстве Score. Попадания - наказание за промахи)
             foreach (KeyValuePair<int, WordNgrammSearchState> item in wordsSearchProcessDict
-                .Where(i => (i.Value.Matches >= treshold) && (!word.IsDigit || i.Value.Misses == 0) && (i.Value.Score > 0))
+                .Where(i => i.Value.Matches >= minMatchedNgrammsCount
+                         && i.Value.Misses <= maxMisses
+                         && i.Value.Score > 0)
                 .OrderByDescending(i => i.Value.Score)
                 .Take(take))
             {
