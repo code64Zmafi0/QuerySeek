@@ -7,7 +7,7 @@ using QuerySeek.Services.Searching.Requests;
 namespace QuerySeek.Services.Searching;
 
 /// <summary>
-/// Позволяет определить стратегию поиска
+/// Позволяет определить стратегию поиска, что-то вроде фабричного метода
 /// </summary>
 /// <typeparam name="TContext"></typeparam>
 /// <param name="nameTokenizer"></param>
@@ -16,14 +16,24 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
 {
     #region Overrides
     /// <summary>
-    /// Определяет запрос на поиск в индексе - что ищем в индексе
+    /// (1. SELECTION) Определяет запрос на поиск сущностей в индексе
     /// </summary>
     /// <param name="context"></param>
     /// <returns></returns>
     public abstract IEnumerable<RequestBase> GetRequest(TContext context);
 
     /// <summary>
-    /// Позволяет определить сортировку
+    /// (2. PREPROCESSING) Позволяет осуществить фильтрацию выборки для определенного типа сущностей перед сортировкой или обогатить правилами
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="type">Текущий тип сущностей</param>
+    /// <param name="result">Выборка сущностей</param>
+    /// <returns></returns>
+    public virtual IEnumerable<EntitySearchResult> TypeResultPreprocessing(TContext context, byte type, ICollection<EntitySearchResult> result)
+        => result;
+
+    /// <summary>
+    /// (3. RANGING) Определяет сортировку
     /// </summary>
     /// <param name="context"></param>
     /// <param name="result">Отсортированный по количеству совпадений enumerable сущностей</param>
@@ -32,17 +42,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         => result.OrderByDescending(i => i.ScoreWithRules);
 
     /// <summary>
-    /// Позволяет осуществить препроцессинг, указать выборку сущностей на сортировку, добавить правила
-    /// </summary>
-    /// <param name="context"></param>
-    /// <param name="type"></param>
-    /// <param name="result"></param>
-    /// <returns></returns>
-    public virtual IEnumerable<EntitySearchResult> TypeResultPreprocessing(TContext context, byte type, ICollection<EntitySearchResult> result)
-        => result;
-
-    /// <summary>
-    /// Определение настроек поиска по словам
+    /// Определение настроек поиска схожих слов для слов из запроса
     /// </summary>
     /// <param name="context"></param>
     /// <returns></returns>
@@ -50,24 +50,30 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         => WordsSearchSettings.Default;
 
     /// <summary>
-    /// Определение возможных альтернатив слов из запроса
+    /// Определение возможных альтернатив для слов из запроса
     /// </summary>
     /// <returns></returns>
     public virtual Dictionary<string, string[]> GetQueryWordsAlternatives(TContext context)
         => [];
 
     /// <summary>
-    /// Определяем моножители для слов из запроса (можем уменьшать значимость предлогов и тд)
+    /// Определение моножителей для слов из запроса (позволяет уменьшать значимость предлогов и тд)
     /// </summary>
     /// <returns></returns>
     public virtual Dictionary<string, double> GetQueryWordsMultiplers(TContext context)
         => [];
 
     /// <summary>
-    /// Событие заполнения context.SearchResult
+    /// Событие после выполнения (1. SELECTION)
     /// </summary>
     /// <param name="context"></param>
     public virtual void OnRequestsProcessed(TContext context) { }
+
+    /// <summary>
+    /// Событие заполнения в контексте набора поисковых токенов
+    /// </summary>
+    /// <param name="context"></param>
+    public virtual void OnContextCreated(TContext context) { }
 
     /// <summary>
     /// Позволяет при совпадении линка, добавить просчет его звасимостей
@@ -79,11 +85,11 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         => false;
 
     /// <summary>
-    /// Событие просчета всех матчей включая линки для сущности
+    /// Событие просчета скора и свопадений для сущности
     /// </summary>
     /// <param name="context"></param>
-    /// <param name="entity"></param>
-    /// <param name="summaryMatches">Матчи слов из запроса</param>
+    /// <param name="entity">Обработанная сущность</param>
+    /// <param name="summaryMatches">Совпавшие слова</param>
     public virtual void OnEntityMatched(TContext context, EntitySearchResult entity, in Span<WordMatch> summaryMatches) { }
 
     /// <summary>
@@ -175,6 +181,8 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
 
         context.WordsSearchSettings = GetWordsSearchSettings(context);
         context.SearchWordsBundle = NgrammsWordsSearchHelper.CreateSearchWordsBundle(context, alternativeWords, queryWordMultiplers);
+
+        OnContextCreated(context);
     }
 
     public void ProcessRequests(TContext context, CancellationToken ct)
@@ -204,7 +212,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
 
         Span<WordMatch> queryWordMatches = stackalloc WordMatch[context.SplittedAndNormalizedQuery.Length];
 
-        //Просчитываем совпадения слов из запроса для сущнности и ее линков
+        //Просчитываем совпадения слов из запроса из сущнности и ее линков, заполняем queryWordMatches
         foreach ((byte Type, List<WordMatch> Matches) in GetMatches(context, entityMatchesBundle))
         {
             double linkMultipler = GetLinkedEntityMatchMultipler(currentEntityType, Type);

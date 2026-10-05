@@ -53,7 +53,7 @@ public static class NgrammsWordsSearchHelper
         //Заполняем слово
         wordSpan.CopyTo(buffer[spaceLength..]);
 
-        //Просчитываем результат слова
+        //Просчитываем хеши для нграммов
         int[] result = new int[wordSpan.Length + NGRAM_LENGTH - 1];
 
         for (int i = 0; i <= buffer.Length - NGRAM_LENGTH; i++)
@@ -124,7 +124,7 @@ public static class NgrammsWordsSearchHelper
     }
 
     /// <summary>
-    /// Поиск схожих слов и альтернатив для слова из запроса
+    /// Поиск схожих слов для слова из запроса
     /// </summary>
     private static List<KeyValuePair<int, byte>> SearchSimilarsByQueryWordAndAlternatives(
         Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict,
