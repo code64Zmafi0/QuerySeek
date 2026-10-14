@@ -1,7 +1,7 @@
 namespace QuerySeek.Services.Helpers;
 
 /// <summary>
-/// Ограничитель 
+/// Ограничитель выборки по схожим словам
 /// </summary>
 /// <param name="quantity"></param>
 public struct WordsSearchStopManager(int quantity)

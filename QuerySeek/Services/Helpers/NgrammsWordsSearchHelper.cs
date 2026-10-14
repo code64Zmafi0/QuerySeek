@@ -13,8 +13,8 @@ public static class NgrammsWordsSearchHelper
     /// <summary>
     /// Производит расчет параметров схожести для слов с заданным минимальным совпадением 
     /// </summary>
-    /// <param name="word"></param>
-    /// <param name="minSimilarity"></param>
+    /// <param name="word">Слово из запроса</param>
+    /// <param name="minSimilarity">Минимально допустимый коэффициент схожести</param>
     /// <returns>Минимальное количество нграмм для совпадения</returns>
     public static SimilarityTreshold CalculateWordSimilarityTreshold(Word word, double minSimilarity)
         => new((int)(word.NGrammsHashes.Length * minSimilarity), int.MaxValue);
@@ -22,7 +22,7 @@ public static class NgrammsWordsSearchHelper
     /// <summary>
     /// Производит расчет параметров схожести для цифр (без последних нграммов)
     /// </summary>
-    /// <param name="word"></param>
+    /// <param name="word">Слово из запроса</param>
     /// <returns>Минимальное количество нграмм для совпадения</returns>
     public static SimilarityTreshold CalculateDigitSimilarityTreshold(Word word)
         => new(word.NGrammsHashes.Length - NGRAM_LENGTH + 1, 0);
@@ -31,7 +31,7 @@ public static class NgrammsWordsSearchHelper
     /// Преобразовние строки в массив нграммов (их хеш кодов)
     /// </summary>
     /// <param name="word"></param>
-    /// <returns></returns>
+    /// <returns>Массив хешей нграммов</returns>
     public static int[] GetNgramms(string word)
     {
         const char SpaceChar = ' ';
@@ -84,7 +84,6 @@ public static class NgrammsWordsSearchHelper
     /// <param name="context"></param>
     /// <param name="alternativeWords"></param>
     /// <param name="queryWordMultiplers"></param>
-    /// <returns></returns>
     public static QueryWordContainer[] CreateSearchWordsBundle(
         SearchContextBase context,
         Dictionary<string, string[]> alternativeWords,
