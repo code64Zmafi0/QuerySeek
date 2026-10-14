@@ -9,113 +9,107 @@ namespace QuerySeek.Services.Searching;
 /// <summary>
 /// Позволяет определить стратегию поиска, что-то вроде фабричного метода
 /// </summary>
-/// <typeparam name="TContext"></typeparam>
-/// <param name="nameTokenizer"></param>
-/// <param name="normalizer"></param>
+/// <typeparam name="TContext">Тип конеткса поиска</typeparam>
+/// <param name="nameTokenizer">Токенайзер</param>
+/// <param name="normalizer">Нормалайзер</param>
 public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokenizer nameTokenizer) where TContext : SearchContextBase
 {
     #region Overrides
     /// <summary>
-    /// (1. SELECTION) Определяет запрос на поиск сущностей в индексе
+    /// (0. WORDS SEARCH) Определение настроек поиска схожих слов для слов из запроса
     /// </summary>
-    /// <param name="context"></param>
-    /// <returns></returns>
+    /// <param name="context">Поисковой контекст</param>
+    public virtual WordsSearchSettings GetWordsSearchSettings(TContext context)
+        => WordsSearchSettings.Default;
+
+    /// <summary>
+    /// (0. WORDS SEARCH) Определение возможных альтернатив для слов из запроса
+    /// </summary>
+    /// <param name="context">Поисковой контекст</param>
+    public virtual Dictionary<string, string[]> GetQueryWordsAlternatives(TContext context)
+        => [];
+
+    /// <summary>
+    /// (0. WORDS SEARCH) Определение моножителей для слов из запроса (позволяет уменьшать значимость предлогов и тд)
+    /// </summary>
+    /// <param name="context">Поисковой контекст</param>
+    public virtual Dictionary<string, double> GetQueryWordsMultiplers(TContext context)
+        => [];
+
+    /// <summary>
+    /// (1. SELECTION) Определяет запрос на поиск сущностей в индексе.
+    /// </summary>
+    /// <param name="context">Поисковой контекст</param>
+    /// <returns>Перечисление запросов вниз по дереву зависимостей</returns>
     public abstract IEnumerable<RequestBase> GetRequest(TContext context);
 
     /// <summary>
-    /// (2. PREPROCESSING) Позволяет осуществить фильтрацию выборки для определенного типа сущностей перед сортировкой или обогатить правилами
+    /// (2. PREPROCESSING) Позволяет осуществить фильтрацию выборки по типам перед сортировкой или обогатить правилами
     /// </summary>
-    /// <param name="context"></param>
+    /// <param name="context">Поисковой контекст</param>
     /// <param name="type">Текущий тип сущностей</param>
-    /// <param name="result">Выборка сущностей</param>
-    /// <returns></returns>
+    /// <param name="result">Выборка сущностей данного типа</param>
     public virtual IEnumerable<EntitySearchResult> TypeResultPreprocessing(TContext context, byte type, ICollection<EntitySearchResult> result)
         => result;
 
     /// <summary>
     /// (3. RANGING) Определяет сортировку
     /// </summary>
-    /// <param name="context"></param>
-    /// <param name="result">Отсортированный по количеству совпадений enumerable сущностей</param>
-    /// <returns></returns>
+    /// <param name="context">Поисковой контекст</param>
+    /// <param name="result">Выборка сущностей для сортировки</param>
     public virtual IEnumerable<EntitySearchResult> Ranging(TContext context, IEnumerable<EntitySearchResult> result)
         => result.OrderByDescending(i => i.ScoreWithRules);
 
     /// <summary>
-    /// Определение настроек поиска схожих слов для слов из запроса
+    /// (SCORING SETTINGS) Позволяет при совпадении линка, добавить просчет его звасимостей (зайти в иерархию привязанной)
     /// </summary>
-    /// <param name="context"></param>
-    /// <returns></returns>
-    public virtual WordsSearchSettings GetWordsSearchSettings(TContext context)
-        => WordsSearchSettings.Default;
-
-    /// <summary>
-    /// Определение возможных альтернатив для слов из запроса
-    /// </summary>
-    /// <returns></returns>
-    public virtual Dictionary<string, string[]> GetQueryWordsAlternatives(TContext context)
-        => [];
-
-    /// <summary>
-    /// Определение моножителей для слов из запроса (позволяет уменьшать значимость предлогов и тд)
-    /// </summary>
-    /// <returns></returns>
-    public virtual Dictionary<string, double> GetQueryWordsMultiplers(TContext context)
-        => [];
-
-    /// <summary>
-    /// Событие после выполнения (1. SELECTION)
-    /// </summary>
-    /// <param name="context"></param>
-    public virtual void OnRequestsProcessed(TContext context) { }
-
-    /// <summary>
-    /// Событие заполнения в контексте набора поисковых токенов
-    /// </summary>
-    /// <param name="context"></param>
-    public virtual void OnContextCreated(TContext context) { }
-
-    /// <summary>
-    /// Позволяет при совпадении линка, добавить просчет его звасимостей
-    /// </summary>
-    /// <param name="entityType"></param>
-    /// <param name="linkedType"></param>
-    /// <returns></returns>
+    /// <param name="entityType">Тип обрабатываемой сущности</param>
+    /// <param name="linkedType">Тип привязанной сущности</param>
     public virtual bool OnLinkedMatchNeedMergeLinks(byte entityType, byte linkedType)
         => false;
 
     /// <summary>
-    /// Событие просчета скора и свопадений для сущности
+    /// (SCORING SETTINGS) Множитель совпадений из связанных сущностей
     /// </summary>
-    /// <param name="context"></param>
-    /// <param name="entity">Обработанная сущность</param>
-    /// <param name="summaryMatches">Совпавшие слова</param>
-    public virtual void OnEntityMatched(TContext context, EntitySearchResult entity, in Span<WordMatch> summaryMatches) { }
-
-    /// <summary>
-    /// Множитель совпадений из связанных сущностей
-    /// </summary>
-    /// <param name="entityType"></param>
-    /// <param name="linkedType"></param>
-    /// <returns></returns>
+    /// <param name="entityType">Тип обрабатываемой сущности</param>
+    /// <param name="linkedType">Тип привязанной сущности</param>
     public virtual double GetLinkedEntityMatchMultipler(byte entityType, byte linkedType)
         => 1;
 
     /// <summary>
-    /// Множитель типа имени
+    /// (SCORING SETTINGS) Множитель типа имени для сущностей
     /// </summary>
-    /// <param name="nameType"></param>
-    /// <returns></returns>
-    public virtual double GetNameTypeMultipler(byte nameType)
+    /// <param name="entityType">Тип сущности</param>
+    /// <param name="nameType">Тип имени</param>
+    public virtual double GetNameTypeMultipler(byte entityType, byte nameType)
         => 1;
 
+    /// <summary>
+    /// (EVENT) Событие заполнения в контексте набора поисковых токенов. После (0. WORDS SEARCH)
+    /// </summary>
+    /// <param name="context">Поисковой контекст</param>
+    public virtual void OnContextReady(TContext context) { }
+
+    /// <summary>
+    /// (EVENT) Событие просчета совпадений для сущности. После (SCORING)
+    /// </summary>
+    /// <param name="context">Поисковой контекст</param>
+    /// <param name="entity">Обработанная сущность</param>
+    /// <param name="queryWordsMatches">Совпадения для слов из запроса</param>
+    public virtual void OnEntityMatched(TContext context, EntitySearchResult entity, in Span<WordMatch> queryWordsMatches) { }
+
+    /// <summary>
+    /// (EVENT) Событие после выборки (1. SELECTION)
+    /// </summary>
+    /// <param name="context">Поисковой контекст</param>
+    public virtual void OnRequestsProcessed(TContext context) { }
     #endregion
 
     #region Search logic
     /// <summary>
     /// Поиск топа всех типов
     /// </summary>
-    /// <param name="context">Контекст поиска</param>
+    /// <param name="context">Поисковой контекст</param>
     /// <param name="take">Количество элементов</param>
     /// <param name="cancellationToken"></param>
     /// <returns>Отранжированный результат из всех типов</returns>
@@ -144,7 +138,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// <summary>
     /// Поиск топов по типам
     /// </summary>
-    /// <param name="context">Контекст поиска</param>
+    /// <param name="context">Поисковой контекст</param>
     /// <param name="take">Количество элементов каждого типа</param>
     /// <param name="cancellationToken"></param>
     /// <returns>Блоки отранжированных результатов по типам</returns>
@@ -182,7 +176,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         context.WordsSearchSettings = GetWordsSearchSettings(context);
         context.SearchWordsBundle = NgrammsWordsSearchHelper.CreateSearchWordsBundle(context, alternativeWords, queryWordMultiplers);
 
-        OnContextCreated(context);
+        OnContextReady(context);
     }
 
     public void ProcessRequests(TContext context, CancellationToken ct)
@@ -204,69 +198,78 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// <summary>
     /// Просчитываем скор текстовых совпадний для сущности
     /// </summary>
-    public void CalculateTextScore(TContext context, EntitySearchResult entityMatchesBundle)
+    public void CalculateTextScore(TContext context, EntitySearchResult entitySearchResult)
     {
-        if (entityMatchesBundle.Score != 0) return;
+        if (entitySearchResult.Score != 0) return;
 
-        byte currentEntityType = entityMatchesBundle.Key.Type;
+        byte currentEntityType = entitySearchResult.Key.Type;
 
-        Span<WordMatch> queryWordMatches = stackalloc WordMatch[context.SplittedAndNormalizedQuery.Length];
+        Span<WordMatch> queryWordsMatches = stackalloc WordMatch[context.SplittedAndNormalizedQuery.Length];
 
-        //Просчитываем совпадения слов из запроса из сущнности и ее линков, заполняем queryWordMatches
-        foreach ((byte Type, List<WordMatch> Matches) in GetMatches(context, entityMatchesBundle))
+        //Просчитываем совпадения для слов запроса из сущнности и ее линков, заполняем queryWordsMatches
+        foreach ((byte Type, List<WordMatch> Matches) in GetMatches(context, entitySearchResult))
         {
-            double linkMultipler = GetLinkedEntityMatchMultipler(currentEntityType, Type);
-            if (linkMultipler != 0)
+            double nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, Type);
+            if (nodeMultipler != 0)
             {
-                ProcessNodeMatches(in queryWordMatches, Matches, context, linkMultipler);
+                ProcessNodeMatches(in queryWordsMatches, Type, Matches, context, nodeMultipler);
             }
         }
 
         //Складываем скор совпадений слов
         int resultScore = 0;
-        foreach (WordMatch ws in queryWordMatches)
+        foreach (WordMatch ws in queryWordsMatches)
             resultScore += ws.Score;
 
-        entityMatchesBundle.Score = resultScore;
+        entitySearchResult.Score = resultScore;
 
-        OnEntityMatched(context, entityMatchesBundle, in queryWordMatches);
+        OnEntityMatched(context, entitySearchResult, in queryWordsMatches);
     }
 
     /// <summary>
-    /// Возвращает набор совпавших слов для сущности и прилинкованных к ней
+    /// Возвращает наборы совпавших слов для сущности и прилинкованных к ней
     /// </summary>
-    private IEnumerable<(byte Type, List<WordMatch> Matches)> GetMatches(TContext context, EntitySearchResult entityMatchesBundle)
+    private IEnumerable<(byte Type, List<WordMatch> Matches)> GetMatches(
+        TContext context,
+        EntitySearchResult entitySearchResult)
     {
-        byte currentEntityType = entityMatchesBundle.Key.Type;
+        byte currentEntityType = entitySearchResult.Key.Type;
 
-        //При OnLinkedMatchNeedMergeLinks могут повторяться типы, отсекаем
+        //Сущность может быть привязана к нескольким сущностям одного типа.
+        //Если линк с таким типом уже был просчитан - пропускаем просчеты для сущностей этого типа
         BitArray256 matchedTypes = new();
 
-        yield return (currentEntityType, entityMatchesBundle.WordsMatches);
+        yield return (currentEntityType, entitySearchResult.WordsMatches);
         matchedTypes[currentEntityType] = true;
 
-        foreach (Key linkKey in entityMatchesBundle.Meta.Links)
+        foreach (Key linkKey in entitySearchResult.Meta.Links)
         {
-            if (matchedTypes[linkKey.Type]
-                || !context.TryGetSearchedEntity(linkKey, out EntitySearchResult? link))
+            byte linkType = linkKey.Type;
+
+            if (matchedTypes[linkType]
+                || !context.TryGetSearchedEntity(linkKey, out EntitySearchResult? link)
+                || link.WordsMatches.Count == 0)
                 continue;
 
-            yield return (linkKey.Type, link.WordsMatches);
-            matchedTypes[linkKey.Type] = true;
+            yield return (linkType, link.WordsMatches);
+            matchedTypes[linkType] = true;
 
             //Пробуем провалится на уровень выше по условию и просчитать линков с данного родителя
-            if (OnLinkedMatchNeedMergeLinks(currentEntityType, linkKey.Type))
+            if (OnLinkedMatchNeedMergeLinks(currentEntityType, linkType))
             {
                 Key[] linkedEntityLinks = link.Meta.Links;
 
-                foreach (Key mergedEntityLink in linkedEntityLinks)
+                foreach (Key mergedEntityKey in linkedEntityLinks)
                 {
-                    if (matchedTypes[mergedEntityLink.Type]
-                        || !context.TryGetSearchedEntity(mergedEntityLink, out EntitySearchResult? mergeLink))
+                    byte mergingLinkType = mergedEntityKey.Type;
+
+                    if (matchedTypes[mergingLinkType]
+                        || !context.TryGetSearchedEntity(mergedEntityKey, out EntitySearchResult? mergingLink)
+                        || mergingLink.WordsMatches.Count == 0)
                         continue;
 
-                    yield return (mergedEntityLink.Type, mergeLink.WordsMatches);
-                    matchedTypes[mergedEntityLink.Type] = true;
+                    yield return (mergingLinkType, mergingLink.WordsMatches);
+                    matchedTypes[mergingLinkType] = true;
                 }
             }
         }
@@ -276,10 +279,11 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// Заполняет матчи для слов из запроса <paramref name="queryWordsMatches"/> из совпадений для сущности <paramref name="matches"/>
     /// </summary>
     /// <param name="queryWordsMatches">Совпадения со словами из запроса</param>
+    /// <param name="type">Тип сущности матчей</param>
     /// <param name="matches">Матчи слов с сущностью</param>
     /// <param name="context">Контекст поиска</param>
-    /// <param name="nodeMultipler">Мультиплер для линка</param>
-    private void ProcessNodeMatches(in Span<WordMatch> queryWordsMatches, List<WordMatch> matches, TContext context, double nodeMultipler)
+    /// <param name="nodeMultipler">Мультиплер</param>
+    private void ProcessNodeMatches(in Span<WordMatch> queryWordsMatches, byte type, List<WordMatch> matches, TContext context, double nodeMultipler)
     {
         //Сначала выбираем матчи по сущности пытаемся собрать совпадения для слов из запроса
         Span<WordMatch> nodeScores = stackalloc WordMatch[queryWordsMatches.Length];
@@ -298,7 +302,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
 
             if (queryWordPosition == -1) continue;
 
-            double nameTypeMultipler = GetNameMultiplerInternal(compareResult.NameType);
+            double nameTypeMultipler = GetNameMultiplerInternal(type, compareResult.NameType);
 
             byte score = (byte)Math.Ceiling(compareResult.Score * nameTypeMultipler * nodeMultipler);
 
@@ -363,12 +367,12 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal double GetNameMultiplerInternal(byte nameType)
+    internal double GetNameMultiplerInternal(byte entityType, byte nameType)
     {
         if (nameType == 0)
             return 1;
 
-        return GetNameTypeMultipler(nameType);
+        return GetNameTypeMultipler(entityType, nameType);
     }
     #endregion
 
