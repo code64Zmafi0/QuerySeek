@@ -27,7 +27,7 @@ public static class EntitiesSearchMapHelper
         this KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][] searchMap,
         int wordId,
         byte entityType,
-        Key[] containerKeys)
+        Key[] areasKeys)
     {
         KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[] wordMatches = searchMap[wordId];
 
@@ -37,7 +37,7 @@ public static class EntitiesSearchMapHelper
 
         IReadOnlyDictionary<Key, WordMatchMeta[]> matchesBundleByContainers = wordMatches[index].Value;
 
-        foreach (Key containerKey in containerKeys)
+        foreach (Key containerKey in areasKeys)
         {
             if (!matchesBundleByContainers.TryGetValue(containerKey, out WordMatchMeta[]? entityMatches))
                 continue;
@@ -49,9 +49,8 @@ public static class EntitiesSearchMapHelper
     /// <summary>
     /// Бинарный поиск индекса нужного типа для бандла типов
     /// </summary>
-    /// <param name="sortedKeys"></param>
-    /// <param name="targetType"></param>
-    /// <returns></returns>
+    /// <param name="sortedKeys">Совпадения слов по типам</param>
+    /// <param name="targetType">Запрошенный тип</param>
     private static int BinarySearch(KeyValuePair<byte /*TypeId*/, IReadOnlyDictionary</*ByNodeKey*/ Key, WordMatchMeta[]>>[] sortedKeys, byte targetType)
     {
         int left = 0;
