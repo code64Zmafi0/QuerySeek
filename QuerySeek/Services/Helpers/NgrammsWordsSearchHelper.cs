@@ -83,11 +83,11 @@ public static class NgrammsWordsSearchHelper
     /// </summary>
     /// <param name="context"></param>
     /// <param name="alternativeWords"></param>
-    /// <param name="queryWordMultiplers"></param>
+    /// <param name="queryWordMultipliers"></param>
     public static QueryWordContainer[] CreateSearchWordsBundle(
         SearchContextBase context,
         Dictionary<string, string[]> alternativeWords,
-        Dictionary<string, double> queryWordMultiplers)
+        Dictionary<string, double> queryWordMultipliers)
     {
         IReadOnlyDictionary<int, NgrammAssociation[]> wordsIdsByNgramms = context.Index.WordsIdsByNgramms;
 
@@ -98,16 +98,16 @@ public static class NgrammsWordsSearchHelper
         {
             string wordFrowQuery = wordAndRepeats.Key;
             int[] positions = [.. wordAndRepeats.Select(i => i.Index)];
-            double multipler = queryWordMultiplers.TryGetValue(wordFrowQuery, out var m) ? m : 1;
+            double multiplier = queryWordMultipliers.TryGetValue(wordFrowQuery, out var m) ? m : 1;
 
-            List<Word> words = [new(wordFrowQuery, GetNgramms(wordFrowQuery), multipler)];
+            List<Word> words = [new(wordFrowQuery, GetNgramms(wordFrowQuery), multiplier)];
 
             if (alternativeWords.TryGetValue(wordFrowQuery, out string[]? alts))
             {
                 words.AddRange(Array.ConvertAll(alts, alt => new Word(
                     alt,
                     GetNgramms(alt),
-                    queryWordMultiplers.TryGetValue(alt, out var m) ? m : 1)));
+                    queryWordMultipliers.TryGetValue(alt, out var m) ? m : 1)));
             }
 
             List<KeyValuePair<int, byte>> similarWords = SearchSimilarsByQueryWordAndAlternatives(

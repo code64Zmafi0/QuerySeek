@@ -60,7 +60,7 @@ public class EntitySearchResult(Key key, EntityMeta meta)
                 AdditionalRule item = Rules[i];
 
                 resultScore += item.Score;
-                resultScore = (int)(resultScore * item.Multipler);
+                resultScore = (int)(resultScore * item.Multiplier);
             }
 
             return resultScore;
@@ -92,8 +92,8 @@ public readonly record struct WordMatch(
 /// </summary>
 /// <param name="Name"></param>
 /// <param name="Score"></param>
-/// <param name="Multipler"></param>
-public record AdditionalRule(string Name, int Score = 0, double Multipler = 1);
+/// <param name="Multiplier"></param>
+public record AdditionalRule(string Name, int Score = 0, double Multiplier = 1);
 
 /// <summary>
 /// Контейнер слова из запроса включает в себя слово из запроса, альтернативы, позиции в запросе и похожие слова из индекса
@@ -108,14 +108,14 @@ public record QueryWordContainer(List<Word> QueryWordAndAlternatives, int[] Posi
 /// </summary>
 /// <param name="word"></param>
 /// <param name="ngramms"></param>
-/// <param name="multipler"></param>
-public class Word(string word, int[] ngramms, double multipler) : IEquatable<Word>
+/// <param name="multiplier"></param>
+public class Word(string word, int[] ngramms, double multiplier) : IEquatable<Word>
 {
     public readonly string QueryWord = word;
 
     public readonly int[] NGrammsHashes = ngramms;
 
-    public readonly double Multiplier = multipler;
+    public readonly double Multiplier = multiplier;
 
     public readonly bool IsDigit = long.TryParse(word, out _);
 

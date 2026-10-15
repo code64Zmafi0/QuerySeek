@@ -33,7 +33,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// (0. WORDS SEARCH) Определение моножителей для слов из запроса (позволяет уменьшать значимость предлогов и тд)
     /// </summary>
     /// <param name="context">Поисковой контекст</param>
-    public virtual Dictionary<string, double> GetQueryWordsMultiplers(TContext context)
+    public virtual Dictionary<string, double> GetQueryWordsMultipliers(TContext context)
         => [];
 
     /// <summary>
@@ -73,7 +73,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// </summary>
     /// <param name="entityType">Тип обрабатываемой сущности</param>
     /// <param name="linkedType">Тип привязанной сущности</param>
-    public virtual double GetLinkedEntityMatchMultipler(byte entityType, byte linkedType)
+    public virtual double GetLinkedEntityMatchMultiplier(byte entityType, byte linkedType)
         => 1;
 
     /// <summary>
@@ -81,7 +81,7 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// </summary>
     /// <param name="entityType">Тип сущности</param>
     /// <param name="nameType">Тип имени</param>
-    public virtual double GetNameTypeMultipler(byte entityType, byte nameType)
+    public virtual double GetNameTypeMultiplier(byte entityType, byte nameType)
         => 1;
 
     /// <summary>
@@ -171,10 +171,10 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         context.SplittedAndNormalizedQuery = TextPreprocessor.PreprocessText(nameTokenizer, normalizer, context.Query);
 
         Dictionary<string, string[]> alternativeWords = GetQueryWordsAlternatives(context);
-        Dictionary<string, double> queryWordMultiplers = GetQueryWordsMultiplers(context);
+        Dictionary<string, double> queryWordMultipliers = GetQueryWordsMultipliers(context);
 
         context.WordsSearchSettings = GetWordsSearchSettings(context);
-        context.SearchWordsBundle = NgrammsWordsSearchHelper.CreateSearchWordsBundle(context, alternativeWords, queryWordMultiplers);
+        context.SearchWordsBundle = NgrammsWordsSearchHelper.CreateSearchWordsBundle(context, alternativeWords, queryWordMultipliers);
 
         OnContextReady(context);
     }
@@ -209,10 +209,10 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
         //Просчитываем совпадения для слов запроса из сущнности и ее линков, заполняем queryWordsMatches
         foreach ((byte Type, List<WordMatch> Matches) in GetMatches(context, entitySearchResult))
         {
-            double nodeMultipler = GetLinkedEntityMatchMultipler(currentEntityType, Type);
-            if (nodeMultipler != 0)
+            double nodeMultiplier = GetLinkedEntityMatchMultiplier(currentEntityType, Type);
+            if (nodeMultiplier != 0)
             {
-                ProcessNodeMatches(in queryWordsMatches, Type, Matches, context, nodeMultipler);
+                ProcessNodeMatches(in queryWordsMatches, Type, Matches, context, nodeMultiplier);
             }
         }
 
@@ -282,8 +282,8 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     /// <param name="type">Тип сущности матчей</param>
     /// <param name="matches">Матчи слов с сущностью</param>
     /// <param name="context">Контекст поиска</param>
-    /// <param name="nodeMultipler">Мультиплер</param>
-    private void ProcessNodeMatches(in Span<WordMatch> queryWordsMatches, byte type, List<WordMatch> matches, TContext context, double nodeMultipler)
+    /// <param name="nodeMultiplier">Мультиплер</param>
+    private void ProcessNodeMatches(in Span<WordMatch> queryWordsMatches, byte type, List<WordMatch> matches, TContext context, double nodeMultiplier)
     {
         //Сначала выбираем матчи по сущности пытаемся собрать совпадения для слов из запроса
         Span<WordMatch> nodeScores = stackalloc WordMatch[queryWordsMatches.Length];
@@ -302,9 +302,9 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
 
             if (queryWordPosition == -1) continue;
 
-            double nameTypeMultipler = GetNameMultiplerInternal(type, compareResult.NameType);
+            double nameTypeMultiplier = GetNameMultiplierInternal(type, compareResult.NameType);
 
-            byte score = (byte)Math.Ceiling(compareResult.Score * nameTypeMultipler * nodeMultipler);
+            byte score = (byte)Math.Ceiling(compareResult.Score * nameTypeMultiplier * nodeMultiplier);
 
             if (isNewQueryPosition || previouslyCalculatedResult.Score < score)
                 nodeScores[queryWordPosition] = new(compareResult.NameWordPosition, compareResult.NameType, compareResult.WordsBundlePosition, score);
@@ -367,12 +367,12 @@ public abstract class SearcherBase<TContext>(INormalizer normalizer, INameTokeni
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal double GetNameMultiplerInternal(byte entityType, byte nameType)
+    internal double GetNameMultiplierInternal(byte entityType, byte nameType)
     {
         if (nameType == 0)
             return 1;
 
-        return GetNameTypeMultipler(entityType, nameType);
+        return GetNameTypeMultiplier(entityType, nameType);
     }
     #endregion
 

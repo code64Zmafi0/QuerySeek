@@ -59,7 +59,7 @@ Also, you can redefine normalization and tokenizer splitting on words for use in
     - AppendChilds - use to force adding entities by parent
     - AppendChildsByAreas - use to force adding entities by parent in areas
 - Override GetLinkedEntityMatchMiltipler(byte entityType, byte linkedType) for flexible scoring mathes of linked entities
-- Override GetNameTypeMultipler(byte nameType) for flexible scoring by name types
+- Override GetNameTypeMultiplier(byte entityType, byte nameType) for flexible scoring by name types
 - Override TypeBundlePreprocessing(TContext context, byte type, ICollection<EntitySearchResult> result) to add rules or filter the results that will be output as a result
 - Override Ranging(TContext context, IEnumerable<EntitySearchResult> result) for sorting, use EntitySearchResult.Score property for ranging entites by matches factor or ScoreWithRules for ranging by score and rules
 
