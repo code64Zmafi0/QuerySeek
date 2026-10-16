@@ -4,6 +4,6 @@ namespace QuerySeek.Services.Helpers;
 
 public static class TextPreprocessor
 {
-    public static string[] PreprocessText(INameTokenizer nameTokenizer, INormalizer normalizer, string name)
+    public static string[] PreprocessText(ITokenizer nameTokenizer, INormalizer normalizer, string name)
         => [..nameTokenizer.Tokenize(normalizer.Normalize(name))];
 }

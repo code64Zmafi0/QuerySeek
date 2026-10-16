@@ -81,18 +81,15 @@ public static class NgrammsWordsSearchHelper
     /// <summary>
     /// Создание бандла слов для поиска
     /// </summary>
-    /// <param name="context"></param>
-    /// <param name="alternativeWords"></param>
-    /// <param name="queryWordMultipliers"></param>
-    public static QueryWordContainer[] CreateSearchWordsBundle(
-        SearchContextBase context,
-        Dictionary<string, string[]> alternativeWords,
-        Dictionary<string, double> queryWordMultipliers)
+    /// <param name="context">Поисковой контекст</param>
+    public static QueryWordContainer[] CreateSearchWordsBundle(SearchContextBase context)
     {
         IReadOnlyDictionary<int, NgrammAssociation[]> wordsIdsByNgramms = context.Index.WordsIdsByNgramms;
+        IReadOnlyDictionary<string, string[]> alternativeWords = context.WordsSearchSettings.Alternatives;
+        IReadOnlyDictionary<string, double> queryWordMultipliers = context.WordsSearchSettings.Multiplers;
 
         //Используем один словарь для расчета совпавщих слов для каждого слова из запроса дабы лишний раз не аллоцировать
-        Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict = new(context.WordsSearchSettings.WordsSearchDictionaryPreallocate);
+        Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict = new(context.WordsSearchSettings.Settings.WordsSearchDictionaryPreallocate);
 
         QueryWordContainer[] result = [.. context.SplittedAndNormalizedQuery.Index().GroupBy(i => i.Item).Select(wordAndRepeats =>
         {
@@ -114,7 +111,7 @@ public static class NgrammsWordsSearchHelper
                 wordsSearchProcessDict,
                 wordsIdsByNgramms,
                 words,
-                context.WordsSearchSettings);
+                context.WordsSearchSettings.Settings);
 
             return new QueryWordContainer(words, positions, similarWords);
         })];
@@ -129,7 +126,7 @@ public static class NgrammsWordsSearchHelper
         Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict,
         IReadOnlyDictionary<int, NgrammAssociation[]> wordsIdsByNgramms,
         List<Word> queryWordAndAlternatives,
-        WordsSearchSettings wordsSearchSettings)
+        WordsSearchSimilaritySettings wordsSearchSettings)
     {
         List<KeyValuePair<int, byte>> result = [];
 

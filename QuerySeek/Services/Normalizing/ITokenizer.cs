@@ -1,6 +1,6 @@
 ﻿namespace QuerySeek.Services.Normalizing;
 
-public interface INameTokenizer
+public interface ITokenizer
 {
     IEnumerable<string> Tokenize(string? value);
 }

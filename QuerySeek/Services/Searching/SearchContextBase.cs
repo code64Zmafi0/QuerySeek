@@ -1,15 +1,19 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using QuerySeek.Models;
-using QuerySeek.Services.Searching.Requests;
 
 namespace QuerySeek.Services.Searching;
 
 /// <summary>
 /// Контекст поиска, можем хранить дополнительные свойства при переопределении
 /// </summary>
-/// <param name="index"></param>
-public class SearchContextBase(IndexInstance index, string query)
+/// <param name="index">Индекс</param>
+/// <param name="query">Поисковая строка</param>
+public class SearchContextBase(
+    IndexInstance index,
+    string query,
+    Dictionary<string, string[]>? alternativeWords = null,
+    Dictionary<string, double>? queryWordMultipliers = null)
 {
     /// <summary>
     /// Входящий текстовый запрос

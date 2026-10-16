@@ -45,10 +45,10 @@ public static class QS
     #endregion
 
     #region Build
-    public static IndexBuilder GetBuilder(INormalizer normalizer, INameTokenizer nameTokenizer)
+    public static IndexBuilder GetBuilder(INormalizer normalizer, ITokenizer nameTokenizer)
         => new(normalizer, nameTokenizer);
 
-    public static IndexInstance Build(INormalizer normalizer, INameTokenizer nameTokenizer, IEnumerable<IIndexedEntity> entities)
+    public static IndexInstance Build(INormalizer normalizer, ITokenizer nameTokenizer, IEnumerable<IIndexedEntity> entities)
     {
         var builder = new IndexBuilder(normalizer, nameTokenizer);
 
@@ -58,7 +58,7 @@ public static class QS
         return builder.Build();
     }
 
-    public static async Task<IndexInstance> BuildAsync(INormalizer normalizer, INameTokenizer nameTokenizer, IAsyncEnumerable<IIndexedEntity> entities)
+    public static async Task<IndexInstance> BuildAsync(INormalizer normalizer, ITokenizer nameTokenizer, IAsyncEnumerable<IIndexedEntity> entities)
     {
         var builder = new IndexBuilder(normalizer, nameTokenizer);
 

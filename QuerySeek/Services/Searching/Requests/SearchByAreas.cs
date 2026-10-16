@@ -24,7 +24,7 @@ public class SearchByAreas(
             QueryWordContainer wordFromQuery = queryWordsBundle[queryWordPosition];
             List<KeyValuePair<int, byte>> currentSimilarWordsBundle = wordFromQuery.SimilarWords;
 
-            WordsSearchStopManager wsm = searchContext.WordsSearchSettings.GetWordsSearchStopManager(wordFromQuery.QueryWordAndAlternatives[0]);
+            WordsSearchStopManager wsm = searchContext.WordsSearchSettings.Settings.GetWordsSearchStopManager(wordFromQuery.QueryWordAndAlternatives[0]);
 
             for (int i = 0; i < currentSimilarWordsBundle.Count; i++)
             {

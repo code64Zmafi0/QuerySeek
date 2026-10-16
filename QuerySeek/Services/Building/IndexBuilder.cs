@@ -7,7 +7,7 @@ using QuerySeek.Services.Normalizing;
 
 namespace QuerySeek.Services.Building;
 
-public class IndexBuilder(INormalizer normalizer, INameTokenizer nameTokenizer)
+public class IndexBuilder(INormalizer normalizer, ITokenizer nameTokenizer)
 {
     private readonly Dictionary<Key, EntityMeta> Entities = [];
     private readonly Dictionary<Key, HashSet<Key>> Childs = [];
@@ -55,7 +55,7 @@ public class IndexBuilder(INormalizer normalizer, INameTokenizer nameTokenizer)
     private IEnumerable<(string[] TokenizedName, byte NameType)> GetNamesToBuild(
         IEnumerable<Name> names,
         INormalizer normalizer,
-        INameTokenizer nameTokenizer)
+        ITokenizer nameTokenizer)
         => [.. names
             .Select(name =>
             {
