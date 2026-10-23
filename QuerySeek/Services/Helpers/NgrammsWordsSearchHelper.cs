@@ -210,7 +210,7 @@ public static class NgrammsWordsSearchHelper
                     byte queryWordMisses = (byte)(queryWordNgrammPosition - matchInfo.PreviousQueryWordNgrammPosition - 1);
                     byte indexWordMisses = (byte)(indexWordNgrammPosition - matchInfo.PreviousIndexWordNgrammPosition - 1);
 
-                    byte misses = (byte)Math.Max(queryWordMisses, indexWordMisses);
+                    byte misses = Math.Max(queryWordMisses, indexWordMisses);
 
                     misses = queryWordNgrammPosition == 0 
                         ? default

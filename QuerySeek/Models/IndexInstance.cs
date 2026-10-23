@@ -49,7 +49,6 @@ public class IndexInstance
 
             if (meta.Links.Length == 0)
                 meta.Links = Array.Empty<Key>();
-
         }
 
         if (useFrozenCollections)
