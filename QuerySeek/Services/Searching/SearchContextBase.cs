@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using QuerySeek.Models;
+using QuerySeek.Services.Normalizing;
 
 namespace QuerySeek.Services.Searching;
 
@@ -11,9 +12,7 @@ namespace QuerySeek.Services.Searching;
 /// <param name="query">Поисковая строка</param>
 public class SearchContextBase(
     IndexInstance index,
-    string query,
-    Dictionary<string, string[]>? alternativeWords = null,
-    Dictionary<string, double>? queryWordMultipliers = null)
+    string query)
 {
     /// <summary>
     /// Входящий текстовый запрос
@@ -24,6 +23,16 @@ public class SearchContextBase(
     /// Инстанс индекса
     /// </summary>
     public IndexInstance Index { get; } = index;
+
+    /// <summary>
+    /// Входящий текстовый запрос
+    /// </summary>
+    public ITokenizer Tokenizer { get; internal set; } = DefaultTokenizer.Instance;
+
+    /// <summary>
+    /// Входящий текстовый запрос
+    /// </summary>
+    public INormalizer Normalizer { get; internal set; } = DefaultNormalizer.Instance;
 
     /// <summary>
     /// Нормализованный и разбитый по словам запрос

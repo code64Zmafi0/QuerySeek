@@ -59,8 +59,15 @@ public class EntitySearchResult(Key key, EntityMeta meta)
             {
                 AdditionalRule item = Rules[i];
 
-                resultScore += item.Score;
-                resultScore = (int)(resultScore * item.Multiplier);
+                if (item.CustomCalculator == null)
+                {
+                    resultScore += item.Score;
+                    resultScore = (int)(resultScore * item.Multiplier);
+                }
+                else
+                {
+                    resultScore += item.CustomCalculator(this);
+                }
             }
 
             return resultScore;
@@ -93,7 +100,7 @@ public readonly record struct WordMatch(
 /// <param name="Name"></param>
 /// <param name="Score"></param>
 /// <param name="Multiplier"></param>
-public record AdditionalRule(string Name, int Score = 0, double Multiplier = 1);
+public record AdditionalRule(string Name, int Score = 0, double Multiplier = 1, Func<EntitySearchResult, int>? CustomCalculator = null);
 
 /// <summary>
 /// Контейнер слова из запроса включает в себя слово из запроса, альтернативы, позиции в запросе и похожие слова из индекса

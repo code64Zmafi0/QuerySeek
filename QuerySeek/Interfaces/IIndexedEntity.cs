@@ -16,7 +16,7 @@ public interface IIndexedEntity
     IEnumerable<Name> GetNames();
 
     /// <summary>
-    /// Components of entity (uniq types)
+    /// Components of entity
     /// </summary>
     IEnumerable<Key> GetLinks();
 

@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using QuerySeek.Models;
 using QuerySeek.Services.Helpers;
 using QuerySeek.Services.Normalizing;
@@ -28,7 +27,7 @@ public abstract class SearcherBase<TContext>(
         => WordsSearchSettings.Default;
 
     /// <summary>
-    /// (1. SELECTION) Определяет запрос на поиск сущностей в индексе.
+    /// (1. SELECTION) Определяет запрос на поиск сущностей в индексе
     /// </summary>
     /// <param name="context">Поисковой контекст</param>
     /// <returns>Перечисление запросов вниз по дереву зависимостей</returns>
@@ -114,9 +113,14 @@ public abstract class SearcherBase<TContext>(
 
     public void PrepareContext(TContext context)
     {
+        context.Normalizer = normalizer;
+        context.Tokenizer = tokenizer;
         context.SplittedAndNormalizedQuery = TextPreprocessor.PreprocessText(tokenizer, normalizer, context.Query);
         context.WordsSearchSettings = GetWordsSearchSettings(context);
-        context.SearchWordsBundle = NgrammsWordsSearchHelper.CreateSearchWordsBundle(context);
+        context.SearchWordsBundle = NgrammsWordsSearchHelper.CreateSearchWordsBundle(
+            context.SplittedAndNormalizedQuery,
+            context.Index.WordsIdsByNgramms,
+            context.WordsSearchSettings);
     }
 
     public void ProcessRequests(TContext context, CancellationToken ct)

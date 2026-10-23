@@ -82,16 +82,18 @@ public static class NgrammsWordsSearchHelper
     /// Создание бандла слов для поиска
     /// </summary>
     /// <param name="context">Поисковой контекст</param>
-    public static QueryWordContainer[] CreateSearchWordsBundle(SearchContextBase context)
+    public static QueryWordContainer[] CreateSearchWordsBundle(
+        string[] splittedAndNormalizedQuery,
+        IReadOnlyDictionary<int, NgrammAssociation[]> wordsIdsByNgramms,
+        WordsSearchSettings wordsSearchSettings)
     {
-        IReadOnlyDictionary<int, NgrammAssociation[]> wordsIdsByNgramms = context.Index.WordsIdsByNgramms;
-        IReadOnlyDictionary<string, string[]> alternativeWords = context.WordsSearchSettings.Alternatives;
-        IReadOnlyDictionary<string, double> queryWordMultipliers = context.WordsSearchSettings.Multiplers;
+        IReadOnlyDictionary<string, string[]> alternativeWords = wordsSearchSettings.Alternatives;
+        IReadOnlyDictionary<string, double> queryWordMultipliers = wordsSearchSettings.Multiplers;
 
         //Используем один словарь для расчета совпавщих слов для каждого слова из запроса дабы лишний раз не аллоцировать
-        Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict = new(context.WordsSearchSettings.Settings.WordsSearchDictionaryPreallocate);
+        Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict = new(wordsSearchSettings.Settings.WordsSearchDictionaryPreallocate);
 
-        QueryWordContainer[] result = [.. context.SplittedAndNormalizedQuery.Index().GroupBy(i => i.Item).Select(wordAndRepeats =>
+        QueryWordContainer[] result = [.. splittedAndNormalizedQuery.Index().GroupBy(i => i.Item).Select(wordAndRepeats =>
         {
             string wordFrowQuery = wordAndRepeats.Key;
             int[] positions = [.. wordAndRepeats.Select(i => i.Index)];
@@ -111,7 +113,7 @@ public static class NgrammsWordsSearchHelper
                 wordsSearchProcessDict,
                 wordsIdsByNgramms,
                 words,
-                context.WordsSearchSettings.Settings);
+                wordsSearchSettings.Settings);
 
             return new QueryWordContainer(words, positions, similarWords);
         })];
@@ -130,6 +132,7 @@ public static class NgrammsWordsSearchHelper
     {
         List<KeyValuePair<int, byte>> result = [];
 
+        //Сначала ищем альтенативы
         for (int i = 1; i < queryWordAndAlternatives.Count; i++)
         {
             Word altWord = queryWordAndAlternatives[i];
@@ -138,6 +141,7 @@ public static class NgrammsWordsSearchHelper
                            wordsSearchSettings.AlternativesCount);
         }
 
+        
         Word queryWord = queryWordAndAlternatives[0];
         SearchSimilars(queryWord,
                        wordsSearchSettings.SimilarityTresholdCalculator(queryWord),
@@ -150,7 +154,7 @@ public static class NgrammsWordsSearchHelper
             int minMatchedNgrammsCount = treshold.MinMatchedNgrammsCount;
             int maxMisses = treshold.MaxMisses;
 
-            NgrammSearch(wordsSearchProcessDict, wordsIdsByNgramms, word, minMatchedNgrammsCount);
+            NgrammSearch(wordsSearchProcessDict, wordsIdsByNgramms, word, treshold);
 
             //Ищем бандл схожих слов и сортируем по количеству совпадений (вычисляется в свойстве Score. Попадания - наказание за промахи)
             foreach (KeyValuePair<int, WordNgrammSearchState> item in wordsSearchProcessDict
@@ -175,12 +179,13 @@ public static class NgrammsWordsSearchHelper
         Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict,
         IReadOnlyDictionary<int, NgrammAssociation[]> wordsIdsByNgramms,
         Word queryWord,
-        int treshold)
+        SimilarityTreshold similarityTreshold)
     {
         byte wordLength = (byte)queryWord.NGrammsHashes.Length;
-        treshold = wordLength - treshold;
 
-        Dictionary<int, WordNgrammSearchState> words = wordsSearchProcessDict;
+        int treshold = wordLength - similarityTreshold.MinMatchedNgrammsCount;
+
+        Dictionary<int, WordNgrammSearchState> processedWords = wordsSearchProcessDict;
 
         //Ищем в индексе слов, считаем совпавшие ngramm-ы и пропуски
         for (byte queryWordNgrammPosition = 0; queryWordNgrammPosition < wordLength; queryWordNgrammPosition++)
@@ -193,7 +198,7 @@ public static class NgrammsWordsSearchHelper
                 int wordId = ngrammAssoc.WordId;
                 byte indexWordNgrammPosition = ngrammAssoc.Position;
 
-                ref WordNgrammSearchState matchInfo = ref CollectionsMarshal.GetValueRefOrNullRef(words, wordId);
+                ref WordNgrammSearchState matchInfo = ref CollectionsMarshal.GetValueRefOrNullRef(processedWords, wordId);
 
                 if (!Unsafe.IsNullRef(ref matchInfo))
                 {
@@ -205,31 +210,37 @@ public static class NgrammsWordsSearchHelper
                     byte queryWordMisses = (byte)(queryWordNgrammPosition - matchInfo.PreviousQueryWordNgrammPosition - 1);
                     byte indexWordMisses = (byte)(indexWordNgrammPosition - matchInfo.PreviousIndexWordNgrammPosition - 1);
 
-                    byte misses = (byte)(queryWordMisses >= indexWordMisses
-                        ? queryWordMisses
-                        : queryWordMisses + indexWordMisses);
+                    byte misses = (byte)Math.Max(queryWordMisses, indexWordMisses);
 
+                    misses = queryWordNgrammPosition == 0 
+                        ? default
+                        : (byte)(matchInfo.Misses + misses);
+
+                    //Подменяем уже имеющееся значение
                     matchInfo = new()
                     {
                         Matches = matches,
-                        Misses = queryWordNgrammPosition == 0 ? (byte)0 : (byte)(matchInfo.Misses + misses),
+                        Misses = misses,
                         PreviousQueryWordNgrammPosition = queryWordNgrammPosition,
                         PreviousIndexWordNgrammPosition = indexWordNgrammPosition
                     };
                 }
                 //Попытка отбить добавление в словарь уже точно не совпавщих по treshold
                 else if (queryWordNgrammPosition == 0 || (!queryWord.IsDigit && queryWordNgrammPosition <= treshold))
-                    words[wordId] = new(1, queryWordNgrammPosition, queryWordNgrammPosition, indexWordNgrammPosition);
+                    processedWords[wordId] = new WordNgrammSearchState(1, queryWordNgrammPosition, queryWordNgrammPosition, indexWordNgrammPosition);
             }
         }
     }
-    
+
     private readonly record struct WordNgrammSearchState(
         byte Matches,
         byte Misses,
         byte PreviousQueryWordNgrammPosition,
         byte PreviousIndexWordNgrammPosition)
     {
+        /// <summary>
+        /// Оценка совпадения слова (условие для того что-бы учесть ошибку если она одна и не отнять 0)
+        /// </summary>
         public int Score => Matches - (Misses == 1 && Matches > 1 ? 1 : (Misses / 2));
     }
 }
