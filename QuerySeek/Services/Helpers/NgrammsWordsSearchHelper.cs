@@ -207,13 +207,10 @@ public static class NgrammsWordsSearchHelper
                     byte matches = (byte)(matchInfo.Matches + 1);
 
                     byte queryWordMisses = (byte)(queryWordNgrammPosition - matchInfo.PreviousQueryWordNgrammPosition - 1);
-                    byte indexWordMisses = (byte)(indexWordNgrammPosition - matchInfo.PreviousIndexWordNgrammPosition - 1);
-
-                    byte misses = (byte)((queryWordMisses + indexWordMisses) / 2);
-
-                    misses = queryWordNgrammPosition == 0 
-                        ? default
-                        : (byte)(matchInfo.Misses + misses);
+                    byte indexWordMisses = (byte)(queryWordNgrammPosition == 0
+                        ? 0
+                        : indexWordNgrammPosition - matchInfo.PreviousIndexWordNgrammPosition - 1);
+                    byte misses = (byte)(queryWordMisses + indexWordMisses);
 
                     //Подменяем уже имеющееся значение
                     matchInfo = new()
@@ -240,6 +237,6 @@ public static class NgrammsWordsSearchHelper
         /// <summary>
         /// Оценка совпадения слова
         /// </summary>
-        public int Score => Matches - Misses;
+        public int Score => Matches - (Misses == 1 && Matches > 1 ? 1 : (Misses / 2));
     }
 }
