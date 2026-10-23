@@ -4,7 +4,7 @@ using QuerySeek.Services.Helpers;
 namespace QuerySeek.Services.Searching.Requests;
 
 /// <summary>
-/// Выполняет поиск сущностей целевого типа по найденным контейнерам
+/// Выполняет поиск сущностей целевого типа по контейнерам и текстовому запросу и добавляет в выборку
 /// </summary>
 /// <param name="targetType">Целевой тип сущности</param>
 /// <param name="areasSelector">Выборка поисковых областей</param>

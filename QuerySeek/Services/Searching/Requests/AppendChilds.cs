@@ -3,7 +3,7 @@ using QuerySeek.Models;
 namespace QuerySeek.Services.Searching.Requests;
 
 /// <summary>
-/// Выполняет принудительное добавление дочерних элементов по родителю в выдачу
+/// Выполняет принудительное добавление дочерних элементов по родителю в выборку
 /// </summary>
 /// <param name="targetType">Целевой тип</param>
 /// <param name="appendFilter">Фильтр добавляемых сущностей для каждого родителя</param>

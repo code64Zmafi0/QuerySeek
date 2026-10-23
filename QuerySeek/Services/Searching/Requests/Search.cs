@@ -4,7 +4,7 @@ using QuerySeek.Services.Helpers;
 namespace QuerySeek.Services.Searching.Requests;
 
 /// <summary>
-/// Выполняет поиск сущностей целевого типа
+/// Выполняет поиск сущностей целевого типа по текстовому запросу и добавляет в выборку
 /// </summary>
 /// <param name="targetType">Целевой тип сущности</param>
 public class Search(byte targetType) : RequestBase(targetType)

@@ -195,7 +195,7 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
 
             int[] positions = context.SearchWordsBundle[wordsBundlePosition].PositionsInRequest;
 
-            foreach (int position in context.SearchWordsBundle[wordsBundlePosition].PositionsInRequest)
+            foreach (int position in positions)
             {
                 if (scores[position].IsEmpty)
                 {

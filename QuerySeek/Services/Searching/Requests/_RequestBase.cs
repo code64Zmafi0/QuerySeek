@@ -1,5 +1,9 @@
 ﻿namespace QuerySeek.Services.Searching.Requests;
 
+/// <summary>
+/// Базовое определние для запроса на выборку в индексе. Шаг SELECTING
+/// </summary>
+/// <param name="targetType">Текущий тип отбираемых сущностей</param>
 public abstract class RequestBase(byte targetType)
 {
     public byte TargetType { get; } = targetType;

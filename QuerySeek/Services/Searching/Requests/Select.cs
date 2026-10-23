@@ -3,7 +3,7 @@ using QuerySeek.Models;
 namespace QuerySeek.Services.Searching.Requests;
 
 /// <summary>
-/// Выполняет принудительное добавление сущностей целевого типа
+/// Выполняет принудительное добавление сущностей целевого типа в выборку
 /// </summary>
 /// <param name="targetType"></param>
 /// <param name="ids"></param>
