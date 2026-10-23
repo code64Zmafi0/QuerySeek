@@ -81,7 +81,6 @@ public static class NgrammsWordsSearchHelper
     /// <summary>
     /// Создание бандла слов для поиска
     /// </summary>
-    /// <param name="context">Поисковой контекст</param>
     public static QueryWordContainer[] CreateSearchWordsBundle(
         string[] splittedAndNormalizedQuery,
         IReadOnlyDictionary<int, NgrammAssociation[]> wordsIdsByNgramms,
@@ -210,7 +209,7 @@ public static class NgrammsWordsSearchHelper
                     byte queryWordMisses = (byte)(queryWordNgrammPosition - matchInfo.PreviousQueryWordNgrammPosition - 1);
                     byte indexWordMisses = (byte)(indexWordNgrammPosition - matchInfo.PreviousIndexWordNgrammPosition - 1);
 
-                    byte misses = Math.Max(queryWordMisses, indexWordMisses);
+                    byte misses = (byte)((queryWordMisses + indexWordMisses) / 2);
 
                     misses = queryWordNgrammPosition == 0 
                         ? default
@@ -239,8 +238,8 @@ public static class NgrammsWordsSearchHelper
         byte PreviousIndexWordNgrammPosition)
     {
         /// <summary>
-        /// Оценка совпадения слова (условие для того что-бы учесть ошибку если она одна и не отнять 0)
+        /// Оценка совпадения слова
         /// </summary>
-        public int Score => Matches - (Misses == 1 && Matches > 1 ? 1 : (Misses / 2));
+        public int Score => Matches - Misses;
     }
 }
