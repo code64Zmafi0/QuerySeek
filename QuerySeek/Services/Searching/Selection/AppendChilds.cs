@@ -23,9 +23,7 @@ public class AppendChilds(
             Key[] parentEntityChilds = parent.Meta.Childs;
 
             foreach (Key child in appendFilter(parentEntityChilds.Where(i => i.Type == TargetType)))
-            {
-                searchContext.AddResult(child);
-            }
+                AddResult(searchContext, child);
         }
     }
 }

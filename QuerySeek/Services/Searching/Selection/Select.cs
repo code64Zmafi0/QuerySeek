@@ -19,7 +19,7 @@ public class Select(byte targetType, IEnumerable<int> ids) : EntitiesSelectionOp
 
             if (entities.ContainsKey(key))
             {
-                searchContext.AddResult(key);
+                AddResult(searchContext, key);
             }
         }
     }

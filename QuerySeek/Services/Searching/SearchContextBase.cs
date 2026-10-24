@@ -80,39 +80,5 @@ public class SearchContextBase(
         => TryGetResultsByType(type, out Dictionary<Key, EntitySearchResult>? result)
             ? result.Values
             : Array.Empty<EntitySearchResult>();
-
-    /// <summary>
-    /// Добавляет в контекст поиска сущность
-    /// </summary>
-    public void AddResult(Key key)
-    {
-        ref var types = ref CollectionsMarshal.GetValueRefOrAddDefault(SearchResult, key.Type, out var exists);
-
-        if (!exists)
-            types = [];
-
-        ref var matchesBundle = ref CollectionsMarshal.GetValueRefOrAddDefault(types!, key, out exists);
-
-        if (!exists)
-            matchesBundle = new(key, Index.Entities[key]);
-    }
-
-    /// <summary>
-    /// Добавляет в контекст поиска сущность и добавляет свопадение со словом из запроса
-    /// </summary>
-    public void AddResult(Key key, WordMatch wordMatch)
-    {
-        ref var types = ref CollectionsMarshal.GetValueRefOrAddDefault(SearchResult, key.Type, out var exists);
-
-        if (!exists)
-            types = [];
-
-        ref EntitySearchResult? matchesBundle = ref CollectionsMarshal.GetValueRefOrAddDefault(types!, key, out exists);
-
-        if (!exists)
-            matchesBundle = new(key, Index.Entities[key]);
-
-        matchesBundle!.WordsMatches.Add(wordMatch);
-    }
     #endregion
 }

@@ -30,6 +30,6 @@ public class AppendChildsByAreas(
         IEnumerable<Key> childs = GetChilds(parentsSelector()).Intersect(appendFilter(GetChilds(areasSelector())));
 
         foreach (Key child in childs)
-            searchContext.AddResult(child);
+            AddResult(searchContext, child);
     }
 }

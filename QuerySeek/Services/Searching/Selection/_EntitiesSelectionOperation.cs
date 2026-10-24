@@ -1,3 +1,6 @@
+using System.Runtime.InteropServices;
+using QuerySeek.Models;
+
 namespace QuerySeek.Services.Searching.Requests;
 
 /// <summary>
@@ -14,4 +17,44 @@ public abstract class EntitiesSelectionOperation(byte targetType)
     /// <param name="searchContext"></param>
     /// <param name="ct"></param>
     public abstract void Process(SearchContextBase searchContext, CancellationToken ct);
+
+    /// <summary>
+    /// Добавляет в контекст поиска сущность
+    /// </summary>
+    public static void AddResult(SearchContextBase searchContext, Key key)
+    {
+        Dictionary<byte, Dictionary<Key, EntitySearchResult>> searchResult = searchContext.SearchResult;
+        IReadOnlyDictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
+
+        ref var types = ref CollectionsMarshal.GetValueRefOrAddDefault(searchResult, key.Type, out var exists);
+
+        if (!exists)
+            types = [];
+
+        ref var matchesBundle = ref CollectionsMarshal.GetValueRefOrAddDefault(types!, key, out exists);
+
+        if (!exists)
+            matchesBundle = new(key, entities[key]);
+    }
+
+    /// <summary>
+    /// Добавляет в контекст поиска сущность и добавляет совпадение со словом из запроса
+    /// </summary>
+    public static void AddResult(SearchContextBase searchContext, Key key, WordMatch wordMatch)
+    {
+        Dictionary<byte, Dictionary<Key, EntitySearchResult>> searchResult = searchContext.SearchResult;
+        IReadOnlyDictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
+
+        ref var types = ref CollectionsMarshal.GetValueRefOrAddDefault(searchResult, key.Type, out var exists);
+
+        if (!exists)
+            types = [];
+
+        ref EntitySearchResult? matchesBundle = ref CollectionsMarshal.GetValueRefOrAddDefault(types!, key, out exists);
+
+        if (!exists)
+            matchesBundle = new(key, entities[key]);
+
+        matchesBundle!.WordsMatches.Add(wordMatch);
+    }
 }

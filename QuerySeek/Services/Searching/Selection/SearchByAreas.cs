@@ -37,8 +37,7 @@ public class SearchByAreas(
                 int wordId = indexWordInfo.Key;
 
                 IEnumerable<Key> areasKeys = areas
-                    .Where(a => !a.WordsMatches
-                        .Exists(wm => wm.WordsBundlePosition == queryWordPosition && wordFromQuery.PositionsInRequest.Length < 2))
+                    .Where(a => !a.WordsMatches.Exists(wm => wm.WordsBundlePosition == queryWordPosition && wordFromQuery.PositionsInRequest.Length < 2))
                     .Select(a => a.Key);
 
                 bool isMatchedWord = false;
@@ -61,7 +60,7 @@ public class SearchByAreas(
                             queryWordPosition,
                             indexWordInfo.Value);
 
-                        searchContext.AddResult(entityKey, wordMatch);
+                        AddResult(searchContext, entityKey, wordMatch);
                     }
                 }
 

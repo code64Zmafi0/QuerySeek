@@ -49,7 +49,7 @@ public class Search(byte targetType) : EntitiesSelectionOperation(targetType)
                         queryWordPosition,
                         indexWordInfo.Value);
 
-                    searchContext.AddResult(entityKey, wordMatch);
+                    AddResult(searchContext, entityKey, wordMatch);
                 }
             }
         }
