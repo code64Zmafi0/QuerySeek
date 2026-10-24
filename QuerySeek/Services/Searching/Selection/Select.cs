@@ -7,9 +7,9 @@ namespace QuerySeek.Services.Searching.Requests;
 /// </summary>
 /// <param name="targetType"></param>
 /// <param name="ids"></param>
-public class Select(byte targetType, IEnumerable<int> ids) : RequestBase(targetType)
+public class Select(byte targetType, IEnumerable<int> ids) : EntitiesSelectionOperation(targetType)
 {
-    public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
+    public override void Process(SearchContextBase searchContext, CancellationToken ct)
     {
         IReadOnlyDictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
 

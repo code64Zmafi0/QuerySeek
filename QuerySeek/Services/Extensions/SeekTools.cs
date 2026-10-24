@@ -1,7 +1,11 @@
+using System.Collections.Frozen;
+using System.Runtime;
+using System.Runtime.InteropServices;
 using MessagePack;
 using QuerySeek.Interfaces;
 using QuerySeek.Models;
 using QuerySeek.Services.Building;
+using QuerySeek.Services.Helpers;
 using QuerySeek.Services.Normalizing;
 using QuerySeek.Services.Searching;
 
@@ -37,11 +41,11 @@ public static class QS
     public static Key[] Keys(byte type, params int[] ids)
         => Array.ConvertAll(ids, id => Key(type, id));
 
-    public static bool WordIsFullMatched(Word queryWord, WordMatch wordMatch)
-        => queryWord.NGrammsHashes.Length == wordMatch.Score;
+    public static bool IsWordSimilarityValid(Word queryWord, WordMatch wordMatch, double similarity)
+        => (double)wordMatch.Score / queryWord.NGrammsHashes.Length >= similarity;
 
-    public static bool WordIsFullMatched(SearchContextBase context, WordMatch wordMatch)
-        => WordIsFullMatched(context.SearchWordsBundle[wordMatch.WordsBundlePosition].QueryWordAndAlternatives[0], wordMatch);
+    public static bool IsWordSimilarityValid(this SearchContextBase context, WordMatch wordMatch, double similarity)
+        => IsWordSimilarityValid(context.SearchWordsBundle[wordMatch.WordsBundlePosition].QueryWordAndAlternatives[0], wordMatch, similarity);
     #endregion
 
     #region Build
@@ -71,13 +75,80 @@ public static class QS
     #endregion
 
     #region Serialization
+
+    /// <summary>
+    /// Оптимизация и сжатие индекса после создания и десериализации
+    /// </summary>
+    /// <param name="index">Инстанс индекса</param>
+    /// <param name="useFrozenCollections">Использовать ли Frozen коллекции внутри индекса. Не рекомендуется.</param>
+    /// <param name="optimizeLinks">Оптимизировать ли массивы линков, продолжительная операция</param>
+    /// <param name="gcCompactLOH">Сжать ли LOH и вызвать очистку мусора</param>
+    public static void Inititalize(this IndexInstance index, bool useFrozenCollections = false, bool optimizeLinks = true, bool gcCompactLOH = true)
+    {
+        //Подменяем пустые массивы одной ссылкой
+        foreach (EntityMeta meta in index.Entities.Values)
+        {
+            if (meta.Childs.Length == 0)
+                meta.Childs = Array.Empty<Key>();
+
+            if (meta.Links.Length == 0)
+                meta.Links = Array.Empty<Key>();
+        }
+
+        if (optimizeLinks)
+        {
+            LinksComparer linksComparer = new();
+
+            foreach (IGrouping<byte, KeyValuePair<Key, EntityMeta>> item in index.Entities.GroupBy(i => i.Key.Type))
+            {
+                Dictionary<Key[], Key[]> uniqs = new(linksComparer);
+                foreach (EntityMeta meta in item.Select(i => i.Value))
+                {
+                    if (meta.Links.Length == 0) continue;
+
+                    ref var uniqLinks = ref CollectionsMarshal.GetValueRefOrAddDefault(uniqs, meta.Links, out var exists);
+
+                    if (!exists) uniqLinks = meta.Links;
+                    else meta.Links = uniqLinks!;
+                }
+            }
+        }
+
+        if (useFrozenCollections)
+        {
+            //По замерам получилось только большее потребление памяти 20% и просадка производительности в 2 раза ¯\_(ツ)_/¯
+            //Возможно словари внутри поисковой мапы слишком маленькие и выбранная стратегия медленне, но производительность падает и на коллекциях сущностей и слов
+
+            //Оптимизация словарей
+            index.Entities = index.Entities.ToFrozenDictionary();
+            index.WordsIdsByNgramms = index.WordsIdsByNgramms.ToFrozenDictionary();
+            //Оптимизация поисковой мапы
+            for (int i = 0; i < index.EntitiesSearchMap.Length; i++)
+            {
+                KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[] matchesByTypes = index.EntitiesSearchMap[i];
+
+                for (int j = 0; j < matchesByTypes.Length; j++)
+                {
+                    KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>> current = matchesByTypes[j];
+                    matchesByTypes[j] = new(current.Key, current.Value.ToFrozenDictionary());
+                }
+            }
+        }
+
+        if (gcCompactLOH)
+        {
+            GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+            GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive);
+        }
+    }
+
     public static void WriteIndex(IndexInstance index, string filePath)
         => WriteObject(filePath, index);
 
     public static IndexInstance ReadIndex(string filePath, bool gcCompactLOH = true)
     {
         IndexInstance index = ReadAndDeserializeObject<IndexInstance>(filePath);
-        index.Inititalize(false, gcCompactLOH);
+        index.Inititalize(false, gcCompactLOH: gcCompactLOH);
 
         return index;
     }

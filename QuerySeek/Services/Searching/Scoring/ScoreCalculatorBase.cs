@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using QuerySeek.Models;
 using QuerySeek.Services.Helpers;
 
@@ -7,6 +7,9 @@ namespace QuerySeek.Services.Searching.Scoring;
 /// <summary>
 /// Стандартная реализация просчета текстового скора для сущностей
 /// </summary>
+/// <remarks>
+/// Считает скор для сущности из совпадений слов: сущности и ее линков. Множители совпадений из линков можно переопределить.
+/// </remarks>
 /// <typeparam name="TContext">Тип конеткста</typeparam>
 public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TContext : SearchContextBase
 {
@@ -14,19 +17,12 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
 
     #region Overrides
     /// <summary>
-    /// (SCORING SETTINGS) Позволяет при совпадении линка, добавить просчет его звасимостей (зайти в иерархию привязанной)
-    /// </summary>
-    /// <param name="entityType">Тип обрабатываемой сущности</param>
-    /// <param name="linkedType">Тип привязанной сущности</param>
-    public virtual bool OnLinkedMatchNeedMergeLinks(byte entityType, byte linkedType)
-        => false;
-
-    /// <summary>
     /// (SCORING SETTINGS) Множитель совпадений из связанных сущностей
     /// </summary>
-    /// <param name="entityType">Тип обрабатываемой сущности</param>
-    /// <param name="linkedType">Тип привязанной сущности</param>
-    public virtual double GetLinkedEntityMatchMultiplier(byte entityType, byte linkedType)
+    /// <param name="context">Контекст поиска</param>
+    /// <param name="currentEntity">Обрабатываемой сущность</param>
+    /// <param name="linkedEntity">Привязанной сущность</param>
+    public virtual double GetLinkedEntityMatchMultiplier(TContext context, Key currentEntity, Key linkedEntity)
         => 1;
 
     /// <summary>
@@ -36,6 +32,14 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
     /// <param name="nameType">Тип имени</param>
     public virtual double GetNameTypeMultiplier(byte entityType, byte nameType)
         => 1;
+
+    /// <summary>
+    /// (SCORING SETTINGS) Позволяет при совпадении линка, добавить просчет его звасимостей (зайти в иерархию привязанной)
+    /// </summary>
+    /// <param name="entityType">Тип обрабатываемой сущности</param>
+    /// <param name="linkedType">Тип привязанной сущности</param>
+    public virtual bool OnLinkedMatchNeedMergeLinks(byte entityType, byte linkedType)
+        => false;
 
     /// <summary>
     /// (EVENT) Событие просчета совпадений для сущности. После (SCORING)
@@ -53,17 +57,15 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
     {
         if (entitySearchResult.Score != 0) return;
 
-        byte currentEntityType = entitySearchResult.Key.Type;
-
         Span<WordMatch> queryWordsMatches = stackalloc WordMatch[context.SplittedAndNormalizedQuery.Length];
 
         //Просчитываем совпадения для слов запроса из сущнности и ее линков, заполняем queryWordsMatches
-        foreach ((byte Type, List<WordMatch> Matches) in GetMatches(context, entitySearchResult))
+        foreach ((Key LinkedEntity, List<WordMatch> Matches) in GetMatches(context, entitySearchResult))
         {
-            double nodeMultiplier = GetLinkedEntityMatchMultiplier(currentEntityType, Type);
+            double nodeMultiplier = GetLinkedEntityMatchMultiplier(context, entitySearchResult.Key, LinkedEntity);
             if (nodeMultiplier != 0)
             {
-                ProcessNodeMatches(in queryWordsMatches, Type, Matches, context, nodeMultiplier);
+                ProcessNodeMatches(in queryWordsMatches, LinkedEntity.Type, Matches, context, nodeMultiplier);
             }
         }
 
@@ -80,17 +82,16 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
     /// <summary>
     /// Возвращает наборы совпавших слов для сущности и прилинкованных к ней
     /// </summary>
-    private IEnumerable<(byte Type, List<WordMatch> Matches)> GetMatches(
+    private IEnumerable<(Key Entity, List<WordMatch> Matches)> GetMatches(
         TContext context,
         EntitySearchResult entitySearchResult)
     {
         byte currentEntityType = entitySearchResult.Key.Type;
-
         //Сущность может быть привязана к нескольким сущностям одного типа.
         //Если линк с таким типом уже был просчитан - пропускаем просчеты для сущностей этого типа
         BitArray256 matchedTypes = new();
 
-        yield return (currentEntityType, entitySearchResult.WordsMatches);
+        yield return (entitySearchResult.Key, entitySearchResult.WordsMatches);
         matchedTypes[currentEntityType] = true;
 
         foreach (Key linkKey in entitySearchResult.Meta.Links)
@@ -102,7 +103,7 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
                 || link.WordsMatches.Count == 0)
                 continue;
 
-            yield return (linkType, link.WordsMatches);
+            yield return (linkKey, link.WordsMatches);
             matchedTypes[linkType] = true;
 
             //Пробуем провалится на уровень выше по условию и просчитать линков с данного родителя
@@ -119,7 +120,7 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
                         || mergingLink.WordsMatches.Count == 0)
                         continue;
 
-                    yield return (mergingLinkType, mergingLink.WordsMatches);
+                    yield return (mergedEntityKey, mergingLink.WordsMatches);
                     matchedTypes[mergingLinkType] = true;
                 }
             }

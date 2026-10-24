@@ -1,10 +1,10 @@
-﻿namespace QuerySeek.Services.Searching.Requests;
+namespace QuerySeek.Services.Searching.Requests;
 
 /// <summary>
 /// Базовое определние для запроса на выборку в индексе. Шаг SELECTING
 /// </summary>
 /// <param name="targetType">Текущий тип отбираемых сущностей</param>
-public abstract class RequestBase(byte targetType)
+public abstract class EntitiesSelectionOperation(byte targetType)
 {
     public byte TargetType { get; } = targetType;
 
@@ -13,5 +13,5 @@ public abstract class RequestBase(byte targetType)
     /// </summary>
     /// <param name="searchContext"></param>
     /// <param name="ct"></param>
-    public abstract void ProcessRequest(SearchContextBase searchContext, CancellationToken ct);
+    public abstract void Process(SearchContextBase searchContext, CancellationToken ct);
 }

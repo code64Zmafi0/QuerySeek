@@ -7,9 +7,9 @@ namespace QuerySeek.Services.Searching.Requests;
 /// Выполняет поиск сущностей целевого типа по текстовому запросу и добавляет в выборку
 /// </summary>
 /// <param name="targetType">Целевой тип сущности</param>
-public class Search(byte targetType) : RequestBase(targetType)
+public class Search(byte targetType) : EntitiesSelectionOperation(targetType)
 {
-    public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
+    public override void Process(SearchContextBase searchContext, CancellationToken ct)
     {
         QueryWordContainer[] queryWordsBundle = searchContext.SearchWordsBundle;
         KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][] entitiesSearchMap = searchContext.Index.EntitiesSearchMap;

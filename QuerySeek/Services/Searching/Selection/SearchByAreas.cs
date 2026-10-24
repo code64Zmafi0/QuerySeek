@@ -10,18 +10,19 @@ namespace QuerySeek.Services.Searching.Requests;
 /// <param name="areasSelector">Выборка поисковых областей</param>
 public class SearchByAreas(
     byte targetType,
-    Func<IEnumerable<EntitySearchResult>> areasSelector) : RequestBase(targetType)
+    Func<IEnumerable<EntitySearchResult>> areasSelector) : EntitiesSelectionOperation(targetType)
 {
-    public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
+    public override void Process(SearchContextBase searchContext, CancellationToken ct)
     {
         QueryWordContainer[] queryWordsBundle = searchContext.SearchWordsBundle;
         KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][] entitiesSearchMap = searchContext.Index.EntitiesSearchMap;
 
-        Key[] areas = [..areasSelector().Select(i => i.Key)];
+        EntitySearchResult[] areas = [..areasSelector()];
 
         for (byte queryWordPosition = 0; queryWordPosition < queryWordsBundle.Length; queryWordPosition++)
         {
             QueryWordContainer wordFromQuery = queryWordsBundle[queryWordPosition];
+
             List<KeyValuePair<int, byte>> currentSimilarWordsBundle = wordFromQuery.SimilarWords;
 
             WordsSearchStopManager wsm = searchContext.WordsSearchSettings.Settings.GetWordsSearchStopManager(wordFromQuery.QueryWordAndAlternatives[0]);
@@ -35,11 +36,16 @@ public class SearchByAreas(
 
                 int wordId = indexWordInfo.Key;
 
+                IEnumerable<Key> areasKeys = areas
+                    .Where(a => !a.WordsMatches
+                        .Exists(wm => wm.WordsBundlePosition == queryWordPosition && wordFromQuery.PositionsInRequest.Length < 2))
+                    .Select(a => a.Key);
+
                 bool isMatchedWord = false;
                 foreach (WordMatchMeta[] matches in entitiesSearchMap.GetMatchesByWordAndAreas(
                     wordId,
                     TargetType,
-                    areas))
+                    areasKeys))
                 {
                     isMatchedWord = true;
 

@@ -33,46 +33,4 @@ public class IndexInstance
     public int EntitesCount => Entities.Count;
 
     public int GetEntitesCount(byte type) => Entities.Keys.Count(i => i.Type == type);
-
-    /// <summary>
-    /// Оптимизация и сжатие индекса после создания и десериализации
-    /// </summary>
-    /// <param name="useFrozenCollections">Использовать ли Frozen коллекции внутри индекса. Не рекомендуется.</param>
-    /// <param name="gcCompactLOH">Сжать ли LOH и вызвать очистку мусора</param>
-    public void Inititalize(bool useFrozenCollections = false, bool gcCompactLOH = true)
-    {
-        //Подменяем пустые массивы одной ссылкой
-        foreach (EntityMeta meta in Entities.Values)
-        {
-            if (meta.Childs.Length == 0)
-                meta.Childs = Array.Empty<Key>();
-
-            if (meta.Links.Length == 0)
-                meta.Links = Array.Empty<Key>();
-        }
-
-        if (useFrozenCollections)
-        {
-            //Оптимизация словарей
-            Entities = Entities.ToFrozenDictionary();
-            WordsIdsByNgramms = WordsIdsByNgramms.ToFrozenDictionary();
-            //Оптимизация поисковой мапы
-            for (int i = 0; i < EntitiesSearchMap.Length; i++)
-            {
-                KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[] matchesByTypes = EntitiesSearchMap[i];
-
-                for (int j = 0; j < matchesByTypes.Length; j++)
-                {
-                    KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>> current = matchesByTypes[j];
-                    matchesByTypes[j] = new(current.Key, current.Value.ToFrozenDictionary());
-                }
-            }
-        }
-
-        if (gcCompactLOH)
-        {
-            GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-            GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive);
-        }
-    }
 }

@@ -97,9 +97,10 @@ public readonly record struct WordMatch(
 /// <summary>
 /// Описывает дополнительное правило для сортировки
 /// </summary>
-/// <param name="Name"></param>
-/// <param name="Score"></param>
-/// <param name="Multiplier"></param>
+/// <param name="Name">Имя правила</param>
+/// <param name="Score">Начисляемый скор</param>
+/// <param name="Multiplier">Множитель</param>
+/// <param name="CustomCalculator">Кастомный обработчик для правила</param>
 public record AdditionalRule(string Name, int Score = 0, double Multiplier = 1, Func<EntitySearchResult, int>? CustomCalculator = null);
 
 /// <summary>

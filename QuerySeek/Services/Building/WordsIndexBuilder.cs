@@ -1,6 +1,6 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using QuerySeek.Models;
-using QuerySeek.Services.Helpers;
+using QuerySeek.Services.Searching.WordsSearch;
 
 namespace QuerySeek.Services.Building;
 
@@ -26,7 +26,7 @@ public class WordsIndexBuilder()
 
         foreach (KeyValuePair<string, int> item in Pairs.OrderBy(i => i.Key))
         {
-            int[] ngramms = NgrammsWordsSearchHelper.GetNgramms(item.Key);
+            int[] ngramms = NgrammsWordsSearcher.GetNgramms(item.Key);
 
             for (byte i = 0; i < ngramms.Length; i++)
             {

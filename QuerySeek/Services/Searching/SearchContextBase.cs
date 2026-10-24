@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using QuerySeek.Models;
 using QuerySeek.Services.Normalizing;
+using QuerySeek.Services.Searching.WordsSearch;
 
 namespace QuerySeek.Services.Searching;
 
@@ -83,7 +84,6 @@ public class SearchContextBase(
     /// <summary>
     /// Добавляет в контекст поиска сущность
     /// </summary>
-    /// <param name="key"></param>
     public void AddResult(Key key)
     {
         ref var types = ref CollectionsMarshal.GetValueRefOrAddDefault(SearchResult, key.Type, out var exists);
@@ -100,8 +100,6 @@ public class SearchContextBase(
     /// <summary>
     /// Добавляет в контекст поиска сущность и добавляет свопадение со словом из запроса
     /// </summary>
-    /// <param name="key"></param>
-    /// <param name="wordMatch"></param>
     public void AddResult(Key key, WordMatch wordMatch)
     {
         ref var types = ref CollectionsMarshal.GetValueRefOrAddDefault(SearchResult, key.Type, out var exists);

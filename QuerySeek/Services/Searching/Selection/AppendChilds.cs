@@ -11,9 +11,9 @@ namespace QuerySeek.Services.Searching.Requests;
 public class AppendChilds(
     byte targetType,
     Func<IEnumerable<Key>, IEnumerable<Key>> appendFilter,
-    Func<IEnumerable<EntitySearchResult>> parentsSelector) : RequestBase(targetType)
+    Func<IEnumerable<EntitySearchResult>> parentsSelector) : EntitiesSelectionOperation(targetType)
 {
-    public override void ProcessRequest(SearchContextBase searchContext, CancellationToken ct)
+    public override void Process(SearchContextBase searchContext, CancellationToken ct)
     {
         foreach (EntitySearchResult parent in parentsSelector())
         {

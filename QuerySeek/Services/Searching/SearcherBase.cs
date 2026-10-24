@@ -3,6 +3,7 @@ using QuerySeek.Services.Helpers;
 using QuerySeek.Services.Normalizing;
 using QuerySeek.Services.Searching.Requests;
 using QuerySeek.Services.Searching.Scoring;
+using QuerySeek.Services.Searching.WordsSearch;
 
 namespace QuerySeek.Services.Searching;
 
@@ -31,7 +32,7 @@ public abstract class SearcherBase<TContext>(
     /// </summary>
     /// <param name="context">Поисковой контекст</param>
     /// <returns>Перечисление запросов вниз по дереву зависимостей</returns>
-    public abstract IEnumerable<RequestBase> GetRequest(TContext context);
+    public abstract IEnumerable<EntitiesSelectionOperation> GetRequest(TContext context);
 
     /// <summary>
     /// (2. PREPROCESSING) Позволяет осуществить фильтрацию выборки по типам перед сортировкой или обогатить правилами
@@ -117,7 +118,7 @@ public abstract class SearcherBase<TContext>(
         context.Tokenizer = tokenizer;
         context.SplittedAndNormalizedQuery = TextPreprocessor.PreprocessText(tokenizer, normalizer, context.Query);
         context.WordsSearchSettings = GetWordsSearchSettings(context);
-        context.SearchWordsBundle = NgrammsWordsSearchHelper.CreateSearchWordsBundle(
+        context.SearchWordsBundle = NgrammsWordsSearcher.CreateSearchWordsBundle(
             context.SplittedAndNormalizedQuery,
             context.Index.WordsIdsByNgramms,
             context.WordsSearchSettings);
@@ -125,9 +126,9 @@ public abstract class SearcherBase<TContext>(
 
     public void ProcessRequests(TContext context, CancellationToken ct)
     {
-        foreach (RequestBase request in GetRequest(context))
+        foreach (EntitiesSelectionOperation request in GetRequest(context))
         {
-            request.ProcessRequest(context, ct);
+            request.Process(context, ct);
 
             if (!context.TryGetResultsByType(request.TargetType, out Dictionary<Key, EntitySearchResult>? result))
                 continue;

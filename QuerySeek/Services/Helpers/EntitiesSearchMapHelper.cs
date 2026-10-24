@@ -1,4 +1,4 @@
-﻿using QuerySeek.Models;
+using QuerySeek.Models;
 
 namespace QuerySeek.Services.Helpers;
 
@@ -27,7 +27,7 @@ public static class EntitiesSearchMapHelper
         this KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][] searchMap,
         int wordId,
         byte entityType,
-        Key[] areasKeys)
+        IEnumerable<Key> areasKeys)
     {
         KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[] wordMatches = searchMap[wordId];
 
