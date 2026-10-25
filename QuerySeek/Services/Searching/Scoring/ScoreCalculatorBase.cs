@@ -156,7 +156,7 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
 
             double nameTypeMultiplier = GetNameMultiplierInternal(type, compareResult.NameType);
 
-            byte score = (byte)Math.Ceiling(compareResult.Score * nameTypeMultiplier * nodeMultiplier);
+            byte score = (byte)Math.Round(compareResult.Score * nameTypeMultiplier * nodeMultiplier);
 
             if (isNewQueryPosition || previouslyCalculatedResult.Score < score)
                 nodeScores[queryWordPosition] = new(compareResult.NameWordPosition, compareResult.NameType, compareResult.WordsBundlePosition, score);
