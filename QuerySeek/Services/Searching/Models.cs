@@ -107,14 +107,20 @@ public record AdditionalRule(string Name, int Score = 0, double Multiplier = 1, 
 /// <param name="QueryWordAndAlternatives">Слово из запроса на 0 позиции и альтернативы</param>
 /// <param name="PositionsInRequest">Позиции данного слова в исходном запросе</param>
 /// <param name="SimilarWords">Набор схожих слов из индекса</param>
-public record QueryWordContainer(List<Word> QueryWordAndAlternatives, int[] PositionsInRequest, List<KeyValuePair<int, byte>> SimilarWords);
+public record QueryWordContainer(List<Word> QueryWordAndAlternatives, int[] PositionsInRequest, List<KeyValuePair<int, byte>> SimilarWords)
+{
+    /// <summary>
+    /// Введенное слово
+    /// </summary>
+    public Word Word => QueryWordAndAlternatives[0];
+}
 
 /// <summary>
 /// Слово из запроса интерпретированное в нграммы
 /// </summary>
 public class Word(string word, int[] ngramms, double multiplier) : IEquatable<Word>
 {
-    public readonly string QueryWord = word;
+    public readonly string WordText = word;
 
     public readonly int[] NGrammsHashes = ngramms;
 
@@ -126,7 +132,7 @@ public class Word(string word, int[] ngramms, double multiplier) : IEquatable<Wo
     {
         if (other is null) return false;
 
-        return other.QueryWord.Equals(QueryWord);
+        return other.WordText.Equals(WordText);
     }
 
     public override bool Equals(object? obj)
@@ -138,5 +144,5 @@ public class Word(string word, int[] ngramms, double multiplier) : IEquatable<Wo
     }
 
     public override int GetHashCode()
-        => QueryWord.GetHashCode();
+        => WordText.GetHashCode();
 }

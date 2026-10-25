@@ -45,7 +45,7 @@ public static class QS
         => (double)wordMatch.Score / queryWord.NGrammsHashes.Length >= similarity;
 
     public static bool IsWordSimilarityValid(this SearchContextBase context, WordMatch wordMatch, double similarity)
-        => IsWordSimilarityValid(context.SearchWordsBundle[wordMatch.WordsBundlePosition].QueryWordAndAlternatives[0], wordMatch, similarity);
+        => IsWordSimilarityValid(context.SearchWordsBundle[wordMatch.WordsBundlePosition].Word, wordMatch, similarity);
     #endregion
 
     #region Build

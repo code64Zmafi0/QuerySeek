@@ -47,7 +47,7 @@ public record WordsSearchSimilaritySettings(
 {
     public static readonly WordsSearchSimilaritySettings Default = new(
         MaxCheckingWordsCount: (word) =>
-            word.QueryWord.Length < 4 ? 1000 : 500,
+            word.WordText.Length < 4 ? 1000 : 500,
         WordsToStopProcessCalculator: (word) =>
             35,
         SimilarityTresholdCalculator: (word) => word.IsDigit

@@ -156,6 +156,7 @@ public static class NgrammsWordsSearcher
             foreach (KeyValuePair<int, WordNgrammSearchState> item in wordsSearchProcessDict
                 .Where(i => i.Value.Matches >= minMatchedNgrammsCount
                          && i.Value.Misses <= maxMisses)
+                .OrderByDescending(i => i.Value.Matches)
                 .OrderByDescending(i => wordsSearchSettings.WordScoreCalculator(word, i.Value))
                 .Take(take))
             {

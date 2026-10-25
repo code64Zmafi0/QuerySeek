@@ -1,6 +1,6 @@
 using QuerySeek.Models;
 
-namespace QuerySeek.Services.Searching.Requests;
+namespace QuerySeek.Services.Searching.Selection;
 
 /// <summary>
 /// Выполняет принудительное добавление сущностей целевого типа в выборку

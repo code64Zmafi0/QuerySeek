@@ -1,16 +1,18 @@
 using QuerySeek.Models;
 using QuerySeek.Services.Helpers;
 
-namespace QuerySeek.Services.Searching.Requests;
+namespace QuerySeek.Services.Searching.Selection;
 
 /// <summary>
 /// Выполняет поиск сущностей целевого типа по контейнерам и текстовому запросу и добавляет в выборку
 /// </summary>
 /// <param name="targetType">Целевой тип сущности</param>
 /// <param name="areasSelector">Выборка поисковых областей</param>
+/// <param name="validWordsFilter">Функция для валидации слов из запроса</param>
 public class SearchByAreas(
     byte targetType,
-    Func<IEnumerable<EntitySearchResult>> areasSelector) : EntitiesSelectionOperation(targetType)
+    Func<IEnumerable<EntitySearchResult>> areasSelector,
+    Func<QueryWordContainer, bool>? validWordsFilter = null) : EntitiesSelectionOperation(targetType)
 {
     public override void Process(SearchContextBase searchContext, CancellationToken ct)
     {
@@ -23,9 +25,11 @@ public class SearchByAreas(
         {
             QueryWordContainer wordFromQuery = queryWordsBundle[queryWordPosition];
 
+            if (validWordsFilter != null && !validWordsFilter(wordFromQuery)) continue;
+
             List<KeyValuePair<int, byte>> currentSimilarWordsBundle = wordFromQuery.SimilarWords;
 
-            WordsSearchStopManager wsm = searchContext.WordsSearchSettings.Settings.GetWordsSearchStopManager(wordFromQuery.QueryWordAndAlternatives[0]);
+            WordsSearchStopManager wsm = searchContext.WordsSearchSettings.Settings.GetWordsSearchStopManager(wordFromQuery.Word);
 
             for (int i = 0; i < currentSimilarWordsBundle.Count; i++)
             {

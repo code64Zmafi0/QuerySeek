@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using QuerySeek.Models;
 
-namespace QuerySeek.Services.Searching.Requests;
+namespace QuerySeek.Services.Searching.Selection;
 
 /// <summary>
 /// Базовое определние для запроса на выборку в индексе. Шаг SELECTING

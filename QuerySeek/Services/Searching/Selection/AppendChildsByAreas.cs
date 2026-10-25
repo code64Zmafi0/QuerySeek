@@ -1,6 +1,6 @@
 using QuerySeek.Models;
 
-namespace QuerySeek.Services.Searching.Requests;
+namespace QuerySeek.Services.Searching.Selection;
 
 /// <summary>
 /// Выполняет принудительное добавление дочерних элементов по родителю в котейнерах в выборку

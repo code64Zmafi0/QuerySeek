@@ -1,8 +1,8 @@
 using QuerySeek.Models;
 using QuerySeek.Services.Helpers;
 using QuerySeek.Services.Normalizing;
-using QuerySeek.Services.Searching.Requests;
 using QuerySeek.Services.Searching.Scoring;
+using QuerySeek.Services.Searching.Selection;
 using QuerySeek.Services.Searching.WordsSearch;
 
 namespace QuerySeek.Services.Searching;
