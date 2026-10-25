@@ -85,16 +85,6 @@ public static class QS
     /// <param name="gcCompactLOH">Сжать ли LOH и вызвать очистку мусора</param>
     public static void Inititalize(this IndexInstance index, bool useFrozenCollections = false, bool optimizeLinks = true, bool gcCompactLOH = true)
     {
-        //Подменяем пустые массивы одной ссылкой
-        foreach (EntityMeta meta in index.Entities.Values)
-        {
-            if (meta.Childs.Length == 0)
-                meta.Childs = Array.Empty<Key>();
-
-            if (meta.Links.Length == 0)
-                meta.Links = Array.Empty<Key>();
-        }
-
         if (optimizeLinks)
         {
             LinksComparer linksComparer = new();

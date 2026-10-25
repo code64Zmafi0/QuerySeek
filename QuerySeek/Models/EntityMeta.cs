@@ -8,6 +8,9 @@ namespace QuerySeek.Models;
 [MessagePackObject]
 public class EntityMeta
 {
+    private Key[] _links = Array.Empty<Key>();
+    private Key[] _childs = Array.Empty<Key>();
+
     public EntityMeta() { }
 
     public EntityMeta(Key[] links)
@@ -17,8 +20,20 @@ public class EntityMeta
     }
 
     [Key(1)]
-    public Key[] Links { get; set; } = Array.Empty<Key>();
+    public Key[] Links
+    {
+        get => _links;
+        set => _links = value.Length == 0 
+            ? Array.Empty<Key>()
+            : value;
+    }
 
     [Key(2)]
-    public Key[] Childs { get; set; } = Array.Empty<Key>();
+    public Key[] Childs
+    {
+        get => _childs;
+        set => _childs = value.Length == 0
+            ? Array.Empty<Key>()
+            : value;
+    }
 }
