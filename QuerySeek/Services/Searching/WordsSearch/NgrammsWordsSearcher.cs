@@ -29,7 +29,6 @@ public static class NgrammsWordsSearcher
     /// <summary>
     /// Преобразовние строки в массив нграммов (их хеш кодов)
     /// </summary>
-    /// <param name="word"></param>
     /// <returns>Массив хешей нграммов</returns>
     public static int[] GetNgramms(string word)
     {

@@ -21,8 +21,6 @@ public class TypeSearchResult(byte type, EntitySearchResult[] result)
 /// Prescore - Суммарная дистанция сопадениий из имен;
 /// Score - Конечный скор для сортировки;
 /// </remarks>
-/// <param name="key"></param>
-/// <param name="meta"></param>
 public class EntitySearchResult(Key key, EntityMeta meta)
 {
     public readonly Key Key = key;
@@ -114,9 +112,6 @@ public record QueryWordContainer(List<Word> QueryWordAndAlternatives, int[] Posi
 /// <summary>
 /// Слово из запроса интерпретированное в нграммы
 /// </summary>
-/// <param name="word"></param>
-/// <param name="ngramms"></param>
-/// <param name="multiplier"></param>
 public class Word(string word, int[] ngramms, double multiplier) : IEquatable<Word>
 {
     public readonly string QueryWord = word;

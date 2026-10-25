@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
 using QuerySeek.Models;
 using QuerySeek.Services.Normalizing;
 using QuerySeek.Services.Searching.WordsSearch;
@@ -26,12 +25,12 @@ public class SearchContextBase(
     public IndexInstance Index { get; } = index;
 
     /// <summary>
-    /// Входящий текстовый запрос
+    /// Используемый токенайзер
     /// </summary>
     public ITokenizer Tokenizer { get; internal set; } = DefaultTokenizer.Instance;
 
     /// <summary>
-    /// Входящий текстовый запрос
+    /// Используемый нормалайзер
     /// </summary>
     public INormalizer Normalizer { get; internal set; } = DefaultNormalizer.Instance;
 
@@ -55,9 +54,6 @@ public class SearchContextBase(
     /// </summary>
     public Dictionary<byte, Dictionary<Key, EntitySearchResult>> SearchResult { get; } = [];
 
-    #region Search Tools
-    public int UniqWordsFullQueryScore => SearchWordsBundle.Sum(i => i.QueryWordAndAlternatives[0].NGrammsHashes.Length);
-
     /// <summary>
     /// Пробует получить найденную сущность в контексте
     /// </summary>
@@ -74,11 +70,10 @@ public class SearchContextBase(
         => SearchResult.TryGetValue(type, out result);
 
     /// <summary>
-    /// Пробует получить коллекцию результатов определенного типа
+    /// Отдает коллекцию результатов запрошенного типа
     /// </summary>
     public ICollection<EntitySearchResult> GetResults(byte type)
         => TryGetResultsByType(type, out Dictionary<Key, EntitySearchResult>? result)
             ? result.Values
             : Array.Empty<EntitySearchResult>();
-    #endregion
 }

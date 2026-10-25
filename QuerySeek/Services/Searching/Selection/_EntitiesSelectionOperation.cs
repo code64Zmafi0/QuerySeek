@@ -14,8 +14,8 @@ public abstract class EntitiesSelectionOperation(byte targetType)
     /// <summary>
     /// Выполняет процесс поиска сущностей в индексе и заполняет результат в SearchContext
     /// </summary>
-    /// <param name="searchContext"></param>
-    /// <param name="ct"></param>
+    /// <param name="searchContext">Контекст поиска</param>
+    /// <param name="ct">Токен отмены</param>
     public abstract void Process(SearchContextBase searchContext, CancellationToken ct);
 
     /// <summary>

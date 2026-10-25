@@ -3,7 +3,7 @@ namespace QuerySeek.Services.Helpers;
 /// <summary>
 /// Ограничитель выборки по схожим словам
 /// </summary>
-/// <param name="quantity"></param>
+/// <param name="quantity">Количество совпадений для остановки просчета похожих</param>
 public struct WordsSearchStopManager(int quantity)
 {
     private int MatchesCount;

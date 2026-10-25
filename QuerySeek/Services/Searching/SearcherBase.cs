@@ -86,7 +86,7 @@ public abstract class SearcherBase<TContext>(
     /// </summary>
     /// <param name="context">Поисковой контекст</param>
     /// <param name="take">Количество элементов каждого типа</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Токен отмены</param>
     /// <returns>Блоки отранжированных результатов по типам</returns>
     public TypeSearchResult[] SearchTypes(
         TContext context,
