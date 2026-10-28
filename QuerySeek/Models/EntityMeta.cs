@@ -1,5 +1,4 @@
 using MessagePack;
-using QuerySeek.Serialization;
 
 namespace QuerySeek.Models;
 
@@ -18,10 +17,8 @@ public class EntityMeta
     }
 
     [Key(1)]
-    [OptimizeArrayEmpty(typeof(Key[]))]
     public Key[] Links { get; set; } = Array.Empty<Key>();
 
     [Key(2)]
-    [OptimizeArrayEmpty(typeof(Key[]))]
     public Key[] Childs { get; set; } = Array.Empty<Key>();
 }
