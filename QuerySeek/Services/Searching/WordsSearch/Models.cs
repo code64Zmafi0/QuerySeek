@@ -49,7 +49,7 @@ public record WordsSearchSimilaritySettings(
         MaxCheckingWordsCount: (word) =>
             word.WordText.Length < 4 ? 1000 : 500,
         WordsToStopProcessCalculator: (word) =>
-            35,
+            45,
         SimilarityTresholdCalculator: (word) => word.IsDigit
             ? NgrammsWordsSearcher.CalculateDigitSimilarityTreshold(word)
             : NgrammsWordsSearcher.CalculateWordSimilarityTreshold(word, 0.4),
