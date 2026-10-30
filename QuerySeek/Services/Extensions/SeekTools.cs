@@ -91,15 +91,15 @@ public static class QS
 
             foreach (IGrouping<byte, KeyValuePair<Key, EntityMeta>> item in index.Entities.GroupBy(i => i.Key.Type))
             {
-                Dictionary<Key[], Key[]> uniqs = new(linksComparer);
+                HashSet<Key[]> uniqs = new(linksComparer);
                 foreach (EntityMeta meta in item.Select(i => i.Value))
                 {
                     if (meta.Links.Length == 0) continue;
 
-                    ref var uniqLinks = ref CollectionsMarshal.GetValueRefOrAddDefault(uniqs, meta.Links, out var exists);
-
-                    if (!exists) uniqLinks = meta.Links;
-                    else meta.Links = uniqLinks!;
+                    if (uniqs.TryGetValue(meta.Links, out Key[]? actualValue))
+                        meta.Links = actualValue;
+                    else
+                        uniqs.Add(meta.Links);
                 }
             }
         }

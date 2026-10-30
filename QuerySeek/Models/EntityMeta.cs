@@ -16,9 +16,15 @@ public class EntityMeta
         Childs = Array.Empty<Key>();
     }
 
+    /// <summary>
+    /// Колликция привязанных сущностей
+    /// </summary>
     [Key(1)]
     public Key[] Links { get; set; } = Array.Empty<Key>();
 
+    /// <summary>
+    /// Коллекция дочерних сущностей
+    /// </summary>
     [Key(2)]
     public Key[] Childs { get; set; } = Array.Empty<Key>();
 }

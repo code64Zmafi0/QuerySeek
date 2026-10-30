@@ -2,7 +2,12 @@ using QuerySeek.Models;
 
 namespace QuerySeek.Services.Searching;
 
-public class TypeSearchResult(byte type, EntitySearchResult[] result)
+/// <summary>
+/// Бандл результатов определенного типа
+/// </summary>
+/// <param name="type">Тип сущностей в выборке</param>
+/// <param name="result">Найденные сущности</param>
+public class SearchResults(byte type, EntitySearchResult[] result)
 {
     public readonly byte Type = type;
 
@@ -16,10 +21,10 @@ public class TypeSearchResult(byte type, EntitySearchResult[] result)
 /// Содержит:
 /// Key - ключ сущности; 
 /// Meta - информацию о линках и потомков;
-/// WordsMatches - совпавшие слова из имен сущности;
+/// WordsMatches - совпавшие слова с запросом из сущности;
 /// Rules - Дополнительные правила;
-/// Prescore - Суммарная дистанция сопадениий из имен;
-/// Score - Конечный скор для сортировки;
+/// Score - Скор сортировки;
+/// ScoreWithRules - Вычисляемое свойство c просчетом правил
 /// </remarks>
 public class EntitySearchResult(Key key, EntityMeta meta)
 {
@@ -45,8 +50,14 @@ public class EntitySearchResult(Key key, EntityMeta meta)
     public void AddRule(AdditionalRule rule)
         => Rules.Add(rule);
 
+    /// <summary>
+    /// Скор набранный калькулятором
+    /// </summary>
     public int Score;
 
+    /// <summary>
+    /// Скор набранный калькулятором с учетом правил
+    /// </summary>
     public int ScoreWithRules
     {
         get

@@ -88,7 +88,7 @@ public abstract class SearcherBase<TContext>(
     /// <param name="take">Количество элементов каждого типа</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns>Блоки отранжированных результатов по типам</returns>
-    public TypeSearchResult[] SearchTypes(
+    public SearchResults[] SearchTypes(
         TContext context,
         int take,
         CancellationToken? cancellationToken = null)
@@ -98,7 +98,7 @@ public abstract class SearcherBase<TContext>(
         PrepareContext(context);
         ProcessRequests(context, ct);
 
-        TypeSearchResult[] result = [.. context.SearchResult.Select(typeSearchResult =>
+        SearchResults[] result = [.. context.SearchResult.Select(typeSearchResult =>
         {
             byte currentType = typeSearchResult.Key;
 
@@ -106,7 +106,7 @@ public abstract class SearcherBase<TContext>(
 
             EntitySearchResult[] typeResult = [.. Ranging(context, preprocessed).Take(take)];
 
-            return new TypeSearchResult(currentType, typeResult);
+            return new SearchResults(currentType, typeResult);
         }).Where(i => i.Result.Length != 0)];
 
         return result;
