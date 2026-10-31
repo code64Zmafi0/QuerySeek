@@ -37,7 +37,7 @@ public class IndexBuilder(INormalizer normalizer, ITokenizer nameTokenizer)
 
         IEnumerable<Name> names = indexedEntity.GetNames();
 
-        HashSet<int> uniqWords = [];
+        List<int> uniqWords = [];
 
         foreach ((string[] tokenizedName, byte nameType) in GetNamesToBuild(names, normalizer, nameTokenizer))
         {
