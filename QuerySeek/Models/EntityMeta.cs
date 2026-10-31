@@ -27,4 +27,10 @@ public class EntityMeta
     /// </summary>
     [Key(2)]
     public Key[] Childs { get; set; } = Array.Empty<Key>();
+
+    /// <summary>
+    /// Количество уникальных слов
+    /// </summary>
+    [Key(3)]
+    public int UniqWordsCount { get; internal set; } = 0;
 }

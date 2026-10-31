@@ -37,19 +37,22 @@ public class IndexBuilder(INormalizer normalizer, ITokenizer nameTokenizer)
 
         IEnumerable<Name> names = indexedEntity.GetNames();
 
+        HashSet<int> uniqWords = [];
+
         foreach ((string[] tokenizedName, byte nameType) in GetNamesToBuild(names, normalizer, nameTokenizer))
         {
             for (byte wordNamePosition = 0; wordNamePosition < tokenizedName.Length && wordNamePosition < byte.MaxValue; wordNamePosition++)
             {
                 string word = tokenizedName[wordNamePosition];
                 int wordId = WordsIndexBuilder.GetWordId(word);
+                uniqWords.Add(wordId);
 
                 WordMatchMeta wordMatchMeta = new(key.Id, wordNamePosition, nameType);
                 EntitiesByWordsSearchMapBuilder.AddMatch(wordId, key.Type, containerKey, wordMatchMeta);
             }
         }
 
-        Entities.Add(key, new([.. linksKeys]));
+        Entities.Add(key, new([.. linksKeys]) { UniqWordsCount = uniqWords.Count });
     }
 
     private IEnumerable<(string[] TokenizedName, byte NameType)> GetNamesToBuild(
