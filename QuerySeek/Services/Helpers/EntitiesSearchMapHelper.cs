@@ -9,13 +9,10 @@ public static class EntitiesSearchMapHelper
         int wordId,
         byte entityType)
     {
-        KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[] wordMatches = searchMap[wordId];
+        IReadOnlyDictionary<Key, WordMatchMeta[]>? matchesByContainers = GetMatchesByAresDict(searchMap, wordId, entityType);
+        if (matchesByContainers == null) return null;
 
-        //Типы в бандле упорядочены. Используем бинарный поиск.
-        int index = BinarySearch(wordMatches, entityType);
-        if (index == -1) return null;
-
-        if (wordMatches[index].Value.TryGetValue(Key.Default, out WordMatchMeta[]? matches))
+        if (matchesByContainers.TryGetValue(Key.Default, out WordMatchMeta[]? matches))
         {
             return matches;
         }
@@ -29,21 +26,30 @@ public static class EntitiesSearchMapHelper
         byte entityType,
         IEnumerable<Key> areasKeys)
     {
-        KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[] wordMatches = searchMap[wordId];
-
-        //Типы в бандле упорядочены. Используем бинарный поиск.
-        int index = BinarySearch(wordMatches, entityType);
-        if (index == -1) yield break;
-
-        IReadOnlyDictionary<Key, WordMatchMeta[]> matchesBundleByContainers = wordMatches[index].Value;
+        IReadOnlyDictionary<Key, WordMatchMeta[]>? matchesByContainers = GetMatchesByAresDict(searchMap, wordId, entityType);
+        if (matchesByContainers == null) yield break;
 
         foreach (Key containerKey in areasKeys)
         {
-            if (!matchesBundleByContainers.TryGetValue(containerKey, out WordMatchMeta[]? entityMatches))
+            if (!matchesByContainers.TryGetValue(containerKey, out WordMatchMeta[]? entityMatches))
                 continue;
 
             yield return entityMatches;
         }
+    }
+
+    public static IReadOnlyDictionary<Key, WordMatchMeta[]>? GetMatchesByAresDict(
+        this KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][] searchMap,
+        int wordId,
+        byte entityType)
+    {
+        KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[] wordMatches = searchMap[wordId];
+
+        //Типы в бандле упорядочены. Используем бинарный поиск.
+        int index = BinarySearch(wordMatches, entityType);
+        if (index == -1) return null;
+
+        return wordMatches[index].Value;
     }
 
     /// <summary>
