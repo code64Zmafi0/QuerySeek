@@ -42,7 +42,7 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
         => false;
 
     /// <summary>
-    /// (EVENT) Событие просчета совпадений для сущности. После (SCORING)
+    /// (EVENT) Событие просчета совпадений и основного скора для сущности.
     /// </summary>
     /// <param name="context">Поисковой контекст</param>
     /// <param name="entity">Обработанная сущность</param>

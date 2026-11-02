@@ -4,7 +4,7 @@ using QuerySeek.Models;
 namespace QuerySeek.Services.Searching.Selection;
 
 /// <summary>
-/// Базовое определние для запроса на выборку в индексе. Шаг SELECTING
+/// Базовое определние для запроса на выборку в индексе.
 /// </summary>
 /// <param name="targetType">Текущий тип отбираемых сущностей</param>
 public abstract class EntitiesSelectionOperation(byte targetType)
@@ -12,7 +12,8 @@ public abstract class EntitiesSelectionOperation(byte targetType)
     public byte TargetType { get; } = targetType;
 
     /// <summary>
-    /// Выполняет процесс поиска сущностей в индексе и заполняет результат в SearchContext
+    /// Выполняет процесс поиска сущностей в индексе и заполняет результат в SearchContext.
+    /// После выполенения вызывается Scoring для сущностей текущего типа
     /// </summary>
     /// <param name="searchContext">Контекст поиска</param>
     /// <param name="ct">Токен отмены</param>

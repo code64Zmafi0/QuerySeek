@@ -3,18 +3,6 @@ using QuerySeek.Models;
 namespace QuerySeek.Services.Searching;
 
 /// <summary>
-/// Бандл результатов определенного типа
-/// </summary>
-/// <param name="type">Тип сущностей в выборке</param>
-/// <param name="result">Найденные сущности</param>
-public class SearchResults(byte type, EntitySearchResult[] result)
-{
-    public readonly byte Type = type;
-
-    public readonly EntitySearchResult[] Result = result;
-}
-
-/// <summary>
 /// Описывает найденную сущность
 /// </summary>
 /// <remarks>

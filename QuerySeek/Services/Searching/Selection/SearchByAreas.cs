@@ -8,12 +8,12 @@ namespace QuerySeek.Services.Searching.Selection;
 /// </summary>
 /// <param name="targetType">Целевой тип сущности</param>
 /// <param name="areasSelector">Выборка поисковых областей</param>
-/// <param name="needSearchByMatchedTokens">Искать ли уже по совпавшим словам в родителе</param>
+/// <param name="searchByMatchedTokens">Искать ли по уже совпавшим словам в родителе</param>
 /// <param name="validWordsFilter">Функция для валидации слов из запроса</param>
 public class SearchByAreas(
     byte targetType,
     Func<IEnumerable<EntitySearchResult>> areasSelector,
-    bool needSearchByMatchedTokens = true,
+    bool searchByMatchedTokens = true,
     Func<QueryWordContainer, bool>? validWordsFilter = null) : EntitiesSelectionOperation(targetType)
 {
     public override void Process(SearchContextBase searchContext, CancellationToken ct)
@@ -42,7 +42,7 @@ public class SearchByAreas(
 
                 int wordId = indexWordInfo.Key;
 
-                IEnumerable<Key> areasKeys = needSearchByMatchedTokens
+                IEnumerable<Key> areasKeys = searchByMatchedTokens
                     ? areas.Select(a => a.Key)
                     : areas
                         .Where(a => !a.WordsMatches.Exists(wm => wm.WordsBundlePosition == queryWordPosition && wordFromQuery.PositionsInRequest.Length < 2))

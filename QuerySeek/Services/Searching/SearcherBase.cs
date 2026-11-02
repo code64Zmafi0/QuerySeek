@@ -10,7 +10,7 @@ namespace QuerySeek.Services.Searching;
 /// <summary>
 /// Процессор поиска
 /// </summary>
-/// <typeparam name="TContext">Тип конеткса поиска</typeparam>
+/// <typeparam name="TContext">Тип контекста поиска</typeparam>
 /// <typeparam name="TResult">Тип возвращаемого результата</typeparam>
 /// <param name="normalizer">Нормалайзер запроса</param>
 /// <param name="tokenizer">Токенайзер запроса</param>
@@ -38,10 +38,10 @@ public abstract class SearcherBase<TContext, TResult>(
     public abstract IEnumerable<EntitiesSelectionOperation> GetRequest(TContext context);
 
     /// <summary>
-    /// (3. PROCESSING) Определяет формирование результата поиска
+    /// (3. RESULT BUILDING) Определяет формирование результата поиска
     /// </summary>
     /// <param name="context">Поисковой контекст</param>
-    public abstract TResult SearchResultProcessing(TContext context);
+    public abstract TResult BuildResult(TContext context);
 
     /// <summary>
     /// Событие после подготовки контекста
@@ -73,7 +73,7 @@ public abstract class SearcherBase<TContext, TResult>(
         ProcessRequests(context, ct);
         OnRequestsProcessed(context);
 
-        return SearchResultProcessing(context);
+        return BuildResult(context);
     }
 
     public void PrepareContext(TContext context)
