@@ -54,7 +54,7 @@ public record WordsSearchSimilaritySettings(
             ? NgrammsWordsSearcher.CalculateDigitSimilarityTreshold(word)
             : NgrammsWordsSearcher.CalculateWordSimilarityTreshold(word, 0.4),
         WordScoreCalculator: (word, searchState) =>
-            (byte)(searchState.Matches - Math.Round((searchState.Misses) * 0.6)));
+            (byte)(searchState.Matches - Math.Round(searchState.Misses * 0.4)));
 
     public WordsSearchStopManager GetWordsSearchStopManager(Word word) => new(WordsToStopProcessCalculator(word));
 }
