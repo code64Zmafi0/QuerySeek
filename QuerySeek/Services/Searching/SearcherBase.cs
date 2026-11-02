@@ -11,105 +11,69 @@ namespace QuerySeek.Services.Searching;
 /// Процессор поиска
 /// </summary>
 /// <typeparam name="TContext">Тип конеткса поиска</typeparam>
+/// <typeparam name="TResult">Тип возвращаемого результата</typeparam>
 /// <param name="normalizer">Нормалайзер запроса</param>
 /// <param name="tokenizer">Токенайзер запроса</param>
 /// <param name="scoreCalculator">Калькулятор очков для ранжирования</param>
-public abstract class SearcherBase<TContext>(
+public abstract class SearcherBase<TContext, TResult>(
     INormalizer normalizer,
     ITokenizer tokenizer,
-    IScoreCalculator<TContext> scoreCalculator) where TContext : SearchContextBase
+    IScoreCalculator<TContext> scoreCalculator) 
+    where TContext : SearchContextBase
+    where TResult : class
 {
     #region Overrides
     /// <summary>
-    /// (0. WORDS SEARCH) Определение настроек поиска схожих слов для слов из запроса
+    /// (1. WORDS SEARCH) Определение настроек поиска схожих слов для слов из запроса
     /// </summary>
     /// <param name="context">Поисковой контекст</param>
     public virtual WordsSearchSettings GetWordsSearchSettings(TContext context)
         => WordsSearchSettings.Default;
 
     /// <summary>
-    /// (1. SELECTION) Определяет запрос на поиск сущностей в индексе
+    /// (2. SELECTION) Определяет запрос на поиск/выборку сущностей в индексе
     /// </summary>
     /// <param name="context">Поисковой контекст</param>
     /// <returns>Перечисление запросов вниз по дереву зависимостей</returns>
     public abstract IEnumerable<EntitiesSelectionOperation> GetRequest(TContext context);
 
     /// <summary>
-    /// (2. PREPROCESSING) Позволяет осуществить фильтрацию выборки по типам перед сортировкой или обогатить правилами
+    /// (3. PROCESSING) Определяет формирование результата поиска
     /// </summary>
     /// <param name="context">Поисковой контекст</param>
-    /// <param name="type">Текущий тип сущностей</param>
-    /// <param name="result">Выборка сущностей данного типа</param>
-    public virtual IEnumerable<EntitySearchResult> TypeResultPreprocessing(TContext context, byte type, ICollection<EntitySearchResult> result)
-        => result;
+    public abstract TResult SearchResultProcessing(TContext context);
 
     /// <summary>
-    /// (3. RANGING) Определяет сортировку
+    /// Событие после подготовки контекста
     /// </summary>
     /// <param name="context">Поисковой контекст</param>
-    /// <param name="result">Выборка сущностей для сортировки</param>
-    public virtual IEnumerable<EntitySearchResult> Ranging(TContext context, IEnumerable<EntitySearchResult> result)
-        => result.OrderByDescending(i => i.ScoreWithRules);
+    public virtual void OnContextPreapred(TContext context) { }
+
+    /// <summary>
+    /// Событие после выполенния запроса
+    /// </summary>
+    /// <param name="context">Поисковой контекст</param>
+    public virtual void OnRequestsProcessed(TContext context) { }
     #endregion
 
     /// <summary>
     /// Поиск топа всех типов
     /// </summary>
     /// <param name="context">Поисковой контекст</param>
-    /// <param name="take">Количество элементов</param>
     /// <param name="cancellationToken"></param>
     /// <returns>Отранжированный результат из всех типов</returns>
-    public EntitySearchResult[] Search(
+    public TResult Search(
         TContext context,
-        int take,
         CancellationToken? cancellationToken = null)
     {
         CancellationToken ct = cancellationToken ?? CancellationToken.None;
 
         PrepareContext(context);
+        OnContextPreapred(context);
         ProcessRequests(context, ct);
+        OnRequestsProcessed(context);
 
-        return [.. Ranging(context, GetAllResults()).Take(take)];
-
-        IEnumerable<EntitySearchResult> GetAllResults()
-        {
-            foreach (KeyValuePair<byte, Dictionary<Key, EntitySearchResult>> typeResults in context.SearchResult)
-            {
-                foreach (EntitySearchResult item in TypeResultPreprocessing(context, typeResults.Key, typeResults.Value.Values))
-                    yield return item;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Поиск топов по типам
-    /// </summary>
-    /// <param name="context">Поисковой контекст</param>
-    /// <param name="take">Количество элементов каждого типа</param>
-    /// <param name="cancellationToken">Токен отмены</param>
-    /// <returns>Блоки отранжированных результатов по типам</returns>
-    public SearchResults[] SearchTypes(
-        TContext context,
-        int take,
-        CancellationToken? cancellationToken = null)
-    {
-        CancellationToken ct = cancellationToken ?? CancellationToken.None;
-
-        PrepareContext(context);
-        ProcessRequests(context, ct);
-
-        SearchResults[] result = [.. context.SearchResult.Select(typeSearchResult =>
-        {
-            byte currentType = typeSearchResult.Key;
-
-            IEnumerable<EntitySearchResult> preprocessed = TypeResultPreprocessing(context, currentType, typeSearchResult.Value.Values);
-
-            EntitySearchResult[] typeResult = [.. Ranging(context, preprocessed).Take(take)];
-
-            return new SearchResults(currentType, typeResult);
-        }).Where(i => i.Result.Length != 0)];
-
-        return result;
+        return SearchResultProcessing(context);
     }
 
     public void PrepareContext(TContext context)
