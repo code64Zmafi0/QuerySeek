@@ -1,11 +1,7 @@
 using System.Collections.Frozen;
-using System.Runtime;
-using System.Runtime.InteropServices;
-using MessagePack;
 using QuerySeek.Interfaces;
 using QuerySeek.Models;
 using QuerySeek.Services.Building;
-using QuerySeek.Services.Helpers;
 using QuerySeek.Services.Normalizing;
 using QuerySeek.Services.Searching;
 
@@ -72,96 +68,29 @@ public static class QS
         return builder.Build();
     }
 
-    #endregion
-
-    #region Serialization
-
     /// <summary>
-    /// Оптимизация и сжатие индекса после создания и десериализации
+    /// Привести коллекции к Frozen
     /// </summary>
-    /// <param name="index">Инстанс индекса</param>
-    /// <param name="useFrozenCollections">Использовать ли Frozen коллекции внутри индекса. Не рекомендуется.</param>
-    /// <param name="optimizeLinks">Оптимизировать ли массивы линков, продолжительная операция</param>
-    /// <param name="gcCompactLOH">Сжать ли LOH и вызвать очистку мусора</param>
-    public static void Inititalize(this IndexInstance index, bool useFrozenCollections = false, bool optimizeLinks = true, bool gcCompactLOH = true)
+    public static void UseFrozenCollections(this IndexInstance index)
     {
-        if (optimizeLinks)
+        //По замерам получилось только большее потребление памяти 20% и просадка производительности в 2 раза ¯\_(ツ)_/¯
+        //Возможно словари внутри поисковой мапы слишком маленькие и выбранная стратегия медленне, но производительность падает и на коллекциях сущностей и слов
+
+        //Оптимизация словарей
+        index.Entities = index.Entities.ToFrozenDictionary();
+        index.WordsIdsByNgramms = index.WordsIdsByNgramms.ToFrozenDictionary();
+        //Оптимизация поисковой мапы
+        for (int i = 0; i < index.EntitiesSearchMap.Length; i++)
         {
-            LinksComparer linksComparer = new();
+            KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[] matchesByTypes = index.EntitiesSearchMap[i];
 
-            foreach (IGrouping<byte, KeyValuePair<Key, EntityMeta>> item in index.Entities.GroupBy(i => i.Key.Type))
+            for (int j = 0; j < matchesByTypes.Length; j++)
             {
-                HashSet<Key[]> uniqs = new(linksComparer);
-                foreach (EntityMeta meta in item.Select(i => i.Value))
-                {
-                    if (meta.Links.Length == 0) continue;
-
-                    if (uniqs.TryGetValue(meta.Links, out Key[]? actualValue))
-                        meta.Links = actualValue;
-                    else
-                        uniqs.Add(meta.Links);
-                }
+                KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>> current = matchesByTypes[j];
+                matchesByTypes[j] = new(current.Key, current.Value.ToFrozenDictionary());
             }
         }
-
-        if (useFrozenCollections)
-        {
-            //По замерам получилось только большее потребление памяти 20% и просадка производительности в 2 раза ¯\_(ツ)_/¯
-            //Возможно словари внутри поисковой мапы слишком маленькие и выбранная стратегия медленне, но производительность падает и на коллекциях сущностей и слов
-
-            //Оптимизация словарей
-            index.Entities = index.Entities.ToFrozenDictionary();
-            index.WordsIdsByNgramms = index.WordsIdsByNgramms.ToFrozenDictionary();
-            //Оптимизация поисковой мапы
-            for (int i = 0; i < index.EntitiesSearchMap.Length; i++)
-            {
-                KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[] matchesByTypes = index.EntitiesSearchMap[i];
-
-                for (int j = 0; j < matchesByTypes.Length; j++)
-                {
-                    KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>> current = matchesByTypes[j];
-                    matchesByTypes[j] = new(current.Key, current.Value.ToFrozenDictionary());
-                }
-            }
-        }
-
-        if (gcCompactLOH)
-        {
-            GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-            GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive);
-        }
     }
 
-    public static void WriteIndex(IndexInstance index, string filePath)
-        => WriteObject(filePath, index);
-
-    public static IndexInstance ReadIndex(string filePath, bool gcCompactLOH = true)
-    {
-        IndexInstance index = ReadAndDeserializeObject<IndexInstance>(filePath);
-        index.Inititalize(false, gcCompactLOH: gcCompactLOH);
-
-        return index;
-    }
-
-    public static T ReadAndDeserializeObject<T>(string filePath) where T : class
-    {
-        using Stream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        return MessagePackSerializer.Deserialize<T>(stream);
-    }
-
-    public static void WriteObject(string filePath, object obj)
-    {
-        string? directoryPath = Path.GetDirectoryName(filePath);
-
-        if (directoryPath is null)
-            return;
-
-        if (!Directory.Exists(directoryPath))
-            Directory.CreateDirectory(directoryPath);
-
-        using Stream stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
-
-        MessagePackSerializer.Serialize(stream, obj);
-    }
     #endregion
 }

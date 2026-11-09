@@ -57,11 +57,10 @@ public abstract class SearcherBase<TContext, TResult>(
     #endregion
 
     /// <summary>
-    /// Поиск топа всех типов
+    /// Выполнение поиска
     /// </summary>
     /// <param name="context">Поисковой контекст</param>
     /// <param name="cancellationToken"></param>
-    /// <returns>Отранжированный результат из всех типов</returns>
     public TResult Search(
         TContext context,
         CancellationToken? cancellationToken = null)
