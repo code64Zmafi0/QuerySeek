@@ -7,10 +7,12 @@ namespace QuerySeek.Services.Searching.Selection;
 /// Выполняет поиск сущностей целевого типа по текстовому запросу и добавляет в выборку
 /// </summary>
 /// <param name="targetType">Целевой тип сущности</param>
-/// <param name="validWordsFilter">Функция для валидации слов из запроса</param>
+/// <param name="validateWord">Функция для валидации слов из запроса</param>
+/// <param name="similarsCountToStopProcess">Количество совпавших схожих слов для остановки поиска определнной сущности по текущему слову из запроса</param>
 public class Search(
     byte targetType,
-    Func<QueryWordContainer, bool>? validWordsFilter = null)
+    Func<QueryWordContainer, bool>? validateWord = null,
+    Func<QueryWordContainer, int>? similarsCountToStopProcess = null)
     : EntitiesSelectionOperation(targetType)
 {
     public override void Process(SearchContextBase searchContext, CancellationToken ct)
@@ -22,11 +24,13 @@ public class Search(
         {
             QueryWordContainer wordFromQuery = queryWordsBundle[queryWordPosition];
 
-            if (validWordsFilter != null && !validWordsFilter(wordFromQuery)) continue;
+            if (validateWord != null && !validateWord(wordFromQuery)) continue;
 
             List<KeyValuePair<int, byte>> currentSimilarWordsBundle = wordFromQuery.SimilarWords;
 
-            WordsSearchStopManager wsm = searchContext.WordsSearchSettings.Settings.GetWordsSearchStopManager(wordFromQuery.Word);
+            ByWordSearchStopManager wsm = similarsCountToStopProcess is null
+                ? new()
+                : new(similarsCountToStopProcess(wordFromQuery));
 
             for (int wbIndex = 0; wbIndex < currentSimilarWordsBundle.Count; wbIndex++)
             {

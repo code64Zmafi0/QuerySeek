@@ -25,16 +25,6 @@ public class SearchContextBase(
     public IndexInstance Index { get; } = index;
 
     /// <summary>
-    /// Используемый токенайзер
-    /// </summary>
-    public ITokenizer Tokenizer { get; internal set; } = DefaultTokenizer.Instance;
-
-    /// <summary>
-    /// Используемый нормалайзер
-    /// </summary>
-    public INormalizer Normalizer { get; internal set; } = DefaultNormalizer.Instance;
-
-    /// <summary>
     /// Нормализованный и разбитый по словам запрос
     /// </summary>
     public string[] SplittedAndNormalizedQuery { get; internal set; } = [];
@@ -43,11 +33,6 @@ public class SearchContextBase(
     /// Бандл слов для поиска
     /// </summary>
     public QueryWordContainer[] SearchWordsBundle { get; internal set; } = [];
-
-    /// <summary>
-    /// Настройки поиска слов
-    /// </summary>
-    public WordsSearchSettings WordsSearchSettings { get; internal set; } = WordsSearchSettings.Default;
 
     /// <summary>
     /// Бандл результатов поиска сущностей в индексе

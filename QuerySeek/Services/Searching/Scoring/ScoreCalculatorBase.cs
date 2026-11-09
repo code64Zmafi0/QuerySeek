@@ -42,12 +42,12 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
         => false;
 
     /// <summary>
-    /// (EVENT) Событие просчета совпадений и основного скора для сущности.
+    /// (SCORING SETTINGS) Использование дополнительных правил
     /// </summary>
     /// <param name="context">Поисковой контекст</param>
     /// <param name="entity">Обработанная сущность</param>
     /// <param name="queryWordsMatches">Совпадения для слов из запроса</param>
-    public virtual void OnEntityMatched(TContext context, EntitySearchResult entity, in Span<WordMatch> queryWordsMatches) { }
+    public virtual void UseRules(TContext context, EntitySearchResult entity, in Span<WordMatch> queryWordsMatches) { }
     #endregion
 
     /// <summary>
@@ -76,7 +76,7 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
 
         entitySearchResult.Score = resultScore;
 
-        OnEntityMatched(context, entitySearchResult, in queryWordsMatches);
+        UseRules(context, entitySearchResult, in queryWordsMatches);
     }
 
     /// <summary>

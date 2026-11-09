@@ -22,6 +22,9 @@ public abstract class SearcherBase<TContext, TResult>(
     where TContext : SearchContextBase
     where TResult : class
 {
+    public INormalizer Normalizer => normalizer;
+    public ITokenizer Tokenizer => tokenizer;
+
     #region Overrides
     /// <summary>
     /// (1. WORDS SEARCH) Определение настроек поиска схожих слов для слов из запроса
@@ -44,16 +47,10 @@ public abstract class SearcherBase<TContext, TResult>(
     public abstract TResult BuildResult(TContext context);
 
     /// <summary>
-    /// Событие после подготовки контекста
+    /// Дополнительная пользовательская подготовка контекста
     /// </summary>
     /// <param name="context">Поисковой контекст</param>
-    public virtual void OnContextPreapred(TContext context) { }
-
-    /// <summary>
-    /// Событие после выполенния запроса
-    /// </summary>
-    /// <param name="context">Поисковой контекст</param>
-    public virtual void OnRequestsProcessed(TContext context) { }
+    public virtual void PrepareContext(TContext context) { }
     #endregion
 
     /// <summary>
@@ -67,27 +64,24 @@ public abstract class SearcherBase<TContext, TResult>(
     {
         CancellationToken ct = cancellationToken ?? CancellationToken.None;
 
+        PrepareContextInternal(context);
         PrepareContext(context);
-        OnContextPreapred(context);
         ProcessRequests(context, ct);
-        OnRequestsProcessed(context);
 
         return BuildResult(context);
     }
 
-    public void PrepareContext(TContext context)
+    private void PrepareContextInternal(TContext context)
     {
-        context.Normalizer = normalizer;
-        context.Tokenizer = tokenizer;
         context.SplittedAndNormalizedQuery = TextPreprocessor.PreprocessText(tokenizer, normalizer, context.Query);
-        context.WordsSearchSettings = GetWordsSearchSettings(context);
+        WordsSearchSettings wordsSearchSettings = GetWordsSearchSettings(context);
         context.SearchWordsBundle = NgrammsWordsSearcher.CreateSearchWordsBundle(
             context.SplittedAndNormalizedQuery,
             context.Index.WordsIdsByNgramms,
-            context.WordsSearchSettings);
+            wordsSearchSettings);
     }
 
-    public void ProcessRequests(TContext context, CancellationToken ct)
+    private void ProcessRequests(TContext context, CancellationToken ct)
     {
         foreach (EntitiesSelectionOperation request in GetRequest(context))
         {

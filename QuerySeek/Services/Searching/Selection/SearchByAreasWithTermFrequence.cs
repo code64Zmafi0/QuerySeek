@@ -4,17 +4,19 @@ using QuerySeek.Services.Helpers;
 namespace QuerySeek.Services.Searching.Selection;
 
 /// <summary>
-/// Выполняет поиск сущностей целевого типа по контейнерам и текстовому запросу и добавляет в выборку
+/// Выполняет поиск сущностей целевого типа по контейнерам и текстовому запросу и добавляет в выборку приоритизируя более редкие слова
 /// </summary>
 /// <param name="targetType">Целевой тип сущности</param>
 /// <param name="areasSelector">Выборка поисковых областей</param>
-/// <param name="needSearchByMatchedTokens">Искать ли уже по совпавшим словам в родителе</param>
-/// <param name="validWordsFilter">Функция для валидации слов из запроса</param>
+/// <param name="validateWord">Функция для валидации слов из запроса</param>
+/// <param name="similarsCountToStopProcess">Количество совпавших схожих слов для остановки поиска определнной сущности по текущему слову из запроса</param>
+/// <param name="searchByMatchedTokens">Искать ли уже по совпавшим словам в родителе</param>
 public class SearchByAreasWithTermFrequence(
     byte targetType,
     Func<IEnumerable<EntitySearchResult>> areasSelector,
-    bool needSearchByMatchedTokens = true,
-    Func<QueryWordContainer, bool>? validWordsFilter = null) : EntitiesSelectionOperation(targetType)
+    Func<QueryWordContainer, bool>? validateWord = null,
+    Func<QueryWordContainer, int>? similarsCountToStopProcess = null,
+    bool searchByMatchedTokens = true) : EntitiesSelectionOperation(targetType)
 {
     public override void Process(SearchContextBase searchContext, CancellationToken ct)
     {
@@ -27,11 +29,13 @@ public class SearchByAreasWithTermFrequence(
         {
             QueryWordContainer wordFromQuery = queryWordsBundle[queryWordPosition];
 
-            if (validWordsFilter != null && !validWordsFilter(wordFromQuery)) continue;
+            if (validateWord != null && !validateWord(wordFromQuery)) continue;
 
             List<KeyValuePair<int, byte>> currentSimilarWordsBundle = wordFromQuery.SimilarWords;
 
-            WordsSearchStopManager wsm = searchContext.WordsSearchSettings.Settings.GetWordsSearchStopManager(wordFromQuery.Word);
+            ByWordSearchStopManager wsm = similarsCountToStopProcess is null
+                ? new()
+                : new(similarsCountToStopProcess(wordFromQuery));
 
             IEnumerable<(int WordId, byte WordScore, WordMatchMeta[] WordMatches)> wordsMatches = GetMatchesByWordsScores(
                 currentSimilarWordsBundle, entitiesSearchMap, areas, queryWordPosition, wordFromQuery)
@@ -79,7 +83,7 @@ public class SearchByAreasWithTermFrequence(
 
             if (matchesByContainers == null) continue;
 
-            if (needSearchByMatchedTokens)
+            if (searchByMatchedTokens)
             {
                 foreach (Key key in areas.Select(i => i.Key))
                 {
