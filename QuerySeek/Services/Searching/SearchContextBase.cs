@@ -1,7 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using QuerySeek.Models;
-using QuerySeek.Services.Normalizing;
-using QuerySeek.Services.Searching.WordsSearch;
 
 namespace QuerySeek.Services.Searching;
 
