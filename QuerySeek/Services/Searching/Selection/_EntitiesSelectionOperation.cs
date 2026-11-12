@@ -17,7 +17,7 @@ public abstract class EntitiesSelectionOperation(byte targetType)
     /// </summary>
     /// <param name="searchContext">Контекст поиска</param>
     /// <param name="ct">Токен отмены</param>
-    public abstract void Process(SearchContextBase searchContext, CancellationToken ct);
+    public abstract void Process(SearchContextBase searchContext);
 
     /// <summary>
     /// Добавляет в контекст поиска сущность
@@ -41,7 +41,7 @@ public abstract class EntitiesSelectionOperation(byte targetType)
     /// <summary>
     /// Добавляет в контекст поиска сущность и добавляет совпадение со словом из запроса
     /// </summary>
-    public static void AddResult(SearchContextBase searchContext, Key key, WordMatch wordMatch)
+    public static void AddResult(SearchContextBase searchContext, Key key, TokenMatch wordMatch)
     {
         Dictionary<byte, Dictionary<Key, EntitySearchResult>> searchResult = searchContext.SearchResult;
         IReadOnlyDictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
@@ -56,6 +56,6 @@ public abstract class EntitiesSelectionOperation(byte targetType)
         if (!exists)
             matchesBundle = new(key, entities[key]);
 
-        matchesBundle!.WordsMatches.Add(wordMatch);
+        matchesBundle!.Matches.Add(wordMatch);
     }
 }

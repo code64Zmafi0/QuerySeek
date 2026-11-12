@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 namespace QuerySeek.Services.Normalizing;
 
 /// <summary>
-/// Стандартный разделитель слов, разбивает по сиволам не являющимся буквами и цифрами
+/// Стандартный разделитель слов, разбивает по словам не являющимся буквами и цифрами
 /// </summary>
 /// <param name="notSplittingChars">Позволяет указать символы которые не будут являться сепараторами</param>
 public class DefaultTokenizer(ReadOnlySpan<char> notSplittingChars) : ITokenizer

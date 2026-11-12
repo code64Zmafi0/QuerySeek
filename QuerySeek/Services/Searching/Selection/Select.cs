@@ -9,7 +9,7 @@ namespace QuerySeek.Services.Searching.Selection;
 /// <param name="ids">Набор идентификаторов для принудительного добавления</param>
 public class Select(byte targetType, IEnumerable<int> ids) : EntitiesSelectionOperation(targetType)
 {
-    public override void Process(SearchContextBase searchContext, CancellationToken ct)
+    public override void Process(SearchContextBase searchContext)
     {
         IReadOnlyDictionary<Key, EntityMeta> entities = searchContext.Index.Entities;
 

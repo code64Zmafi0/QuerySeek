@@ -47,7 +47,7 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
     /// <param name="context">Поисковой контекст</param>
     /// <param name="entity">Обработанная сущность</param>
     /// <param name="queryWordsMatches">Совпадения для слов из запроса</param>
-    public virtual void UseRules(TContext context, EntitySearchResult entity, in Span<WordMatch> queryWordsMatches) { }
+    public virtual void UseRules(TContext context, EntitySearchResult entity, in Span<TokenMatch> queryWordsMatches) { }
     #endregion
 
     /// <summary>
@@ -57,10 +57,10 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
     {
         if (entitySearchResult.Score != 0) return;
 
-        Span<WordMatch> queryWordsMatches = stackalloc WordMatch[context.SplittedAndNormalizedQuery.Length];
+        Span<TokenMatch> queryWordsMatches = stackalloc TokenMatch[context.SplittedAndNormalizedQuery.Length];
 
         //Просчитываем совпадения для слов запроса из сущнности и ее линков, заполняем queryWordsMatches
-        foreach ((Key LinkedEntity, List<WordMatch> Matches) in GetMatches(context, entitySearchResult))
+        foreach ((Key LinkedEntity, List<TokenMatch> Matches) in GetMatches(context, entitySearchResult))
         {
             double nodeMultiplier = GetLinkedEntityMatchMultiplier(context, entitySearchResult.Key, LinkedEntity);
             if (nodeMultiplier != 0)
@@ -71,7 +71,7 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
 
         //Складываем скор совпадений слов
         int resultScore = 0;
-        foreach (WordMatch ws in queryWordsMatches)
+        foreach (TokenMatch ws in queryWordsMatches)
             resultScore += ws.Score;
 
         entitySearchResult.Score = resultScore;
@@ -82,7 +82,7 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
     /// <summary>
     /// Возвращает наборы совпавших слов для сущности и прилинкованных к ней
     /// </summary>
-    private IEnumerable<(Key Entity, List<WordMatch> Matches)> GetMatches(
+    private IEnumerable<(Key Entity, List<TokenMatch> Matches)> GetMatches(
         TContext context,
         EntitySearchResult entitySearchResult)
     {
@@ -91,7 +91,7 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
         //Если линк с таким типом уже был просчитан - пропускаем просчеты для сущностей этого типа
         BitArray256 matchedTypes = new();
 
-        yield return (entitySearchResult.Key, entitySearchResult.WordsMatches);
+        yield return (entitySearchResult.Key, entitySearchResult.Matches);
         matchedTypes[currentEntityType] = true;
 
         foreach (Key linkKey in entitySearchResult.Meta.Links)
@@ -100,10 +100,10 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
 
             if (matchedTypes[linkType]
                 || !context.TryGetSearchedEntity(linkKey, out EntitySearchResult? link)
-                || link.WordsMatches.Count == 0)
+                || link.Matches.Count == 0)
                 continue;
 
-            yield return (linkKey, link.WordsMatches);
+            yield return (linkKey, link.Matches);
             matchedTypes[linkType] = true;
 
             //Пробуем провалится на уровень выше по условию и просчитать линков с данного родителя
@@ -117,10 +117,10 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
 
                     if (matchedTypes[mergingLinkType]
                         || !context.TryGetSearchedEntity(mergedEntityKey, out EntitySearchResult? mergingLink)
-                        || mergingLink.WordsMatches.Count == 0)
+                        || mergingLink.Matches.Count == 0)
                         continue;
 
-                    yield return (mergedEntityKey, mergingLink.WordsMatches);
+                    yield return (mergedEntityKey, mergingLink.Matches);
                     matchedTypes[mergingLinkType] = true;
                 }
             }
@@ -135,21 +135,21 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
     /// <param name="matches">Матчи слов с сущностью</param>
     /// <param name="context">Контекст поиска</param>
     /// <param name="nodeMultiplier">Мультиплер</param>
-    private void ProcessNodeMatches(in Span<WordMatch> queryWordsMatches, byte type, List<WordMatch> matches, TContext context, double nodeMultiplier)
+    private void ProcessNodeMatches(in Span<TokenMatch> queryWordsMatches, byte type, List<TokenMatch> matches, TContext context, double nodeMultiplier)
     {
         //Сначала выбираем матчи по сущности пытаемся собрать совпадения для слов из запроса
-        Span<WordMatch> nodeScores = stackalloc WordMatch[queryWordsMatches.Length];
+        Span<TokenMatch> nodeScores = stackalloc TokenMatch[queryWordsMatches.Length];
         for (int i = 0; i < matches.Count; i++)
         {
-            WordMatch compareResult = matches[i];
-            int queryWordPosition = GetCurrentQueryWordPosition(in nodeScores, compareResult.WordsBundlePosition);
-            WordMatch previouslyCalculatedResult = nodeScores[queryWordPosition];
+            TokenMatch compareResult = matches[i];
+            int queryWordPosition = GetCurrentQueryWordPosition(in nodeScores, compareResult.SearchTokensBundlePosition);
+            TokenMatch previouslyCalculatedResult = nodeScores[queryWordPosition];
 
             bool isNewQueryPosition = false;
             if (PreviouslyMatchedWordToNewPositionName(compareResult, previouslyCalculatedResult))
             {
                 isNewQueryPosition = true;
-                queryWordPosition = GetNewQueryWordPosition(in nodeScores, compareResult.WordsBundlePosition);
+                queryWordPosition = GetNewQueryWordPosition(in nodeScores, compareResult.SearchTokensBundlePosition);
             }
 
             if (queryWordPosition == -1) continue;
@@ -159,19 +159,19 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
             byte score = (byte)Math.Round(compareResult.Score * nameTypeMultiplier * nodeMultiplier);
 
             if (isNewQueryPosition || previouslyCalculatedResult.Score < score)
-                nodeScores[queryWordPosition] = new(compareResult.NameWordPosition, compareResult.NameType, compareResult.WordsBundlePosition, score);
+                nodeScores[queryWordPosition] = new(compareResult.NameTokenPosition, compareResult.NameType, compareResult.SearchTokensBundlePosition, score);
         }
 
         //Мерж между линками
         for (int i = 0; i < queryWordsMatches.Length; i++)
         {
-            WordMatch nodeMatch = nodeScores[i];
-            WordMatch previouslyCalculatedResult = queryWordsMatches[i];
+            TokenMatch nodeMatch = nodeScores[i];
+            TokenMatch previouslyCalculatedResult = queryWordsMatches[i];
 
             if (nodeMatch.IsEmpty) continue;
             if (!previouslyCalculatedResult.IsEmpty)
             {
-                int nextQueryWordPosition = GetNewQueryWordPosition(queryWordsMatches, nodeMatch.WordsBundlePosition);
+                int nextQueryWordPosition = GetNewQueryWordPosition(queryWordsMatches, nodeMatch.SearchTokensBundlePosition);
                 if (nextQueryWordPosition != -1) queryWordsMatches[nextQueryWordPosition] = nodeMatch;
             }
             else if (previouslyCalculatedResult.Score < nodeMatch.Score)
@@ -180,9 +180,9 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
             }
         }
 
-        int GetNewQueryWordPosition(in Span<WordMatch> scores, int wordsBundlePosition)
+        int GetNewQueryWordPosition(in Span<TokenMatch> scores, int wordsBundlePosition)
         {
-            foreach (int position in context.SearchWordsBundle[wordsBundlePosition].PositionsInRequest)
+            foreach (int position in context.SearchTokensBundle[wordsBundlePosition].PositionsInRequest)
             {
                 if (scores[position].IsEmpty) return position;
             }
@@ -190,11 +190,11 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
             return -1;
         }
 
-        int GetCurrentQueryWordPosition(in Span<WordMatch> scores, int wordsBundlePosition)
+        int GetCurrentQueryWordPosition(in Span<TokenMatch> scores, int wordsBundlePosition)
         {
             int previousNotEmpty = -1;
 
-            int[] positions = context.SearchWordsBundle[wordsBundlePosition].PositionsInRequest;
+            int[] positions = context.SearchTokensBundle[wordsBundlePosition].PositionsInRequest;
 
             foreach (int position in positions)
             {
@@ -211,11 +211,11 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
             return positions[0];
         }
 
-        static bool PreviouslyMatchedWordToNewPositionName(WordMatch compareResult, WordMatch previouslyCalculatedResult)
+        static bool PreviouslyMatchedWordToNewPositionName(TokenMatch compareResult, TokenMatch previouslyCalculatedResult)
             => !previouslyCalculatedResult.IsEmpty
                 && previouslyCalculatedResult.NameType == compareResult.NameType
-                && previouslyCalculatedResult.NameWordPosition != compareResult.NameWordPosition
-                && previouslyCalculatedResult.WordsBundlePosition == compareResult.WordsBundlePosition;
+                && previouslyCalculatedResult.NameTokenPosition != compareResult.NameTokenPosition
+                && previouslyCalculatedResult.SearchTokensBundlePosition == compareResult.SearchTokensBundlePosition;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -9,7 +9,7 @@ namespace QuerySeek.Services.Searching;
 /// Содержит:
 /// Key - ключ сущности; 
 /// Meta - информацию о линках и потомков;
-/// WordsMatches - совпавшие слова с запросом из сущности;
+/// Matches - совпавшие слова данной сущности с запросом;
 /// Rules - Дополнительные правила;
 /// Score - Скор сортировки;
 /// ScoreWithRules - Вычисляемое свойство c просчетом правил
@@ -20,7 +20,7 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 
     public readonly EntityMeta Meta = meta;
 
-    public readonly List<WordMatch> WordsMatches = new(1);
+    public readonly List<TokenMatch> Matches = new(1);
 
     public readonly List<AdditionalRule> Rules = [];
 
@@ -71,14 +71,14 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 /// <remarks>
 /// Содержит: Позицию слова в имени; Тип имени; Позицию слова в запросе; Дистанцию совпадения - скоринг за совпавшие ngamm-ы.
 /// </remarks>
-/// <param name="NameWordPosition">Позиция совпавшего слова в имени</param>
+/// <param name="NameTokenPosition">Позиция совпавшего слова в имени</param>
 /// <param name="NameType">Тип имени</param>
-/// <param name="WordsBundlePosition">Позиция совпавшего слова из запроса</param>
+/// <param name="SearchTokensBundlePosition">Позиция совпавшего слова из запроса</param>
 /// <param name="Score">Длина совпадения (по количеству свопавщих нграмм)</param>
-public readonly record struct WordMatch(
-    byte NameWordPosition,
+public readonly record struct TokenMatch(
+    byte NameTokenPosition,
     byte NameType,
-    byte WordsBundlePosition,
+    byte SearchTokensBundlePosition,
     byte Score)
 {
     public bool IsEmpty => Score == 0;
@@ -99,7 +99,7 @@ public record AdditionalRule(string Name, int Score = 0, double Multiplier = 1, 
 /// <param name="QueryWordAndAlternatives">Слово из запроса на 0 позиции и альтернативы</param>
 /// <param name="PositionsInRequest">Позиции данного слова в исходном запросе</param>
 /// <param name="SimilarWords">Набор схожих слов из индекса</param>
-public record QueryWordContainer(List<Word> QueryWordAndAlternatives, int[] PositionsInRequest, List<KeyValuePair<int, byte>> SimilarWords)
+public record QueryTokenContainer(List<Word> QueryWordAndAlternatives, int[] PositionsInRequest, List<KeyValuePair<int, byte>> SimilarWords)
 {
     /// <summary>
     /// Введенное слово

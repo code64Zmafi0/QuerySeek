@@ -13,13 +13,10 @@ public class AppendChilds(
     Func<IEnumerable<Key>, IEnumerable<Key>> appendFilter,
     Func<IEnumerable<EntitySearchResult>> parentsSelector) : EntitiesSelectionOperation(targetType)
 {
-    public override void Process(SearchContextBase searchContext, CancellationToken ct)
+    public override void Process(SearchContextBase searchContext)
     {
         foreach (EntitySearchResult parent in parentsSelector())
         {
-            if (ct.IsCancellationRequested)
-                break;
-
             Key[] parentEntityChilds = parent.Meta.Childs;
 
             foreach (Key child in appendFilter(parentEntityChilds.Where(i => i.Type == TargetType)))

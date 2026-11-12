@@ -8,34 +8,32 @@ namespace QuerySeek.Services.Searching.Selection;
 /// </summary>
 /// <param name="targetType">Целевой тип сущности</param>
 /// <param name="areasSelector">Выборка поисковых областей</param>
-/// <param name="validateWord">Функция для валидации слов из запроса</param>
 /// <param name="similarsCountToStopProcess">Количество совпавших схожих слов для остановки поиска определнной сущности по текущему слову из запроса</param>
 /// <param name="searchByMatchedTokens">Искать ли по уже совпавшим словам в родителе</param>
 public class SearchByAreas(
     byte targetType,
     Func<IEnumerable<EntitySearchResult>> areasSelector,
-    Func<QueryWordContainer, bool>? validateWord = null,
-    Func<QueryWordContainer, int>? similarsCountToStopProcess = null,
+    Func<QueryTokenContainer, int>? similarsCountToStopProcess = null,
     bool searchByMatchedTokens = true) : EntitiesSelectionOperation(targetType)
 {
-    public override void Process(SearchContextBase searchContext, CancellationToken ct)
+    public override void Process(SearchContextBase searchContext)
     {
-        QueryWordContainer[] queryWordsBundle = searchContext.SearchWordsBundle;
+        QueryTokenContainer[] queryWordsBundle = searchContext.SearchTokensBundle;
         KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][] entitiesSearchMap = searchContext.Index.EntitiesSearchMap;
 
         EntitySearchResult[] areas = [.. areasSelector()];
 
         for (byte queryWordPosition = 0; queryWordPosition < queryWordsBundle.Length; queryWordPosition++)
         {
-            QueryWordContainer wordFromQuery = queryWordsBundle[queryWordPosition];
-
-            if (validateWord != null && !validateWord(wordFromQuery)) continue;
+            QueryTokenContainer wordFromQuery = queryWordsBundle[queryWordPosition];
 
             List<KeyValuePair<int, byte>> currentSimilarWordsBundle = wordFromQuery.SimilarWords;
 
             ByWordSearchStopManager wsm = similarsCountToStopProcess is null
                 ? new()
                 : new(similarsCountToStopProcess(wordFromQuery));
+
+            if (!wsm.NeedContinue) continue;
 
             for (int i = 0; i < currentSimilarWordsBundle.Count; i++)
             {
@@ -49,7 +47,7 @@ public class SearchByAreas(
                 IEnumerable<Key> areasKeys = searchByMatchedTokens
                     ? areas.Select(a => a.Key)
                     : areas
-                        .Where(a => !a.WordsMatches.Exists(wm => wm.WordsBundlePosition == queryWordPosition && wordFromQuery.PositionsInRequest.Length < 2))
+                        .Where(a => !a.Matches.Exists(wm => wm.SearchTokensBundlePosition == queryWordPosition && wordFromQuery.PositionsInRequest.Length < 2))
                         .Select(a => a.Key);
 
                 bool isMatchedWord = false;
@@ -62,11 +60,8 @@ public class SearchByAreas(
 
                     foreach (WordMatchMeta wordMatchMeta in matches)
                     {
-                        if (ct.IsCancellationRequested)
-                            return;
-
                         Key entityKey = new(TargetType, wordMatchMeta.EntityId);
-                        WordMatch wordMatch = new(
+                        TokenMatch wordMatch = new(
                             wordMatchMeta.NameWordPosition,
                             wordMatchMeta.NameType,
                             queryWordPosition,

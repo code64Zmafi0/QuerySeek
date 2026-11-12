@@ -7,30 +7,28 @@ namespace QuerySeek.Services.Searching.Selection;
 /// Выполняет поиск сущностей целевого типа по текстовому запросу и добавляет в выборку
 /// </summary>
 /// <param name="targetType">Целевой тип сущности</param>
-/// <param name="validateWord">Функция для валидации слов из запроса</param>
 /// <param name="similarsCountToStopProcess">Количество совпавших схожих слов для остановки поиска определнной сущности по текущему слову из запроса</param>
 public class Search(
     byte targetType,
-    Func<QueryWordContainer, bool>? validateWord = null,
-    Func<QueryWordContainer, int>? similarsCountToStopProcess = null)
+    Func<QueryTokenContainer, int>? similarsCountToStopProcess = null)
     : EntitiesSelectionOperation(targetType)
 {
-    public override void Process(SearchContextBase searchContext, CancellationToken ct)
+    public override void Process(SearchContextBase searchContext)
     {
-        QueryWordContainer[] queryWordsBundle = searchContext.SearchWordsBundle;
+        QueryTokenContainer[] queryWordsBundle = searchContext.SearchTokensBundle;
         KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][] entitiesSearchMap = searchContext.Index.EntitiesSearchMap;
 
         for (byte queryWordPosition = 0; queryWordPosition < queryWordsBundle.Length; queryWordPosition++)
         {
-            QueryWordContainer wordFromQuery = queryWordsBundle[queryWordPosition];
-
-            if (validateWord != null && !validateWord(wordFromQuery)) continue;
+            QueryTokenContainer wordFromQuery = queryWordsBundle[queryWordPosition];
 
             List<KeyValuePair<int, byte>> currentSimilarWordsBundle = wordFromQuery.SimilarWords;
 
             ByWordSearchStopManager wsm = similarsCountToStopProcess is null
                 ? new()
                 : new(similarsCountToStopProcess(wordFromQuery));
+
+            if (!wsm.NeedContinue) continue;
 
             for (int wbIndex = 0; wbIndex < currentSimilarWordsBundle.Count; wbIndex++)
             {
@@ -50,11 +48,8 @@ public class Search(
 
                 foreach (WordMatchMeta wordMatchMeta in matches)
                 {
-                    if (ct.IsCancellationRequested)
-                        return;
-
                     Key entityKey = new(TargetType, wordMatchMeta.EntityId);
-                    WordMatch wordMatch = new(
+                    TokenMatch wordMatch = new(
                         wordMatchMeta.NameWordPosition,
                         wordMatchMeta.NameType,
                         queryWordPosition,

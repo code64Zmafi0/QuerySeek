@@ -1,6 +1,3 @@
-using System.Collections.Immutable;
-using QuerySeek.Services.Helpers;
-
 namespace QuerySeek.Services.Searching.WordsSearch;
 
 public readonly record struct SimilarityTreshold(int MinMatchedNgrammsCount, int MaxMisses);
@@ -10,23 +7,6 @@ public readonly record struct WordNgrammSearchState(
     byte Misses,
     byte LastQueryWordNgrammPosition,
     byte LastIndexWordNgrammPosition);
-
-/// <summary>
-/// Настройки поиска слов
-/// </summary>
-/// <param name="Settings">Настройки пойска схожих слов</param>
-/// <param name="Alternatives">Возможные альтернативы для слов из запроса</param>
-/// <param name="Multiplers">Множители для слов из запроса</param>
-public record WordsSearchSettings(
-    WordsSearchSimilaritySettings Settings,
-    IReadOnlyDictionary<string, string[]> Alternatives,
-    IReadOnlyDictionary<string, double> Multiplers)
-{
-    public static readonly WordsSearchSettings Default = new(
-        WordsSearchSimilaritySettings.Default,
-        ImmutableDictionary<string, string[]>.Empty,
-        ImmutableDictionary<string, double>.Empty);
-}
 
 /// <summary>
 /// Настройки пойска схожих слов

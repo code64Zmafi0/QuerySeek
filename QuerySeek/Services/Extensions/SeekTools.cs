@@ -1,5 +1,4 @@
 using System.Collections.Frozen;
-using QuerySeek.Interfaces;
 using QuerySeek.Models;
 using QuerySeek.Services.Building;
 using QuerySeek.Services.Normalizing;
@@ -37,11 +36,11 @@ public static class QS
     public static Key[] Keys(byte type, params int[] ids)
         => Array.ConvertAll(ids, id => Key(type, id));
 
-    public static bool IsWordSimilarityValid(Word queryWord, WordMatch wordMatch, double similarity)
+    public static bool IsWordSimilarityValid(Word queryWord, TokenMatch wordMatch, double similarity)
         => (double)wordMatch.Score / queryWord.NGrammsHashes.Length >= similarity;
 
-    public static bool IsWordSimilarityValid(this QueryWordContainer[] searchWordsBundle, WordMatch wordMatch, double similarity)
-        => IsWordSimilarityValid(searchWordsBundle[wordMatch.WordsBundlePosition].Word, wordMatch, similarity);
+    public static bool IsWordSimilarityValid(this QueryTokenContainer[] searchWordsBundle, TokenMatch wordMatch, double similarity)
+        => IsWordSimilarityValid(searchWordsBundle[wordMatch.SearchTokensBundlePosition].Word, wordMatch, similarity);
     #endregion
 
     #region Build

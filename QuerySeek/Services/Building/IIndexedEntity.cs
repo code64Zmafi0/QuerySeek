@@ -1,7 +1,6 @@
-﻿using QuerySeek.Models;
-using QuerySeek.Services.Building;
+using QuerySeek.Models;
 
-namespace QuerySeek.Interfaces;
+namespace QuerySeek.Services.Building;
 
 public interface IIndexedEntity
 {

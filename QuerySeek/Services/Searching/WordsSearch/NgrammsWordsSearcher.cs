@@ -79,18 +79,17 @@ public static class NgrammsWordsSearcher
     /// <summary>
     /// Создание бандла слов для поиска
     /// </summary>
-    public static QueryWordContainer[] CreateSearchWordsBundle(
+    public static QueryTokenContainer[] CreateSearchTokensBundle(
         string[] splittedAndNormalizedQuery,
         IReadOnlyDictionary<int, NgrammAssociation[]> wordsIdsByNgramms,
-        WordsSearchSettings wordsSearchSettings)
+        WordsSearchSimilaritySettings settings,
+        IReadOnlyDictionary<string, string[]> alternativeWords,
+        IReadOnlyDictionary<string, double> queryWordMultipliers)
     {
-        IReadOnlyDictionary<string, string[]> alternativeWords = wordsSearchSettings.Alternatives;
-        IReadOnlyDictionary<string, double> queryWordMultipliers = wordsSearchSettings.Multiplers;
-
         //Используем один словарь для расчета совпавщих слов для каждого слова из запроса дабы лишний раз не аллоцировать
-        Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict = new(wordsSearchSettings.Settings.WordsSearchDictionaryPreallocate);
+        Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict = new(settings.WordsSearchDictionaryPreallocate);
 
-        QueryWordContainer[] result = [.. splittedAndNormalizedQuery.Index().GroupBy(i => i.Item).Select(wordAndRepeats =>
+        QueryTokenContainer[] result = [.. splittedAndNormalizedQuery.Index().GroupBy(i => i.Item).Select(wordAndRepeats =>
         {
             string wordFrowQuery = wordAndRepeats.Key;
             int[] positions = [.. wordAndRepeats.Select(i => i.Index)];
@@ -110,9 +109,9 @@ public static class NgrammsWordsSearcher
                 wordsSearchProcessDict,
                 wordsIdsByNgramms,
                 words,
-                wordsSearchSettings.Settings);
+                settings);
 
-            return new QueryWordContainer(words, positions, similarWords);
+            return new QueryTokenContainer(words, positions, similarWords);
         })];
 
         return result;
@@ -152,7 +151,7 @@ public static class NgrammsWordsSearcher
 
             NgrammSearch(wordsSearchProcessDict, wordsIdsByNgramms, word, similarityTreshold);
 
-            //Ищем бандл схожих слов и сортируем по количеству совпадений (вычисляется в свойстве Score. Попадания - наказание за промахи)
+            //Ищем бандл схожих слов и сортируем по количеству совпадений (вычисляется WordScoreCalculator. Попадания - наказание за промахи)
             foreach (KeyValuePair<int, WordNgrammSearchState> item in wordsSearchProcessDict
                 .Where(i => i.Value.Matches >= minMatchedNgrammsCount
                          && i.Value.Misses <= maxMisses)

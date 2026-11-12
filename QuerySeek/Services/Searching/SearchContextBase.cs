@@ -30,7 +30,7 @@ public class SearchContextBase(
     /// <summary>
     /// Бандл слов для поиска
     /// </summary>
-    public QueryWordContainer[] SearchWordsBundle { get; internal set; } = [];
+    public QueryTokenContainer[] SearchTokensBundle { get; internal set; } = [];
 
     /// <summary>
     /// Бандл результатов поиска сущностей в индексе

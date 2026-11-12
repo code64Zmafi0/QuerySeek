@@ -15,7 +15,7 @@ public class AppendChildsByAreas(
     Func<IEnumerable<EntitySearchResult>> parentsSelector,
     Func<IEnumerable<EntitySearchResult>> areasSelector) : EntitiesSelectionOperation(targetType)
 {
-    public override void Process(SearchContextBase searchContext, CancellationToken ct)
+    public override void Process(SearchContextBase searchContext)
     {
         IEnumerable<Key> GetChilds(IEnumerable<EntitySearchResult> selector)
         {
