@@ -22,7 +22,7 @@ public class SearchPipeline<TContext> where TContext : SearchContextBase
     /// <param name="wordsSearchSimilaritySettings">Настройка поиска схожих слов</param>
     /// <param name="alternativesFactory">Фабрика для альтернативных слов</param>
     /// <returns></returns>
-    public SearchPipeline<TContext> InitializeSearchTokens(
+    public SearchPipeline<TContext> AddSearchTokens(
         INormalizer? normalizer = null,
         ITokenizer? tokenizer = null,
         WordsSearchSimilaritySettings? wordsSearchSimilaritySettings = null,
@@ -41,7 +41,7 @@ public class SearchPipeline<TContext> where TContext : SearchContextBase
     /// </summary>
     /// <param name="requestFactory">Фабрика запроса на поиск в индексе</param>
     /// <param name="scoreCalculator">Калькулятор скора для сущностей</param>
-    public SearchPipeline<TContext> Search(
+    public SearchPipeline<TContext> AddSearch(
         Func<TContext, IEnumerable<EntitiesSelectionOperation>> requestFactory,
         IScoreCalculator<TContext>? scoreCalculator = null)
     {
