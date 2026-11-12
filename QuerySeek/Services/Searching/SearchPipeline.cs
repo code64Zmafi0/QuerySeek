@@ -81,11 +81,3 @@ public interface IPipelineStep<TContext> where TContext : SearchContextBase
 {
     void Execute(TContext context);
 }
-
-internal class DelegateStep<TContext>(Action<TContext> action)
-    : IPipelineStep<TContext> where TContext : SearchContextBase
-{
-    public void Execute(TContext context) => action(context);
-}
-
-
