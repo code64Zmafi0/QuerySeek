@@ -41,6 +41,10 @@ public static class QS
 
     public static bool IsWordSimilarityValid(this QueryTokenContainer[] searchWordsBundle, TokenMatch wordMatch, double similarity)
         => IsWordSimilarityValid(searchWordsBundle[wordMatch.SearchTokensBundlePosition].Word, wordMatch, similarity);
+
+    public static TResult BuildResult<TContext, TResult>(this TContext context, Func<TContext, TResult> resultFactory) where TContext : SearchContextBase
+        => resultFactory(context);
+
     #endregion
 
     #region Build
