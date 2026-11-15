@@ -7,7 +7,7 @@ Linked data text search engine.
 - Fast text search using 3-gramm words index
 - Designed to search for entities of different types (up to 250 types)
 - Support for data hierarchy and relatedness
-- Flexible sorting settings
+- Custom result building and sorting
 - MessagePack binary serialization enabled index file saving utilities
 
 ## Documentation
@@ -35,45 +35,42 @@ When performing a minor update of the library, it is recommended to update the i
 
 #### Save
 
-- Use `QS.WriteIndex(IndexInstance index, string filePath)` for saving index file
-- Use `QS.ReadIndex(string filePath)` for read index file
+- Use `QSSerializer.WriteIndex(string directoryPath, IndexInstance index)` for saving index files
+- Use `QSSerializer.ReadIndex(string directoryPath)` for read index files
 
 ### Normalizing and splitting
 
 The library provides built-in tools for normalizing and splitting a name into words for searching. Use this static objects.
 
-QuerySeek.Services.Normalizing.`DefaultNormalizer`.Instance
-QuerySeek.Services.Normalizing.`DefaultTokenizer`.Instance
+- QuerySeek.Services.Normalizing.`DefaultNormalizer`.Instance
+- QuerySeek.Services.Normalizing.`DefaultTokenizer`.Instance
 
 Also, you can redefine normalization and tokenizer splitting on words for use in your cases. Implement: ITokenizer and INormalizer
+
+### Search
+
+1) Create `SearchContextBase`.  Inherit SearchContextBase if you need to store additional sorting properties.
+2) Create search pipeline `new SearchPipeline<TContext>`
+3) Use `.AddSearchTokens` extension for add search tokens in context
+4) Add search operations by using extension `.AddSearch` and pass `requestFactory` function (enumrable of requests to search) to configure your search request. Perform a search for entities up the dependency tree
+    - `Search` - search current type entities
+    - `SearchByAreas` - search current type entities in search area (search areas must be found in the Search block above)
+    - `Select` - performs forced addition of entities of the target type based on the passed ids
+    - `AppendChilds` - use to force adding entities by parent
+    - `AppendChildsByAreas` - use to force adding entities by parent in areas
+5) Execute pipeline by use `Execute(TContext context)` method
+6) Use `BuildResult` SearchContext extension and pass fucntion to build result. Use `SearchContextBase.GetResult(byte type)` method to get results from context.
 
 ### Scoring
 
 Override `ScoreCalculatorBase<TContext>` - standard implementation for calculating an entity's score; takes into account matches from linked entities.
 - Override **GetLinkedEntityMatchMultiplier(TContext context, Key currentEntity, Key linkedEntity)** for flexible scoring mathes of linked entities
 - Override **GetNameTypeMultiplier(byte entityType, byte nameType)** for flexible scoring by name types
-- Override **OnEntityMatched(TContext context, EntitySearchResult entity, in Span\<WordMatch> queryWordsMatches)** for use rules or additional scoring
+- Override **UseRules(TContext context, EntitySearchResult entity, in Span\<WordMatch> queryWordsMatches)** for use rules or additional scoring
 
 Or implemet `IScoreCalculator<TContext>` and use your custom scorer
 
-### Search
-
-Inherit `SearchContextBase` if you need to store additional sorting properties
-
-Implement `SearcherBase<TContext, TResult>` 
-- Implement **GetRequest(TContext context)** method (enumrable of requests to search) to configure your search request. The query options are presented below (perform a search for entities up the dependency tree)
-    - `Search` - search current type entities
-    - `SearchByAreas` - search current type entities in search area (search areas must be found in the Search block above)
-    - `Select` - performs forced addition of entities of the target type based on the passed ids
-    - `AppendChilds` - use to force adding entities by parent
-    - `AppendChildsByAreas` - use to force adding entities by parent in areas
-- Implement **BuildResult(TContext context)** select results from context and sorting. For sorting, use EntitySearchResult.Score property for ranging entites by matches factor or ScoreWithRules for ranging by score and rules
-- Override **GetWordsSearchSettings(TContext context)** for configure words search and add alternatives
-
-Pass `INormalizer`, `ITokenizer`, and `IScoreCalculator` to the constructor.
-
 ## Optimizations
 
-- After deserialize index instance use indexInstance.Initialzie() method
 - If your entity cannot be found if the hierarchy parent is not found, be sure to set the IIndexedEntity.GetSearchArea method to improve performance
 - If you using AdditionalRule use a static intances for smaller memory 
