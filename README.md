@@ -59,7 +59,7 @@ Also, you can redefine normalization and tokenizer splitting on words for use in
     - `AppendChilds` - use to force adding entities by parent
     - `AppendChildsByAreas` - use to force adding entities by parent in areas
 5) Execute pipeline by use `Execute(TContext context)` method
-6) Use `BuildResult` SearchContext extension and pass fucntion to build result. Use `SearchContextBase.GetResult(byte type)` method to get results from context.
+6) Use `BuildResult` SearchContext extension and pass fucntion to build result. Use `SearchContextBase.GetResults(byte type)` method to get results by types from context.
 
 ### Scoring
 
