@@ -10,7 +10,25 @@ namespace QuerySeek.Services.Searching;
 /// Пайплаин поиска
 /// </summary>
 /// <typeparam name="TContext">Тип обрабатываемого контекста</typeparam>
-public class SearchPipeline<TContext> where TContext : SearchContextBase
+public interface ISearchPipeline<TContext> where TContext : SearchContextBase
+{
+    TContext Execute(TContext context);
+}
+
+/// <summary>
+/// Шаг пайплаина поиска
+/// </summary>
+/// <typeparam name="TContext">Тип обрабатываемого контекста</typeparam>
+public interface IPipelineStep<TContext> where TContext : SearchContextBase
+{
+    void Execute(TContext context);
+}
+
+/// <summary>
+/// Пайплаин поиска
+/// </summary>
+/// <typeparam name="TContext">Тип обрабатываемого контекста</typeparam>
+public class SearchPipeline<TContext> : ISearchPipeline<TContext> where TContext : SearchContextBase
 {
     private readonly List<IPipelineStep<TContext>> _steps = [];
 
@@ -71,13 +89,4 @@ public class SearchPipeline<TContext> where TContext : SearchContextBase
         }
         return context;
     }
-}
-
-/// <summary>
-/// Шаг пайплаина поиска
-/// </summary>
-/// <typeparam name="TContext">Тип обрабатываемого контекста</typeparam>
-public interface IPipelineStep<TContext> where TContext : SearchContextBase
-{
-    void Execute(TContext context);
 }
