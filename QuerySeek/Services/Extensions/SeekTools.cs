@@ -45,6 +45,7 @@ public static class QS
     public static TResult BuildResult<TContext, TResult>(this TContext context, Func<TContext, TResult> resultFactory) where TContext : SearchContextBase
         => resultFactory(context);
 
+    public static SearchPipeline<TContext> SearchPipeline<TContext>() where TContext : SearchContextBase => new();
     #endregion
 
     #region Build
