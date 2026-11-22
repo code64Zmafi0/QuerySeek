@@ -7,12 +7,12 @@ namespace QuerySeek.Services.Searching;
 /// </summary>
 /// <remarks>
 /// Содержит:
-/// Key - ключ сущности; 
-/// Meta - информацию о линках и потомков;
-/// Matches - совпавшие слова данной сущности с запросом;
-/// Rules - Дополнительные правила;
-/// Score - Скор сортировки;
-/// ScoreWithRules - Вычисляемое свойство c просчетом правил
+/// <para> Key - Ключ сущности; </para>
+/// <para> Meta - Информация о линках и потомках; </para>
+/// <para> Matches - Совпавшие слова данной сущности с запросом; </para>
+/// <para> Rules - Дополнительные правила; </para>
+/// <para> Score - Скор сортировки; </para>
+/// <para> ScoreWithRules - Скор сортировки c просчетом правил </para>
 /// </remarks>
 public class EntitySearchResult(Key key, EntityMeta meta)
 {
