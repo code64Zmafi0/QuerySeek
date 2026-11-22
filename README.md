@@ -4,10 +4,9 @@ Linked data text search engine.
 
 ## Features
 
-- Fast text search using 3-gramm words index
-- Designed to search for entities of different types (up to 250 types)
-- Support for data hierarchy and relatedness
-- Custom result building and sorting
+- Fast fuzzy text search using 3-gramm words index
+- Support for data hierarchy and relatedness. Designed to search for entities of different types (up to 250 types)
+- Customization
 - MessagePack binary serialization enabled index file saving utilities
 
 ## Documentation
@@ -49,7 +48,7 @@ Also, you can redefine normalization and tokenizer splitting on words for use in
 
 ### Search
 
-1) Create `SearchContextBase`.  Inherit SearchContextBase if you need to store additional sorting properties.
+1) Create `SearchContextBase`.  Inherit SearchContextBase if you need to store additional properties.
 2) Create search pipeline `new SearchPipeline<TContext>`
 3) Use `.AddSearchTokens` extension for add search tokens in context
 4) Add search operations by using extension `.AddSearch` and pass `requestFactory` function (enumrable of requests to search) to configure your search request. Perform a search for entities up the dependency tree
@@ -61,16 +60,160 @@ Also, you can redefine normalization and tokenizer splitting on words for use in
 5) Execute pipeline by use `Execute(TContext context)` method
 6) Use `BuildResult` SearchContext extension and pass fucntion to build result. Use `SearchContextBase.GetResults(byte type)` method to get results by types from context.
 
-### Scoring
+#### Scoring
 
 Override `ScoreCalculatorBase<TContext>` - standard implementation for calculating an entity's score; takes into account matches from linked entities.
 - Override **GetLinkedEntityMatchMultiplier(TContext context, Key currentEntity, Key linkedEntity)** for flexible scoring mathes of linked entities
 - Override **GetNameTypeMultiplier(byte entityType, byte nameType)** for flexible scoring by name types
 - Override **UseRules(TContext context, EntitySearchResult entity, in Span\<WordMatch> queryWordsMatches)** for use rules or additional scoring
 
-Or implemet `IScoreCalculator<TContext>` and use your custom scorer
+Or implemet `IScoreCalculator<TContext>` and use your custom scorer. Use in `.AddSearch` method
 
-## Optimizations
+### Optimizations
 
 - If your entity cannot be found if the hierarchy parent is not found, be sure to set the IIndexedEntity.GetSearchArea method to improve performance
-- If you using AdditionalRule use a static intances for smaller memory 
+- If you using AdditionalRule use a static intances for smaller memory
+
+## Example - Sound library
+
+Define entities types
+
+```csharp
+public static class IndexedTypes
+{
+    public static readonly byte Track = 1;
+    public static readonly byte Album = 2;
+    public static readonly byte Artist = 3;
+}
+```
+
+#### Create index
+
+Define entities models, implement `IIndexedEntity`
+
+```csharp
+public class Track(int id, string name, int? albumId, int artistId) : IIndexedEntity
+{
+    public int Id => id;
+    public int? AlbumId => albumId;
+    public int ArtistId => artistId;
+    public string Name => name;
+
+    public Key GetKey() => QS.Key(IndexedTypes.Track, Id);
+
+    public IEnumerable<Key> GetLinks()
+    {
+        if (AlbumId != null) yield return QS.Key(IndexedTypes.Album, AlbumId.Value);
+        QS.Key(IndexedTypes.Artist, ArtistId);
+    }
+
+    public IEnumerable<Name> GetNames() => [ QS.Name(Name) ];
+
+    public Key? GetSearchArea() => null;
+}
+
+public class Album(int id, string name, int artistId) : IIndexedEntity
+{
+    public int Id => id;
+    public int ArtistId => artistId;
+    public string Name => name;
+
+    public Key GetKey() => QS.Key(IndexedTypes.Album, Id);
+
+    public IEnumerable<Key> GetLinks() =>
+    [
+        QS.Key(IndexedTypes.Artist, ArtistId)
+    ];
+
+    public IEnumerable<Name> GetNames() => [ QS.Name(Name) ];
+
+    public Key? GetSearchArea() => null;
+}
+
+public class Artist(int id, string name) : IIndexedEntity
+{
+    public int Id => id;
+    public string Name => name;
+
+    public Key GetKey() => QS.Key(IndexedTypes.Artist, Id);
+
+    public IEnumerable<Key> GetLinks() => [];
+
+    public IEnumerable<Name> GetNames() => [ QS.Name(Name) ];
+
+    public Key? GetSearchArea() => null;
+}
+```
+
+Create IndexInstance
+
+```csharp
+List<Artist> artists =
+[
+    new(1, "Linkin Park"),
+    new(2, "Coldplay"),
+    new(3, "Undefined"),
+];
+
+List<Album> albums =
+[
+    new(1, "Meteora", artistId: 1),
+    new(2, "Parachutes", artistId: 2)
+];
+
+List<Track> tracks =
+[
+    new(1, "Numb", albumId: 1, artistId: 1),
+    new(2, "Faint", albumId: 1, artistId: 1),
+    new(3, "Yellow", albumId: 2, artistId: 2),
+    new(4, "Shiver", albumId: 2, artistId: 2),
+    new(5, "New Divide", albumId: null, artistId: 1)
+];
+
+IndexInstance index = QS.Build(DefaultNormalizer.Instance, DefaultTokenizer.Instance,
+[
+    .. artists,
+    .. albums,
+    .. tracks
+]);
+```
+
+#### Save and read
+
+- Use `QSSerializer.WriteIndex(string directoryPath, IndexInstance index)` for saving index files
+- Use `QSSerializer.ReadIndex(string directoryPath)` for read index files
+
+#### Search
+
+Define search pipeline, execute and build result
+
+```csharp
+public Key[] Search(IndexInstance index, string query) => QS
+    .SearchPipeline<SearchContextBase>()
+    .AddSearchTokens()
+    .AddSearch(context => //Follow the hierarchy
+        [
+            new Search(IndexedTypes.Artist),
+            new Search(IndexedTypes.Album),
+            new Search(IndexedTypes.Track)
+        ])
+    .Execute(new SearchContextBase(index, query))
+    .BuildResult(context => context
+        .GetAllResults()
+        .OrderByDescending(i => i.Score)
+        .Select(i => i.Key)
+        .ToArray());
+```
+
+Or present by types
+
+```csharp
+    .BuildResult(context =>
+    {
+        EntitySearchResult[] artists = context.GetResults(IndexedTypes.Artist).OrderByDescending(i => i.Score).Select(i => i.Key).ToArray();
+        EntitySearchResult[] albums = context.GetResults(IndexedTypes.Album).OrderByDescending(i => i.Score).Select(i => i.Key).ToArray();
+        EntitySearchResult[] tracks = context.GetResults(IndexedTypes.Track).OrderByDescending(i => i.Score).Select(i => i.Key).ToArray();
+
+        return (artists, albums, tracks);
+    });
+```

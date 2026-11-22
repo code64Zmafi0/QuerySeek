@@ -4,7 +4,7 @@ using QuerySeek.Models;
 namespace QuerySeek.Services.Searching;
 
 /// <summary>
-/// Контекст поиска, можем хранить дополнительные свойства при переопределении
+/// Контекст поиска, позволяет хранить дополнительные свойства при переопределении
 /// </summary>
 /// <param name="index">Индекс</param>
 /// <param name="query">Поисковая строка</param>
@@ -49,14 +49,20 @@ public class SearchContextBase(
     /// <summary>
     /// Пробует получить словарь результатов для определенного типа
     /// </summary>
-    public bool TryGetResultsByType(byte type, [NotNullWhen(true)] out Dictionary<Key, EntitySearchResult>? result)
-        => SearchResult.TryGetValue(type, out result);
+    public bool TryGetResultsByType(byte type, [NotNullWhen(true)] out Dictionary<Key, EntitySearchResult>? result) =>
+        SearchResult.TryGetValue(type, out result);
 
     /// <summary>
     /// Отдает коллекцию результатов запрошенного типа
     /// </summary>
-    public ICollection<EntitySearchResult> GetResults(byte type)
-        => TryGetResultsByType(type, out Dictionary<Key, EntitySearchResult>? result)
+    public ICollection<EntitySearchResult> GetResults(byte type) =>
+        TryGetResultsByType(type, out Dictionary<Key, EntitySearchResult>? result)
             ? result.Values
             : Array.Empty<EntitySearchResult>();
+
+    /// <summary>
+    /// Отдает все результаты поиска
+    /// </summary>
+    public IEnumerable<EntitySearchResult> GetAllResults() =>
+        SearchResult.Values.SelectMany(i => i.Values);
 }
