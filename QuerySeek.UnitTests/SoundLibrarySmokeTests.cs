@@ -66,7 +66,7 @@ public class SoundLibrarySmokeTests
             .Returns(new[] { QS.Key(IndexedTypes.Artist, 2) })
             .SetName("Search_ArtistName_ReturnsArtist");
 
-        yield return new TestCaseData("Parochtes")
+        yield return new TestCaseData("Parochttes")
             .Returns(new[] { QS.Key(IndexedTypes.Album, 2) })
             .SetName("Search_Fuzzy_ReturnsAlbum");
 
