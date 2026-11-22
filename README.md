@@ -188,10 +188,10 @@ IndexInstance index = QS.Build(DefaultNormalizer.Instance, DefaultTokenizer.Inst
 Define search pipeline, execute and build result
 
 ```csharp
-public Key[] Search(IndexInstance index, string query) =>
-  QS.SearchPipeline<SearchContextBase>()
-    .AddSearchTokens() // Add search tokens
-    .AddSearch(context => // Add search
+public Key[] Search(IndexInstance index, string query) => QS
+    .SearchPipeline<SearchContextBase>() //Initialize search pipeline
+    .AddSearchTokens() // Add search tokens initialization step
+    .AddSearch(context => // Add entities search processing step
         [
             //Follow the hierarchy
             new Search(IndexedTypes.Artist),
