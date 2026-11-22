@@ -33,12 +33,12 @@ public class SearchPipeline<TContext> : ISearchPipeline<TContext> where TContext
     private readonly List<IPipelineStep<TContext>> _steps = [];
 
     /// <summary>
-    /// Инициализация поисковых токенов
+    /// Добавляет инициализацию поисковых токенов
     /// </summary>
     /// <param name="normalizer">Нормалайзер для запроса</param>
     /// <param name="tokenizer">Токенайзер для запроса</param>
-    /// <param name="wordsSearchSimilaritySettings">Настройка поиска схожих слов</param>
-    /// <param name="alternativesFactory">Фабрика для альтернативных слов</param>
+    /// <param name="wordsSearchSimilaritySettings">Настройки поиска схожих слов</param>
+    /// <param name="alternativesFactory">Фабрика для альтернативных слов, доступен context.SplittedAndNormalizedQuery</param>
     /// <returns></returns>
     public SearchPipeline<TContext> AddSearchTokens(
         INormalizer? normalizer = null,
@@ -55,7 +55,7 @@ public class SearchPipeline<TContext> : ISearchPipeline<TContext> where TContext
     }
 
     /// <summary>
-    /// Выборка сущностей
+    /// Добавляет поиск сущностей по индексу
     /// </summary>
     /// <param name="requestFactory">Фабрика запроса на поиск в индексе</param>
     /// <param name="scoreCalculator">Калькулятор скора для сущностей</param>

@@ -72,7 +72,7 @@ public class SearchByAreasWithTermFrequence(
         {
             KeyValuePair<int, byte> wordInfo = similarWords[i];
 
-            IReadOnlyDictionary<Key, WordMatchMeta[]>? matchesByContainers = entitiesSearchMap.GetMatchesByAresDict(
+            IReadOnlyDictionary<Key, WordMatchMeta[]>? matchesByContainers = entitiesSearchMap.GetMatchesByAreasDict(
                 wordInfo.Key,
                 TargetType);
 

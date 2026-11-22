@@ -9,7 +9,7 @@ public static class EntitiesSearchMapHelper
         int wordId,
         byte entityType)
     {
-        IReadOnlyDictionary<Key, WordMatchMeta[]>? matchesByContainers = GetMatchesByAresDict(searchMap, wordId, entityType);
+        IReadOnlyDictionary<Key, WordMatchMeta[]>? matchesByContainers = GetMatchesByAreasDict(searchMap, wordId, entityType);
         if (matchesByContainers == null) return null;
 
         if (matchesByContainers.TryGetValue(Key.Default, out WordMatchMeta[]? matches))
@@ -26,7 +26,7 @@ public static class EntitiesSearchMapHelper
         byte entityType,
         IEnumerable<Key> areasKeys)
     {
-        IReadOnlyDictionary<Key, WordMatchMeta[]>? matchesByContainers = GetMatchesByAresDict(searchMap, wordId, entityType);
+        IReadOnlyDictionary<Key, WordMatchMeta[]>? matchesByContainers = GetMatchesByAreasDict(searchMap, wordId, entityType);
         if (matchesByContainers == null) yield break;
 
         foreach (Key containerKey in areasKeys)
@@ -38,7 +38,7 @@ public static class EntitiesSearchMapHelper
         }
     }
 
-    public static IReadOnlyDictionary<Key, WordMatchMeta[]>? GetMatchesByAresDict(
+    public static IReadOnlyDictionary<Key, WordMatchMeta[]>? GetMatchesByAreasDict(
         this KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][] searchMap,
         int wordId,
         byte entityType)

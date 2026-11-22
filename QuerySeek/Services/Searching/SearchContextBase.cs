@@ -6,6 +6,13 @@ namespace QuerySeek.Services.Searching;
 /// <summary>
 /// Контекст поиска, позволяет хранить дополнительные свойства при переопределении
 /// </summary>
+/// <remarks>
+/// <see cref="Query">Переданный текстовый запрос</see><br/>
+/// <see cref="Index">Переданный инстанс индекса</see><br/>
+/// <see cref="SplittedAndNormalizedQuery">Нормализованный и разбитый по словам текстовый запрос</see><br/>
+/// <see cref="SearchTokensBundle">Бандл токенов запроса для осуществления поиска по индексу</see><br/>
+/// <see cref="SearchResult">Коллекция результатов поиска по индексу</see><br/>
+/// </remarks>
 /// <param name="index">Индекс</param>
 /// <param name="query">Поисковая строка</param>
 public class SearchContextBase(
@@ -53,7 +60,7 @@ public class SearchContextBase(
         SearchResult.TryGetValue(type, out result);
 
     /// <summary>
-    /// Отдает коллекцию результатов запрошенного типа
+    /// Возвращает коллекцию результатов запрошенного типа
     /// </summary>
     public ICollection<EntitySearchResult> GetResults(byte type) =>
         TryGetResultsByType(type, out Dictionary<Key, EntitySearchResult>? result)
@@ -61,7 +68,7 @@ public class SearchContextBase(
             : Array.Empty<EntitySearchResult>();
 
     /// <summary>
-    /// Отдает все результаты поиска
+    /// Возвращает перечисление всех результатов поиска
     /// </summary>
     public IEnumerable<EntitySearchResult> GetAllResults() =>
         SearchResult.Values.SelectMany(i => i.Values);

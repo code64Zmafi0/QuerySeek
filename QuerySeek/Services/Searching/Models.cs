@@ -6,13 +6,12 @@ namespace QuerySeek.Services.Searching;
 /// Описывает найденную сущность
 /// </summary>
 /// <remarks>
-/// Содержит:
-/// <para> Key - Ключ сущности; </para>
-/// <para> Meta - Информация о линках и потомках; </para>
-/// <para> Matches - Совпавшие слова данной сущности с запросом; </para>
-/// <para> Rules - Дополнительные правила; </para>
-/// <para> Score - Скор сортировки; </para>
-/// <para> ScoreWithRules - Скор сортировки c просчетом правил </para>
+/// <see cref="Key">Ключ сущности</see><br/>
+/// <see cref="Meta">Информация о линках и потомках</see><br/>
+/// <see cref="Matches">Совпавшие слова данной сущности с запросом</see><br/>
+/// <see cref="Rules">Дополнительные правила</see><br/>
+/// <see cref="Score">Скор набранный калькулятором</see><br/>
+/// <see cref="ScoreWithRules">Скор набранный калькулятором c учетом правил</see><br/>
 /// </remarks>
 public class EntitySearchResult(Key key, EntityMeta meta)
 {
@@ -69,12 +68,15 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 /// Описывает совпавщее слово c именем сущности
 /// </summary>
 /// <remarks>
-/// Содержит: Позицию слова в имени; Тип имени; Позицию слова в запросе; Дистанцию совпадения - скоринг за совпавшие ngamm-ы.
+/// <see cref="NameTokenPosition">Позиция слова в имени сущности</see><br/>
+/// <see cref="NameType">Тип имени сущности</see><br/>
+/// <see cref="SearchTokensBundlePosition">Позиция слова в запросе</see><br/>
+/// <see cref="Score">Дистанция совпадения - скоринг за совпавшие ngamm-ы</see><br/>
 /// </remarks>
 /// <param name="NameTokenPosition">Позиция совпавшего слова в имени</param>
 /// <param name="NameType">Тип имени</param>
 /// <param name="SearchTokensBundlePosition">Позиция совпавшего слова из запроса</param>
-/// <param name="Score">Длина совпадения (по количеству свопавщих нграмм)</param>
+/// <param name="Score">Длина совпадения (по количеству совпавщих нграмм)</param>
 public readonly record struct TokenMatch(
     byte NameTokenPosition,
     byte NameType,
