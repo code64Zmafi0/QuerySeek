@@ -211,9 +211,9 @@ Or present by types
 ```csharp
     .BuildResult(context =>
     {
-        EntitySearchResult[] artists = context.GetResults(IndexedTypes.Artist).OrderByDescending(i => i.Score).Select(i => i.Key).ToArray();
-        EntitySearchResult[] albums = context.GetResults(IndexedTypes.Album).OrderByDescending(i => i.Score).Select(i => i.Key).ToArray();
-        EntitySearchResult[] tracks = context.GetResults(IndexedTypes.Track).OrderByDescending(i => i.Score).Select(i => i.Key).ToArray();
+        Key[] artists = context.GetResults(IndexedTypes.Artist).OrderByDescending(i => i.Score).Select(i => i.Key).ToArray();
+        Key[] albums = context.GetResults(IndexedTypes.Album).OrderByDescending(i => i.Score).Select(i => i.Key).ToArray();
+        Key[] tracks = context.GetResults(IndexedTypes.Track).OrderByDescending(i => i.Score).Select(i => i.Key).ToArray();
 
         return (artists, albums, tracks);
     });
