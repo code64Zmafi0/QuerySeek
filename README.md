@@ -188,17 +188,18 @@ IndexInstance index = QS.Build(DefaultNormalizer.Instance, DefaultTokenizer.Inst
 Define search pipeline, execute and build result
 
 ```csharp
-public Key[] Search(IndexInstance index, string query) => QS
-    .SearchPipeline<SearchContextBase>()
-    .AddSearchTokens()
-    .AddSearch(context => //Follow the hierarchy
+public Key[] Search(IndexInstance index, string query) =>
+  QS.SearchPipeline<SearchContextBase>()
+    .AddSearchTokens() // Add search tokens
+    .AddSearch(context => // Add search
         [
+            //Follow the hierarchy
             new Search(IndexedTypes.Artist),
             new Search(IndexedTypes.Album),
             new Search(IndexedTypes.Track)
         ])
-    .Execute(new SearchContextBase(index, query))
-    .BuildResult(context => context
+    .Execute(new SearchContextBase(index, query)) //Pipeline executing
+    .BuildResult(context => context // Building result from context
         .GetAllResults()
         .OrderByDescending(i => i.Score)
         .Select(i => i.Key)
