@@ -17,7 +17,7 @@ public class EntityMeta
     }
 
     /// <summary>
-    /// Колликция привязанных сущностей
+    /// Коллекция привязанных сущностей
     /// </summary>
     [Key(1)]
     public Key[] Links { get; set; } = Array.Empty<Key>();
