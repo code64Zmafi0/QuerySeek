@@ -15,7 +15,7 @@ public class SearchWithTermFrequence(
 {
     public override void Process(SearchContextBase searchContext)
     {
-        QueryTokenContainer[] queryWordsBundle = searchContext.SearchTokensBundle;
+        QueryTokenContainer[] queryWordsBundle = searchContext.SearchTokens;
         KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][] entitiesSearchMap = searchContext.Index.EntitiesSearchMap;
 
         for (byte queryWordPosition = 0; queryWordPosition < queryWordsBundle.Length; queryWordPosition++)

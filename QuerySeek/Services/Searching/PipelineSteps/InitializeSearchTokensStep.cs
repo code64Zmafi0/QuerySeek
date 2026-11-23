@@ -22,7 +22,7 @@ public class InitializeSearchTokensStep<TContext>(
             ? AlternativesAndMultiplers.Empty
             : alternativesFactory.Invoke(context);
 
-        context.SearchTokensBundle = NgrammsWordsSearcher.CreateSearchTokensBundle(
+        context.SearchTokens = NgrammsWordsSearcher.CreateSearchTokensBundle(
             splittedAndNormalizedQuery,
             context.Index.WordsIdsByNgramms,
             wordsSearchSimilaritySettings,

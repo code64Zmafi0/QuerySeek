@@ -182,7 +182,7 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
 
         int GetNewQueryWordPosition(in Span<TokenMatch> scores, int wordsBundlePosition)
         {
-            foreach (int position in context.SearchTokensBundle[wordsBundlePosition].PositionsInRequest)
+            foreach (int position in context.SearchTokens[wordsBundlePosition].PositionsInRequest)
             {
                 if (scores[position].IsEmpty) return position;
             }
@@ -194,7 +194,7 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
         {
             int previousNotEmpty = -1;
 
-            int[] positions = context.SearchTokensBundle[wordsBundlePosition].PositionsInRequest;
+            int[] positions = context.SearchTokens[wordsBundlePosition].PositionsInRequest;
 
             foreach (int position in positions)
             {

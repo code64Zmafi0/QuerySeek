@@ -17,9 +17,7 @@ public class AppendChilds(
     {
         foreach (EntitySearchResult parent in parentsSelector())
         {
-            Key[] parentEntityChilds = parent.Meta.Childs;
-
-            foreach (Key child in appendFilter(parentEntityChilds.Where(i => i.Type == TargetType)))
+            foreach (Key child in appendFilter(parent.GetChilds(TargetType)))
                 AddResult(searchContext, child);
         }
     }

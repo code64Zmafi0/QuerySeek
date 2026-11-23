@@ -23,13 +23,8 @@ public class EntitySearchResult(Key key, EntityMeta meta)
 
     public readonly List<AdditionalRule> Rules = [];
 
-    public Key? GetLink(byte type)
-    {
-        foreach (Key link in Meta.Links)
-            if (link.Type == type) return link;
-
-        return null;
-    }
+    public IEnumerable<Key> GetLinks(byte type)
+        => Meta.Links.Where(i => i.Type == type);
 
     public IEnumerable<Key> GetChilds(byte type)
         => Meta.Childs.Where(i => i.Type == type);

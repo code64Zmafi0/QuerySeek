@@ -21,7 +21,7 @@ public class AppendChildsByAreas(
         {
             foreach (EntitySearchResult containerInfo in selector)
             {
-                foreach(Key child in containerInfo.Meta.Childs.Where(i => i.Type == TargetType))
+                foreach(Key child in containerInfo.GetChilds(TargetType))
                     yield return child;
             }
         }

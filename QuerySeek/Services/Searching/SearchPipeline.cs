@@ -33,7 +33,7 @@ public class SearchPipeline<TContext> : ISearchPipeline<TContext> where TContext
     private readonly List<IPipelineStep<TContext>> _steps = [];
 
     /// <summary>
-    /// Добавляет инициализацию поисковых токенов
+    /// Добавляет шаг инициализации поисковых токенов в пайплайн
     /// </summary>
     /// <param name="normalizer">Нормалайзер для запроса</param>
     /// <param name="tokenizer">Токенайзер для запроса</param>
@@ -55,7 +55,7 @@ public class SearchPipeline<TContext> : ISearchPipeline<TContext> where TContext
     }
 
     /// <summary>
-    /// Добавляет поиск сущностей по индексу
+    /// Добавляет шаг поиска сущностей по индексу в пайплайн
     /// </summary>
     /// <param name="requestFactory">Фабрика запроса на поиск в индексе</param>
     /// <param name="scoreCalculator">Калькулятор скора для сущностей</param>

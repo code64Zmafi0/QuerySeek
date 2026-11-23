@@ -18,7 +18,7 @@ public class SearchByAreasWithTermFrequence(
 {
     public override void Process(SearchContextBase searchContext)
     {
-        QueryTokenContainer[] queryWordsBundle = searchContext.SearchTokensBundle;
+        QueryTokenContainer[] queryWordsBundle = searchContext.SearchTokens;
         KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][] entitiesSearchMap = searchContext.Index.EntitiesSearchMap;
 
         EntitySearchResult[] areas = [.. areasSelector()];

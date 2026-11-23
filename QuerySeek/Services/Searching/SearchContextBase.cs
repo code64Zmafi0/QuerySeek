@@ -10,7 +10,7 @@ namespace QuerySeek.Services.Searching;
 /// <see cref="Query">Переданный текстовый запрос</see><br/>
 /// <see cref="Index">Переданный инстанс индекса</see><br/>
 /// <see cref="SplittedAndNormalizedQuery">Нормализованный и разбитый по словам текстовый запрос</see><br/>
-/// <see cref="SearchTokensBundle">Бандл токенов запроса для осуществления поиска по индексу</see><br/>
+/// <see cref="SearchTokens">Бандл токенов запроса для осуществления поиска по индексу</see><br/>
 /// <see cref="SearchResult">Коллекция результатов поиска по индексу</see><br/>
 /// </remarks>
 /// <param name="index">Индекс</param>
@@ -35,9 +35,9 @@ public class SearchContextBase(
     public string[] SplittedAndNormalizedQuery { get; internal set; } = [];
 
     /// <summary>
-    /// Бандл слов для поиска
+    /// Коллекция слов для поиска
     /// </summary>
-    public QueryTokenContainer[] SearchTokensBundle { get; internal set; } = [];
+    public QueryTokenContainer[] SearchTokens { get; internal set; } = [];
 
     /// <summary>
     /// Бандл результатов поиска сущностей в индексе
