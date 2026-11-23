@@ -3,12 +3,12 @@ using QuerySeek.Models;
 namespace QuerySeek.Services.Searching.Selection;
 
 /// <summary>
-/// Выполняет принудительное добавление дочерних элементов по родителю в котейнерах в выборку
+/// Выполняет принудительное добавление дочерних элементов по родителям и поисковым областям в <see cref="SearchContextBase.SearchResult"/>
 /// </summary>
 /// <param name="targetType">Целевой тип</param>
 /// <param name="appendFilter">Фильтр добавляемых сущностей</param>
 /// <param name="parentsSelector">Выборка родителей</param>
-/// <param name="areasSelector">Выборка поисковых областей/param>
+/// <param name="areasSelector">Выборка поисковых областей</param>
 public class AppendChildsByAreas(
     byte targetType,
     Func<IEnumerable<Key>, IEnumerable<Key>> appendFilter,
@@ -26,7 +26,7 @@ public class AppendChildsByAreas(
             }
         }
 
-        //Количество данных в контейнере меньше чем суммарно связей - реализация интерсект скрывает создание хешсет из второго аргумента
+        //Количество данных в поисковой зоне меньше чем суммарно связей - реализация интерсект скрывает создание хешсет из второго аргумента
         IEnumerable<Key> childs = GetChilds(parentsSelector()).Intersect(appendFilter(GetChilds(areasSelector())));
 
         foreach (Key child in childs)

@@ -4,7 +4,7 @@ using QuerySeek.Services.Helpers;
 namespace QuerySeek.Services.Searching.Selection;
 
 /// <summary>
-/// Выполняет поиск сущностей целевого типа по текстовому запросу и добавляет в выборку приоритизируя более редкие слова
+/// Выполняет поиск сущностей целевого типа по поисковым токенам приоритизируя более редкие и добавляет в <see cref="SearchContextBase.SearchResult"/>
 /// </summary>
 /// <param name="targetType">Целевой тип сущности</param>
 /// <param name="similarsCountToStopProcess">Количество совпавших схожих слов для остановки поиска определнной сущности по текущему слову из запроса</param>
