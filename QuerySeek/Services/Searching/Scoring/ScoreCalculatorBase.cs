@@ -5,12 +5,13 @@ using QuerySeek.Services.Helpers;
 namespace QuerySeek.Services.Searching.Scoring;
 
 /// <summary>
-/// Стандартная реализация просчета текстового скора для сущностей
+/// Стандартная реализация расчета <see cref="EntitySearchResult.Score"/>
 /// </summary>
 /// <remarks>
-/// Считает скор для сущности из совпадений слов: сущности и ее линков. Множители совпадений из линков можно переопределить.
+/// Считает <see cref="EntitySearchResult.Score"/> из совпадений слов: сущности и ее линков.
+/// <para> Позволяет переопределить множители совпадений из линков. Позволяет задавать <see cref="EntitySearchResult.Rules"/></para>
 /// </remarks>
-/// <typeparam name="TContext">Тип конеткста</typeparam>
+/// <typeparam name="TContext">Тип поискового контекста</typeparam>
 public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TContext : SearchContextBase
 {
     public static readonly ScoreCalculatorBase<TContext> Intance = new();

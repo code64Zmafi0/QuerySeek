@@ -1,4 +1,3 @@
-using QuerySeek.Models;
 using QuerySeek.Services.Searching.Scoring;
 using QuerySeek.Services.Searching.Selection;
 
@@ -16,10 +15,7 @@ public class SearchStep<TContext>(
         {
             request.Process(context);
 
-            if (!context.TryGetResultsByType(request.TargetType, out Dictionary<Key, EntitySearchResult>? result))
-                continue;
-
-            foreach (EntitySearchResult item in result.Values)
+            foreach (EntitySearchResult item in context.GetResults(request.TargetType))
                 scoreCalculator.CalculateTextScore(context, item);
         }
     }
