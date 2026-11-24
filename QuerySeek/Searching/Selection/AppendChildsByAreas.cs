@@ -1,0 +1,35 @@
+using QuerySeek.Models;
+
+namespace QuerySeek.Searching.Selection;
+
+/// <summary>
+/// Выполняет принудительное добавление дочерних элементов по родителям и поисковым областям в <see cref="SearchContextBase.SearchResult"/>
+/// </summary>
+/// <param name="targetType">Целевой тип</param>
+/// <param name="appendFilter">Фильтр добавляемых сущностей</param>
+/// <param name="parentsSelector">Выборка родителей</param>
+/// <param name="areasSelector">Выборка поисковых областей</param>
+public class AppendChildsByAreas(
+    byte targetType,
+    Func<IEnumerable<Key>, IEnumerable<Key>> appendFilter,
+    Func<IEnumerable<EntitySearchResult>> parentsSelector,
+    Func<IEnumerable<EntitySearchResult>> areasSelector) : EntitiesSelectionOperation(targetType)
+{
+    public override void Process(SearchContextBase searchContext)
+    {
+        IEnumerable<Key> GetChilds(IEnumerable<EntitySearchResult> selector)
+        {
+            foreach (EntitySearchResult containerInfo in selector)
+            {
+                foreach(Key child in containerInfo.GetChilds(TargetType))
+                    yield return child;
+            }
+        }
+
+        //Количество данных в поисковой зоне меньше чем суммарно связей - реализация интерсект скрывает создание хешсет из второго аргумента
+        IEnumerable<Key> childs = GetChilds(parentsSelector()).Intersect(appendFilter(GetChilds(areasSelector())));
+
+        foreach (Key child in childs)
+            AddResult(searchContext, child);
+    }
+}

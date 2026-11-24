@@ -1,9 +1,9 @@
 ﻿using QuerySeek.Models;
-using QuerySeek.Services.Building;
-using QuerySeek.Services.Extensions;
-using QuerySeek.Services.Normalizing;
-using QuerySeek.Services.Searching;
-using QuerySeek.Services.Searching.Selection;
+using QuerySeek.Building;
+using QuerySeek.Extensions;
+using QuerySeek.Searching;
+using QuerySeek.Searching.Selection;
+using QuerySeek.Normalizers;
 
 namespace QuerySeek.UnitTests;
 

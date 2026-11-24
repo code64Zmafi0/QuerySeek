@@ -41,8 +41,8 @@ When performing a minor update of the library, it is recommended to update the i
 
 The library provides built-in tools for normalizing and splitting a name into words for searching. Use this static objects.
 
-- QuerySeek.Services.Normalizing.`DefaultNormalizer`.Instance
-- QuerySeek.Services.Normalizing.`DefaultTokenizer`.Instance
+- QuerySeek.Normalizing.`DefaultNormalizer`.Instance
+- QuerySeek.Normalizing.`DefaultTokenizer`.Instance
 
 Also, you can redefine normalization and tokenizer splitting on words for use in your cases. Implement: ITokenizer and INormalizer
 

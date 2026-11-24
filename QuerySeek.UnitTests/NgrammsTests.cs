@@ -1,4 +1,4 @@
-﻿using QuerySeek.Services.Searching.WordsSearch;
+﻿using QuerySeek.Searching.WordsSearch;
 
 namespace QuerySeek.UnitTests;
 

@@ -1,4 +1,4 @@
-﻿using QuerySeek.Services.Helpers;
+﻿using QuerySeek.Helpers;
 
 namespace QuerySeek.UnitTests;
 

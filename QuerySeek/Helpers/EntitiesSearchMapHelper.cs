@@ -1,0 +1,80 @@
+using QuerySeek.Models;
+
+namespace QuerySeek.Helpers;
+
+public static class EntitiesSearchMapHelper
+{
+    public static WordMatchMeta[]? GetMatchesByWord(
+        this KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][] searchMap,
+        int wordId,
+        byte entityType)
+    {
+        IReadOnlyDictionary<Key, WordMatchMeta[]>? matchesByContainers = GetMatchesByAreasDict(searchMap, wordId, entityType);
+        if (matchesByContainers == null) return null;
+
+        if (matchesByContainers.TryGetValue(Key.Default, out WordMatchMeta[]? matches))
+        {
+            return matches;
+        }
+
+        return null;
+    }
+
+    public static IEnumerable<WordMatchMeta[]> GetMatchesByWordAndAreas(
+        this KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][] searchMap,
+        int wordId,
+        byte entityType,
+        IEnumerable<Key> areasKeys)
+    {
+        IReadOnlyDictionary<Key, WordMatchMeta[]>? matchesByContainers = GetMatchesByAreasDict(searchMap, wordId, entityType);
+        if (matchesByContainers == null) yield break;
+
+        foreach (Key containerKey in areasKeys)
+        {
+            if (!matchesByContainers.TryGetValue(containerKey, out WordMatchMeta[]? entityMatches))
+                continue;
+
+            yield return entityMatches;
+        }
+    }
+
+    public static IReadOnlyDictionary<Key, WordMatchMeta[]>? GetMatchesByAreasDict(
+        this KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][] searchMap,
+        int wordId,
+        byte entityType)
+    {
+        KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[] wordMatches = searchMap[wordId];
+
+        //Типы в бандле упорядочены. Используем бинарный поиск.
+        int index = BinarySearch(wordMatches, entityType);
+        if (index == -1) return null;
+
+        return wordMatches[index].Value;
+    }
+
+    /// <summary>
+    /// Бинарный поиск индекса нужного типа для бандла типов
+    /// </summary>
+    /// <param name="sortedKeys">Совпадения слов по типам</param>
+    /// <param name="targetType">Запрошенный тип</param>
+    private static int BinarySearch(KeyValuePair<byte /*TypeId*/, IReadOnlyDictionary</*ByNodeKey*/ Key, WordMatchMeta[]>>[] sortedKeys, byte targetType)
+    {
+        int left = 0;
+        int right = sortedKeys.Length - 1;
+
+        while (left <= right)
+        {
+            int mid = left + (right - left) / 2;
+
+            if (sortedKeys[mid].Key == targetType)
+                return mid;
+
+            if (sortedKeys[mid].Key < targetType)
+                left = mid + 1;
+            else
+                right = mid - 1;
+        }
+
+        return -1;
+    }
+}

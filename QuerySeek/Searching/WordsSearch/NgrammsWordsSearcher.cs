@@ -1,0 +1,224 @@
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using QuerySeek.Models;
+
+namespace QuerySeek.Searching.WordsSearch;
+
+public static class NgrammsWordsSearcher
+{
+    public const byte NGRAM_LENGTH = 3;
+    public const byte MAX_WORD_LENGTH = 250;
+
+    /// <summary>
+    /// Производит расчет параметров схожести для слов с заданным минимальным совпадением 
+    /// </summary>
+    /// <param name="word">Слово из запроса</param>
+    /// <param name="minSimilarity">Минимально допустимый коэффициент схожести</param>
+    /// <returns>Минимальное количество нграмм для совпадения</returns>
+    public static SimilarityTreshold CalculateWordSimilarityTreshold(Word word, double minSimilarity)
+        => new((int)(word.NGrammsHashes.Length * minSimilarity), (int)(word.NGrammsHashes.Length * 0.6));
+
+    /// <summary>
+    /// Производит расчет параметров схожести для цифр (без последних нграммов)
+    /// </summary>
+    /// <param name="word">Слово из запроса</param>
+    /// <returns>Минимальное количество нграмм для совпадения</returns>
+    public static SimilarityTreshold CalculateDigitSimilarityTreshold(Word word)
+        => new(word.NGrammsHashes.Length - NGRAM_LENGTH + 1, 0);
+
+    /// <summary>
+    /// Преобразовние строки в массив нграммов (их хеш кодов)
+    /// </summary>
+    /// <returns>Массив хешей нграммов</returns>
+    public static int[] GetNgramms(string word)
+    {
+        const char SpaceChar = ' ';
+
+        ReadOnlySpan<char> wordSpan = word.Length > MAX_WORD_LENGTH
+            ? word.AsSpan(0, MAX_WORD_LENGTH)
+            : word;
+
+        int spaceLength = NGRAM_LENGTH - 1;
+        int totalLength = wordSpan.Length + spaceLength * 2;
+
+        //Буффер нормализации
+        Span<char> buffer = stackalloc char[totalLength];
+
+        //Заполняем спейсы
+        buffer[..spaceLength].Fill(SpaceChar);
+        buffer[^spaceLength..].Fill(SpaceChar);
+
+        //Заполняем слово
+        wordSpan.CopyTo(buffer[spaceLength..]);
+
+        //Просчитываем хеши для нграммов
+        int[] result = new int[wordSpan.Length + NGRAM_LENGTH - 1];
+
+        for (int i = 0; i <= buffer.Length - NGRAM_LENGTH; i++)
+        {
+            //Вычисляем хеш нграмма
+            Span<char> nGramm = buffer.Slice(i, NGRAM_LENGTH);
+
+            int num = 5381;
+            int num2 = num;
+            for (int k = 0; k < nGramm.Length; k += 2)
+            {
+                num = (num << 5) + num ^ nGramm[k];
+
+                if (k + 1 < nGramm.Length)
+                    num2 = (num2 << 5) + num2 ^ nGramm[k + 1];
+            }
+            int hash = num + num2 * 1566083941;
+
+            result[i] = hash;
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Создание бандла слов для поиска
+    /// </summary>
+    public static QueryTokenContainer[] CreateSearchTokensBundle(
+        string[] splittedAndNormalizedQuery,
+        IReadOnlyDictionary<int, NgrammAssociation[]> wordsIdsByNgramms,
+        WordsSearchSimilaritySettings settings,
+        IReadOnlyDictionary<string, string[]> alternativeWords,
+        IReadOnlyDictionary<string, double> queryWordMultipliers)
+    {
+        //Используем один словарь для расчета совпавщих слов для каждого слова из запроса дабы лишний раз не аллоцировать
+        Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict = new(settings.WordsSearchDictionaryPreallocate);
+
+        QueryTokenContainer[] result = [.. splittedAndNormalizedQuery.Index().GroupBy(i => i.Item).Select(wordAndRepeats =>
+        {
+            string wordFrowQuery = wordAndRepeats.Key;
+            int[] positions = [.. wordAndRepeats.Select(i => i.Index)];
+            double multiplier = queryWordMultipliers.TryGetValue(wordFrowQuery, out var m) ? m : 1;
+
+            List<Word> words = [new(wordFrowQuery, GetNgramms(wordFrowQuery), multiplier)];
+
+            if (alternativeWords.TryGetValue(wordFrowQuery, out string[]? alts))
+            {
+                words.AddRange(Array.ConvertAll(alts, alt => new Word(
+                    alt,
+                    GetNgramms(alt),
+                    queryWordMultipliers.TryGetValue(alt, out var m) ? m : 1)));
+            }
+
+            List<KeyValuePair<int, byte>> similarWords = SearchSimilarsByQueryWordAndAlternatives(
+                wordsSearchProcessDict,
+                wordsIdsByNgramms,
+                words,
+                settings);
+
+            return new QueryTokenContainer(words, positions, similarWords);
+        })];
+
+        return result;
+    }
+
+    /// <summary>
+    /// Поиск схожих слов для слова из запроса
+    /// </summary>
+    private static List<KeyValuePair<int, byte>> SearchSimilarsByQueryWordAndAlternatives(
+        Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict,
+        IReadOnlyDictionary<int, NgrammAssociation[]> wordsIdsByNgramms,
+        List<Word> queryWordAndAlternatives,
+        WordsSearchSimilaritySettings wordsSearchSettings)
+    {
+        List<KeyValuePair<int, byte>> result = [];
+
+        //Сначала ищем альтенативы
+        for (int i = 1; i < queryWordAndAlternatives.Count; i++)
+        {
+            Word altWord = queryWordAndAlternatives[i];
+            SearchSimilars(altWord,
+                           wordsSearchSettings.SimilarityTresholdCalculator(altWord),
+                           wordsSearchSettings.AlternativesCount);
+        }
+        
+        Word queryWord = queryWordAndAlternatives[0];
+        SearchSimilars(queryWord,
+                       wordsSearchSettings.SimilarityTresholdCalculator(queryWord),
+                       wordsSearchSettings.MaxCheckingWordsCount(queryWord));
+
+        return result;
+
+        void SearchSimilars(Word word, SimilarityTreshold similarityTreshold, int take)
+        {
+            int minMatchedNgrammsCount = similarityTreshold.MinMatchedNgrammsCount;
+            int maxMisses = similarityTreshold.MaxMisses;
+
+            NgrammSearch(wordsSearchProcessDict, wordsIdsByNgramms, word, similarityTreshold);
+
+            //Ищем бандл схожих слов и сортируем по количеству совпадений (вычисляется WordScoreCalculator. Попадания - наказание за промахи)
+            foreach (KeyValuePair<int, WordNgrammSearchState> item in wordsSearchProcessDict
+                .Where(i => i.Value.Matches >= minMatchedNgrammsCount
+                         && i.Value.Misses <= maxMisses)
+                .OrderByDescending(i => i.Value.Matches)
+                .OrderByDescending(i => wordsSearchSettings.WordScoreCalculator(word, i.Value))
+                .Take(take))
+            {
+                result.Add(new(item.Key, (byte)(wordsSearchSettings.WordScoreCalculator(word, item.Value) * word.Multiplier)));
+            }
+
+            //Чистка переиспользуемого словаря
+            wordsSearchProcessDict.Clear();
+        }
+    }
+
+    /// <summary>
+    /// Поиск похожих слов по n-gramm
+    /// </summary>
+    private static void NgrammSearch(
+        Dictionary<int, WordNgrammSearchState> wordsSearchProcessDict,
+        IReadOnlyDictionary<int, NgrammAssociation[]> wordsIdsByNgramms,
+        Word queryWord,
+        SimilarityTreshold similarityTreshold)
+    {
+        byte wordLength = (byte)queryWord.NGrammsHashes.Length;
+
+        int treshold = wordLength - similarityTreshold.MinMatchedNgrammsCount;
+        int maxMisses = similarityTreshold.MaxMisses;
+
+        //Ищем в индексе слов, считаем совпавшие ngramm-ы и пропуски
+        for (byte queryWordNgrammPosition = 0; queryWordNgrammPosition < wordLength; queryWordNgrammPosition++)
+        {
+            if (!wordsIdsByNgramms.TryGetValue(queryWord.NGrammsHashes[queryWordNgrammPosition], out NgrammAssociation[]? ngrammAssociations))
+                continue;
+
+            foreach (NgrammAssociation ngrammAssoc in ngrammAssociations)
+            {
+                int wordId = ngrammAssoc.WordId;
+                byte indexWordNgrammPosition = ngrammAssoc.Position;
+
+                ref WordNgrammSearchState matchInfo = ref CollectionsMarshal.GetValueRefOrNullRef(wordsSearchProcessDict, wordId);
+
+                if (!Unsafe.IsNullRef(ref matchInfo))
+                {
+                    if (matchInfo.LastQueryWordNgrammPosition == queryWordNgrammPosition || matchInfo.LastIndexWordNgrammPosition >= indexWordNgrammPosition)
+                        continue;
+
+                    byte matches = (byte)(matchInfo.Matches + 1);
+
+                    byte queryWordMisses = (byte)(queryWordNgrammPosition - matchInfo.LastQueryWordNgrammPosition - 1);
+                    byte indexWordMisses = (byte)(indexWordNgrammPosition - matchInfo.LastIndexWordNgrammPosition - 1);
+
+                    byte misses = (byte)(Math.Max(queryWordMisses, indexWordMisses) + matchInfo.Misses);
+
+                    //Подменяем уже имеющееся значение
+                    matchInfo = new()
+                    {
+                        Matches = matches,
+                        Misses = misses,
+                        LastQueryWordNgrammPosition = queryWordNgrammPosition,
+                        LastIndexWordNgrammPosition = indexWordNgrammPosition
+                    };
+                }
+                //Попытка отбить добавление в словарь уже точно не совпавщих по similarityTreshold
+                else if (queryWordNgrammPosition <= treshold || queryWordNgrammPosition <= maxMisses)
+                    wordsSearchProcessDict[wordId] = new WordNgrammSearchState(1, queryWordNgrammPosition, queryWordNgrammPosition, indexWordNgrammPosition);
+            }
+        }
+    }
+}

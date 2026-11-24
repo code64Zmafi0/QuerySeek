@@ -1,4 +1,4 @@
-﻿using QuerySeek.Services.Normalizing;
+﻿using QuerySeek.Normalizers;
 
 namespace QuerySeek.UnitTests;
 
