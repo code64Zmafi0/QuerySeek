@@ -42,16 +42,16 @@ public static class QS
     public static SearchPipeline<TContext> SearchPipeline<TContext>() where TContext : SearchContextBase => new();
 
     public static bool IsSimilarityValid(Word queryWord, TokenMatch tokenMatch, double similarity)
-    => (double)tokenMatch.Score / queryWord.NGrammsHashes.Length >= similarity;
+        => (double)tokenMatch.Score / queryWord.NGrammsHashes.Length >= similarity;
 
     public static bool IsSimilarityValid(this QueryTokenContainer[] searchTokensBundle, TokenMatch tokenMatch, double similarity)
         => IsSimilarityValid(searchTokensBundle[tokenMatch.SearchTokensBundlePosition].Word, tokenMatch, similarity);
 
-    public static bool HasAnyValidMatchedToken(this EntitySearchResult entitySearchResult, QueryTokenContainer[] searchTokensBundle, double similarity)
-        => entitySearchResult.Matches.Exists(i => IsSimilarityValid(searchTokensBundle[i.SearchTokensBundlePosition].Word, i, similarity));
+    public static bool HasAnyValidMatchedToken(this QueryTokenContainer[] searchTokensBundle, EntitySearchResult entitySearchResult, double similarity)
+        => entitySearchResult.Matches.Exists(i => IsSimilarityValid(searchTokensBundle, i, similarity));
 
-    public static bool HasAllValidMatchedTokens(this EntitySearchResult entitySearchResult, QueryTokenContainer[] searchTokensBundle, double similarity)
-        => entitySearchResult.Matches.TrueForAll(i => IsSimilarityValid(searchTokensBundle[i.SearchTokensBundlePosition].Word, i, similarity));
+    public static bool HasAllValidMatchedTokens(this QueryTokenContainer[] searchTokensBundle, EntitySearchResult entitySearchResult, double similarity)
+        => entitySearchResult.Matches.TrueForAll(i => IsSimilarityValid(searchTokensBundle, i, similarity));
 
     public static TResult BuildResult<TContext, TResult>(this TContext context, Func<TContext, TResult> resultFactory) where TContext : SearchContextBase
         => resultFactory(context);
