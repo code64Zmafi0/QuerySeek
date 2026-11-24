@@ -78,7 +78,7 @@ public class SearchByAreasWithTermFrequence(
 
             if (matchesByContainers == null) continue;
 
-            if (searchByMatchedTokens)
+            if (searchByMatchedTokens || wordFromQuery.PositionsInRequest.Length > 1)
             {
                 foreach (Key key in areas.Select(i => i.Key))
                 {
@@ -92,8 +92,7 @@ public class SearchByAreasWithTermFrequence(
             {
                 foreach (EntitySearchResult entitySearchResult in areas)
                 {
-                    if (entitySearchResult.Matches.Exists(wm => wm.SearchTokensBundlePosition == queryWordPosition
-                                                                  && wordFromQuery.PositionsInRequest.Length < 2))
+                    if (entitySearchResult.Matches.Exists(wm => wm.SearchTokensBundlePosition == queryWordPosition))
                         continue;
 
                     if (!matchesByContainers.TryGetValue(entitySearchResult.Key, out WordMatchMeta[]? matches))

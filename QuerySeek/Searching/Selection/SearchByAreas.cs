@@ -44,11 +44,10 @@ public class SearchByAreas(
 
                 int wordId = indexWordInfo.Key;
 
-                IEnumerable<Key> areasKeys = searchByMatchedTokens
+                IEnumerable<Key> areasKeys = searchByMatchedTokens || wordFromQuery.PositionsInRequest.Length > 1
                     ? areas.Select(a => a.Key)
-                    : areas
-                        .Where(a => !a.Matches.Exists(wm => wm.SearchTokensBundlePosition == queryWordPosition && wordFromQuery.PositionsInRequest.Length < 2))
-                        .Select(a => a.Key);
+                    : areas.Where(a => !a.Matches.Exists(wm => wm.SearchTokensBundlePosition == queryWordPosition))
+                           .Select(a => a.Key);
 
                 bool isMatchedWord = false;
                 foreach (WordMatchMeta[] matches in entitiesSearchMap.GetMatchesByWordAndAreas(
