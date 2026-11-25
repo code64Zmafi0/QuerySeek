@@ -124,36 +124,39 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
         if (nodeMultiplier == 0) return;
 
         //Сначала выбираем матчи по сущности пытаемся собрать совпадения для слов из запроса
-        Span<TokenMatch> nodeScores = stackalloc TokenMatch[queryWordsMatches.Length];
+        Span<TokenMatch> currentMatches = stackalloc TokenMatch[queryWordsMatches.Length];
 
         List<TokenMatch> matches = matchesEntity.Matches;
         for (int i = 0; i < matches.Count; i++)
         {
-            TokenMatch compareResult = matches[i];
-            int queryWordPosition = GetCurrentQueryWordPosition(in nodeScores, compareResult.SearchTokensBundlePosition);
-            TokenMatch previouslyCalculatedResult = nodeScores[queryWordPosition];
+            TokenMatch tokenMatch = matches[i];
+
+            tokenMatch = GetValidMatch(matches, i);
+
+            int queryWordPosition = GetCurrentQueryWordPosition(in currentMatches, tokenMatch.SearchTokensBundlePosition);
+            TokenMatch previouslyCalculatedResult = currentMatches[queryWordPosition];
 
             bool isNewQueryPosition = false;
-            if (PreviouslyMatchedWordToNewPositionName(compareResult, previouslyCalculatedResult))
+            if (PreviouslyMatchedWordToNewPositionName(tokenMatch, previouslyCalculatedResult))
             {
                 isNewQueryPosition = true;
-                queryWordPosition = GetNewQueryWordPosition(in nodeScores, compareResult.SearchTokensBundlePosition);
+                queryWordPosition = GetNewQueryWordPosition(in currentMatches, tokenMatch.SearchTokensBundlePosition);
             }
 
             if (queryWordPosition == -1) continue;
 
-            double nameTypeMultiplier = GetNameMultiplierInternal(matchesEntity.Key.Type, compareResult.NameType);
+            double nameTypeMultiplier = GetNameMultiplierInternal(matchesEntity.Key.Type, tokenMatch.NameType);
 
-            byte score = (byte)Math.Round(compareResult.Score * nameTypeMultiplier * nodeMultiplier);
+            byte score = (byte)Math.Round(tokenMatch.Score * nameTypeMultiplier * nodeMultiplier);
 
             if (isNewQueryPosition || previouslyCalculatedResult.Score < score)
-                nodeScores[queryWordPosition] = new(compareResult.NameTokenPosition, compareResult.NameType, compareResult.SearchTokensBundlePosition, score);
+                currentMatches[queryWordPosition] = new(tokenMatch.NameTokenPosition, tokenMatch.NameType, tokenMatch.SearchTokensBundlePosition, score);
         }
 
         //Мерж между линками
         for (int i = 0; i < queryWordsMatches.Length; i++)
         {
-            TokenMatch nodeMatch = nodeScores[i];
+            TokenMatch nodeMatch = currentMatches[i];
             TokenMatch previouslyCalculatedResult = queryWordsMatches[i];
 
             if (nodeMatch.IsEmpty) continue;
@@ -197,6 +200,25 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
             }
 
             return positions[0];
+        }
+
+        TokenMatch GetValidMatch(List<TokenMatch> matches, int index)
+        {
+            TokenMatch current = matches[index];
+
+            for (int i = index + 1; i < matches.Count; i++)
+            {
+                TokenMatch over = matches[i];
+
+                if (over.NameTokenPosition == current.NameTokenPosition
+                    && over.NameType == current.NameType
+                    && over.Score > current.Score)
+                {
+                    return over;
+                }
+            }
+
+            return current;
         }
 
         static bool PreviouslyMatchedWordToNewPositionName(TokenMatch compareResult, TokenMatch previouslyCalculatedResult)
