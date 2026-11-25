@@ -129,9 +129,7 @@ public class ScoreCalculatorBase<TContext> : IScoreCalculator<TContext> where TC
         List<TokenMatch> matches = matchesEntity.Matches;
         for (int i = 0; i < matches.Count; i++)
         {
-            TokenMatch tokenMatch = matches[i];
-
-            tokenMatch = GetValidMatch(matches, i);
+            TokenMatch tokenMatch = GetValidMatch(matches, i);
 
             int queryWordPosition = GetCurrentQueryWordPosition(in currentMatches, tokenMatch.SearchTokensBundlePosition);
             TokenMatch previouslyCalculatedResult = currentMatches[queryWordPosition];
