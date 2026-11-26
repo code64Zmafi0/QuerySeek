@@ -92,7 +92,7 @@ public class SearchByAreasWithTermFrequence(
             {
                 foreach (EntitySearchResult entitySearchResult in areas)
                 {
-                    if (entitySearchResult.Matches.Exists(wm => wm.SearchTokensBundlePosition == queryWordPosition))
+                    if (entitySearchResult.Matches.Exists(wm => wm.SearchTokenIndex == queryWordPosition))
                         continue;
 
                     if (!matchesByContainers.TryGetValue(entitySearchResult.Key, out WordMatchMeta[]? matches))

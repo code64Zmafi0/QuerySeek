@@ -46,7 +46,7 @@ public class SearchByAreas(
 
                 IEnumerable<Key> areasKeys = searchByMatchedTokens || wordFromQuery.PositionsInRequest.Length > 1
                     ? areas.Select(a => a.Key)
-                    : areas.Where(a => !a.Matches.Exists(wm => wm.SearchTokensBundlePosition == queryWordPosition))
+                    : areas.Where(a => !a.Matches.Exists(wm => wm.SearchTokenIndex == queryWordPosition))
                            .Select(a => a.Key);
 
                 bool isMatchedWord = false;

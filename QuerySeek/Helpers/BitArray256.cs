@@ -1,4 +1,6 @@
-﻿namespace QuerySeek.Helpers;
+using System.Numerics;
+
+namespace QuerySeek.Helpers;
 
 /// <summary>
 /// Аналог BitArray на стеке для уменьшения аллокаций
@@ -13,13 +15,10 @@ public struct BitArray256
     /// <summary>
     /// Получает или устанавливает значение бита по указанному индексу (0-255).
     /// </summary>
-    public bool this[int index]
+    public bool this[byte index]
     {
-        get
+        readonly get
         {
-            if ((uint)index >= 256)
-                throw new ArgumentOutOfRangeException(nameof(index));
-
             int fieldIndex = index >> 6; // Деление на 64
             int bitPosition = index & 63; // Остаток от деления на 64
 
@@ -34,9 +33,6 @@ public struct BitArray256
         }
         set
         {
-            if ((uint)index >= 256)
-                throw new ArgumentOutOfRangeException(nameof(index));
-
             int fieldIndex = index >> 6;
             int bitPosition = index & 63;
 
@@ -64,4 +60,10 @@ public struct BitArray256
             }
         }
     }
+
+    public readonly int PopCount()
+        => BitOperations.PopCount(_part0)
+         + BitOperations.PopCount(_part1)
+         + BitOperations.PopCount(_part2)
+         + BitOperations.PopCount(_part3);
 }

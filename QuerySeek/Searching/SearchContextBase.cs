@@ -4,14 +4,19 @@ using QuerySeek.Models;
 namespace QuerySeek.Searching;
 
 /// <summary>
-/// Контекст поиска, позволяет хранить дополнительные свойства при переопределении
+/// Базовый контекст поиска QuerySeek
 /// </summary>
 /// <remarks>
 /// <see cref="Query">Переданный текстовый запрос</see><br/>
 /// <see cref="Index">Переданный инстанс индекса</see><br/>
 /// <see cref="SplittedAndNormalizedQuery">Нормализованный и разбитый по словам текстовый запрос</see><br/>
 /// <see cref="SearchTokens">Бандл токенов запроса для осуществления поиска по индексу</see><br/>
-/// <see cref="SearchResult">Коллекция результатов поиска по индексу</see><br/>
+/// <see cref="SearchResult">Коллекция результатов поиска по индексу</see>
+/// <para>Вспомогательные методы:</para>
+/// <see cref="TryGetSearchedEntity"/><br/>
+/// <see cref="TryGetResultsByType"/><br/>
+/// <see cref="GetResults"/><br/>
+/// <see cref="GetAllResults"/><br/>
 /// </remarks>
 /// <param name="index">Индекс</param>
 /// <param name="query">Поисковая строка</param>
@@ -45,7 +50,7 @@ public class SearchContextBase(
     public Dictionary<byte, Dictionary<Key, EntitySearchResult>> SearchResult { get; } = [];
 
     /// <summary>
-    /// Пробует получить найденную сущность в контексте
+    /// Пробует получить найденную сущность
     /// </summary>
     public bool TryGetSearchedEntity(Key key, [NotNullWhen(true)] out EntitySearchResult? searchResult)
     {

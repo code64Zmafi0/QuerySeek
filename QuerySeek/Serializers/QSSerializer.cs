@@ -10,12 +10,16 @@ public static class QSSerializer
     private static readonly string WordsIndexFileName = "words_index.dat";
     private static readonly string SearchMapFileName = "search_map.dat";
 
+    private static readonly MessagePackSerializerOptions? SerializerOptions
+        = null;
+        //= MessagePackSerializerOptions.Standard.WithCompression(MessagePackCompression.Lz4BlockArray);
+
     /// <summary>
     /// Записывает файлы индекса в директорию
     /// </summary>
     /// <param name="directoryPath">Путь до директории</param>
     /// <param name="index">Индекс</param>
-    public static void WriteIndex(string directoryPath, IndexInstance index)
+    public static async Task WriteIndexAsync(string directoryPath, IndexInstance index)
     {
         Directory.CreateDirectory(directoryPath);
 
@@ -23,16 +27,16 @@ public static class QSSerializer
         string wordsPath = Path.Combine(directoryPath, WordsIndexFileName);
         string searchMapPath = Path.Combine(directoryPath, SearchMapFileName);
 
-        WriteMPObject(entitiesPath, index.Entities);
-        WriteMPObject(wordsPath, index.WordsIdsByNgramms);
-        WriteMPObject(searchMapPath, index.EntitiesSearchMap);
+        await WriteMPObjectAsync(entitiesPath, index.Entities);
+        await WriteMPObjectAsync(wordsPath, index.WordsIdsByNgramms);
+        await WriteMPObjectAsync(searchMapPath, index.EntitiesSearchMap);
     }
 
     /// <summary>
     /// Читает индекс из директории
     /// </summary>
     /// <param name="directoryPath">Путь до директории</param>
-    public static IndexInstance? ReadIndex(string directoryPath)
+    public static async Task<IndexInstance?> ReadIndexAsync(string directoryPath)
     {
         if (!Directory.Exists(directoryPath)) return null;
 
@@ -40,14 +44,14 @@ public static class QSSerializer
         string wordsPath = Path.Combine(directoryPath, WordsIndexFileName);
         string searchMapPath = Path.Combine(directoryPath, SearchMapFileName);
 
-        var entities = ReadMPObject<IReadOnlyDictionary<Key, EntityMeta>>(entitiesPath);
+        var entities = await ReadMPObjectAsync<IReadOnlyDictionary<Key, EntityMeta>>(entitiesPath);
         DeduplicateLinks(entities);
         GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, true);
 
-        var words = ReadMPObject<IReadOnlyDictionary<int, NgrammAssociation[]>>(wordsPath);
+        var words = await ReadMPObjectAsync<IReadOnlyDictionary<int, NgrammAssociation[]>>(wordsPath);
         GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, true);
 
-        var searchMap = ReadMPObject<KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][]>(searchMapPath);
+        var searchMap = await ReadMPObjectAsync<KeyValuePair<byte, IReadOnlyDictionary<Key, WordMatchMeta[]>>[][]>(searchMapPath);
         GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true, true);
 
         IndexInstance indexInstance = new()
@@ -79,13 +83,13 @@ public static class QSSerializer
         }
     }
 
-    public static T ReadMPObject<T>(string filePath) where T : class
+    public static async Task<T> ReadMPObjectAsync<T>(string filePath) where T : class
     {
         using Stream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        return MessagePackSerializer.Deserialize<T>(stream);
+        return await MessagePackSerializer.DeserializeAsync<T>(stream, SerializerOptions).ConfigureAwait(false);
     }
 
-    public static void WriteMPObject(string filePath, object obj)
+    public static async Task WriteMPObjectAsync(string filePath, object obj)
     {
         string? directoryPath = Path.GetDirectoryName(filePath);
 
@@ -96,7 +100,6 @@ public static class QSSerializer
             Directory.CreateDirectory(directoryPath);
 
         using Stream stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
-
-        MessagePackSerializer.Serialize(stream, obj);
+        await MessagePackSerializer.SerializeAsync(stream, obj, SerializerOptions).ConfigureAwait(false);
     }
 }

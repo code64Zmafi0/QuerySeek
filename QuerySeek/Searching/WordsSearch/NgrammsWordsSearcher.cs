@@ -92,7 +92,7 @@ public static class NgrammsWordsSearcher
         QueryTokenContainer[] result = [.. splittedAndNormalizedQuery.Index().GroupBy(i => i.Item).Select(wordAndRepeats =>
         {
             string wordFrowQuery = wordAndRepeats.Key;
-            int[] positions = [.. wordAndRepeats.Select(i => i.Index)];
+            int[] positions = [.. wordAndRepeats.Select(i => i.Index).Order()];
             double multiplier = queryWordMultipliers.TryGetValue(wordFrowQuery, out var m) ? m : 1;
 
             List<Word> words = [new(wordFrowQuery, GetNgramms(wordFrowQuery), multiplier)];
